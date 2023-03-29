@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/nikoksr/notify"
 	"github.com/nikoksr/notify/service/bark"
 	"github.com/nikoksr/notify/service/discord"
@@ -22,12 +21,11 @@ type StarEvent struct {
 	Repository struct {
 		Name            string `json:"name"`
 		FullName        string `json:"full_name"`
-		URL             string `json:"url"`
+		HtmlUrl         string `json:"html_url"`
 		StarGazersCount int    `json:"stargazers_count"`
 	} `json:"repository"`
 	Sender struct {
 		Login   string `json:"login"`
-		URL     string `json:"url"`
 		HtmlUrl string `json:"html_url"`
 	}
 	StarredAt string `json:"starred_at"`
@@ -44,15 +42,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	title := fmt.Sprintf("New GitHub Star on %s", EscapeText("MarkdownV2", event.Repository.FullName))
+	title := fmt.Sprintf("New GitHub Star on %s", escape(event.Repository.FullName))
 	text := fmt.Sprintf(
-		"[%s](%s) starred [%s](%s), now it has %d stars\\.",
-		EscapeText("MarkdownV2", event.Sender.Login),
-		EscapeText("MarkdownV2", event.Sender.HtmlUrl),
-		EscapeText("MarkdownV2", event.Repository.FullName),
-		EscapeText("MarkdownV2", event.Repository.URL),
+		"[%s](%s) starred [%s](%s), now it has **%d** stars\\.",
+		escape(event.Sender.Login),
+		escape(event.Sender.HtmlUrl),
+		escape(event.Repository.FullName),
+		escape(event.Repository.HtmlUrl),
 		event.Repository.StarGazersCount,
 	)
+
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 	err = Notify(ctx, title, text)
@@ -115,31 +114,14 @@ func Notify(ctx context.Context, subject, message string) (err error) {
 	return nil
 }
 
-// EscapeText takes an input text and escape Telegram markup symbols.
-// In this way we can send a text without being afraid of having to escape the characters manually.
-// Note that you don't have to include the formatting style in the input text, or it will be escaped too.
-// If there is an error, an empty string will be returned.
-//
-// parseMode is the text formatting mode (ModeMarkdown, ModeMarkdownV2 or ModeHTML)
-// text is the input string that will be escaped
-func EscapeText(parseMode string, text string) string {
-	var replacer *strings.Replacer
+var replacer = strings.NewReplacer(
+	"_", "\\_", "*", "\\*", "[", "\\[", "]", "\\]", "(",
+	"\\(", ")", "\\)", "~", "\\~", "`", "\\`", ">", "\\>",
+	"#", "\\#", "+", "\\+", "-", "\\-", "=", "\\=", "|",
+	"\\|", "{", "\\{", "}", "\\}", ".", "\\.", "!", "\\!",
+	"\\", "\\\\",
+)
 
-	if parseMode == tgbotapi.ModeHTML {
-		replacer = strings.NewReplacer("<", "&lt;", ">", "&gt;", "&", "&amp;")
-	} else if parseMode == tgbotapi.ModeMarkdown {
-		replacer = strings.NewReplacer("_", "\\_", "*", "\\*", "`", "\\`", "[", "\\[")
-	} else if parseMode == "MarkdownV2" {
-		replacer = strings.NewReplacer(
-			"_", "\\_", "*", "\\*", "[", "\\[", "]", "\\]", "(",
-			"\\(", ")", "\\)", "~", "\\~", "`", "\\`", ">", "\\>",
-			"#", "\\#", "+", "\\+", "-", "\\-", "=", "\\=", "|",
-			"\\|", "{", "\\{", "}", "\\}", ".", "\\.", "!", "\\!",
-			"\\", "\\\\",
-		)
-	} else {
-		return ""
-	}
-
+func escape(text string) string {
 	return replacer.Replace(text)
 }
