@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"log"
 	"net/http"
+	"net/url"
 	"os"
 )
 
@@ -63,16 +62,16 @@ func bark(title, text string) error {
 	if barkKey == "" {
 		return errors.New("BARK_KEY is empty")
 	}
-	url := barkAddress + "/" + barkKey
+	u := barkAddress + "/" + barkKey
 	if title != "" {
-		url = url + "/" + title
+		title = url.QueryEscape(title)
+		u = u + "/" + title
 	}
 	if text != "" {
-		url = url + "/" + text
+		text = url.QueryEscape(text)
+		u = u + "/" + text
 	}
-	resp, err := http.Get(url)
-	body, _ := io.ReadAll(resp.Body)
-	log.Printf("bark: %s, response: %s", url, body)
+	resp, err := http.Get(u)
 	if err != nil {
 		return err
 	}
