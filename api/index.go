@@ -33,19 +33,29 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if event.Action != "created" {
-		w.WriteHeader(http.StatusOK)
-		return
+	var title, text string
+	switch event.Action {
+	case "deleted":
+		title = fmt.Sprintf("Lost GitHub Star on %s", utils.EscapeMarkdown(event.Repository.FullName))
+		text = fmt.Sprintf(
+			"[%s](%s) unstarred [%s](%s), now it has **%d** stars\\.",
+			utils.EscapeMarkdown(event.Sender.Login),
+			utils.EscapeMarkdown(event.Sender.HtmlUrl),
+			utils.EscapeMarkdown(event.Repository.FullName),
+			utils.EscapeMarkdown(event.Repository.HtmlUrl),
+			event.Repository.StarGazersCount,
+		)
+	case "created":
+		title = fmt.Sprintf("New GitHub Star on %s", utils.EscapeMarkdown(event.Repository.FullName))
+		text = fmt.Sprintf(
+			"[%s](%s) starred [%s](%s), now it has **%d** stars\\.",
+			utils.EscapeMarkdown(event.Sender.Login),
+			utils.EscapeMarkdown(event.Sender.HtmlUrl),
+			utils.EscapeMarkdown(event.Repository.FullName),
+			utils.EscapeMarkdown(event.Repository.HtmlUrl),
+			event.Repository.StarGazersCount,
+		)
 	}
-	title := fmt.Sprintf("New GitHub Star on %s", utils.EscapeMarkdown(event.Repository.FullName))
-	text := fmt.Sprintf(
-		"[%s](%s) starred [%s](%s), now it has **%d** stars\\.",
-		utils.EscapeMarkdown(event.Sender.Login),
-		utils.EscapeMarkdown(event.Sender.HtmlUrl),
-		utils.EscapeMarkdown(event.Repository.FullName),
-		utils.EscapeMarkdown(event.Repository.HtmlUrl),
-		event.Repository.StarGazersCount,
-	)
 
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
