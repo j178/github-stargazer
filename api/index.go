@@ -1,12 +1,12 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"os"
+
+	github_stargazer "github.com/j178/github-stargazer"
 )
 
 type StarEvent struct {
@@ -44,37 +44,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		event.Repository.URL,
 		event.Repository.StarGazersCount,
 	)
-	err = bark(title, text)
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+	err = github_stargazer.Notify(ctx, title, text)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK"))
-}
-
-var (
-	barkAddress = "https://api.day.app"
-)
-
-func bark(title, text string) error {
-	barkKey := os.Getenv("BARK_KEY")
-	if barkKey == "" {
-		return errors.New("BARK_KEY is empty")
-	}
-	u := barkAddress + "/" + barkKey
-	if title != "" {
-		title = url.QueryEscape(title)
-		u = u + "/" + title
-	}
-	if text != "" {
-		text = url.QueryEscape(text)
-		u = u + "/" + text
-	}
-	resp, err := http.Get(u)
-	if err != nil {
-		return err
-	}
-	_ = resp.Body.Close()
-	return nil
 }
