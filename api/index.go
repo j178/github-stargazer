@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	github_stargazer "github.com/j178/github-stargazer"
 )
 
 type StarEvent struct {
@@ -45,7 +47,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	)
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
-	err = Notify(ctx, title, text)
+	err = github_stargazer.Notify(ctx, title, text)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
