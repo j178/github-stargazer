@@ -1,4 +1,4 @@
-package github_stargazer
+package api
 
 import (
 	"context"

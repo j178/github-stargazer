@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	github_stargazer "github.com/j178/github-stargazer"
 )
 
 type StarEvent struct {
@@ -46,7 +44,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	)
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
-	err = github_stargazer.Notify(ctx, title, text)
+	err = Notify(ctx, title, text)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
