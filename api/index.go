@@ -100,5 +100,5 @@ func validateSignature(r *http.Request) bool {
 	mac := hmac.New(sha256.New, []byte(os.Getenv("GITHUB_WEBHOOK_SECRET")))
 	mac.Write(payload)
 	expectedMAC := hex.EncodeToString(mac.Sum(nil))
-	return hmac.Equal([]byte(signature[5:]), []byte(expectedMAC))
+	return hmac.Equal([]byte(signature[len("sha256="):]), []byte(expectedMAC))
 }
