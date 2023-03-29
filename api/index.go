@@ -43,7 +43,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	title := fmt.Sprintf("New GitHub Star on %s", event.Repository.FullName)
+	title := fmt.Sprintf("New GitHub Star on %s", EscapeText("MarkdownV2", event.Repository.FullName))
 	text := fmt.Sprintf(
 		"[%s](%s) starred [%s](%s), now it has %d stars.",
 		EscapeText("MarkdownV2", event.Sender.Login),
