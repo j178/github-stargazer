@@ -90,13 +90,13 @@ func Notify(ctx context.Context, subject, message string) (err error) {
 	case "telegram":
 		tg, err := telegram.New(env("TELEGRAM_TOKEN"))
 		if err != nil {
-			return err
+			return fmt.Errorf("telegram: %w", err)
 		}
 		tg.SetParseMode("MarkdownV2")
 		chatIDStr := env("TELEGRAM_CHAT_ID")
 		chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
 		if err != nil {
-			return err
+			return fmt.Errorf("telegram parse chat_id: %w", err)
 		}
 		tg.AddReceivers(chatID)
 		notifier.UseServices(tg)
@@ -105,5 +105,9 @@ func Notify(ctx context.Context, subject, message string) (err error) {
 		ds.AddReceivers(env("DISCORD_CHANNEL_ID"))
 		notifier.UseServices(ds)
 	}
-	return notifier.Send(ctx, subject, message)
+	err = notifier.Send(ctx, subject, message)
+	if err != nil {
+		return fmt.Errorf("send: %w", err)
+	}
+	return nil
 }
