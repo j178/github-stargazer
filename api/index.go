@@ -45,7 +45,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	title := fmt.Sprintf("New GitHub Star on %s", EscapeText("MarkdownV2", event.Repository.FullName))
 	text := fmt.Sprintf(
-		"[%s](%s) starred [%s](%s), now it has %d stars.",
+		"[%s](%s) starred [%s](%s), now it has %d stars\\.",
 		EscapeText("MarkdownV2", event.Sender.Login),
 		EscapeText("MarkdownV2", event.Sender.URL),
 		EscapeText("MarkdownV2", event.Repository.FullName),
