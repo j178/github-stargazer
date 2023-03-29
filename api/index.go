@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 type StarEvent struct {
@@ -42,7 +43,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		event.Repository.URL,
 		event.Repository.StarGazersCount,
 	)
-	ctx, cancel := context.WithCancel(r.Context())
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 	err = Notify(ctx, title, text)
 	if err != nil {
