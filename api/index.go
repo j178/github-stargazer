@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"os"
 )
@@ -49,11 +51,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
 var (
-	barkAddress = "https://api.day.app/%s/"
+	barkAddress = "https://api.day.app"
 )
 
 func bark(title, text string) error {
@@ -61,17 +63,19 @@ func bark(title, text string) error {
 	if barkKey == "" {
 		return errors.New("BARK_KEY is empty")
 	}
-	url := fmt.Sprintf(barkAddress, barkKey)
+	url := barkAddress + "/" + barkKey
 	if title != "" {
-		url = fmt.Sprintf("%s/%s", url, title)
+		url = url + "/" + title
 	}
 	if text != "" {
-		url = fmt.Sprintf("%s/%s", url, text)
+		url = url + "/" + text
 	}
 	resp, err := http.Get(url)
+	body, _ := io.ReadAll(resp.Body)
+	log.Printf("bark: %s, response: %s", url, body)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	_ = resp.Body.Close()
 	return nil
 }
