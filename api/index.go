@@ -1,10 +1,16 @@
 package api
 
 import (
+	"bytes"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/j178/github_stargazer/notify"
@@ -27,6 +33,11 @@ type StarEvent struct {
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
+	if !validateSignature(r) {
+		http.Error(w, "Bad signature", http.StatusForbidden)
+		return
+	}
+
 	var event StarEvent
 	err := json.NewDecoder(r.Body).Decode(&event)
 	if err != nil {
@@ -66,4 +77,28 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("OK"))
+}
+
+func validateSignature(r *http.Request) bool {
+	if os.Getenv("GITHUB_WEBHOOK_SECRET") == "" {
+		return true
+	}
+
+	payload, err := io.ReadAll(r.Body)
+	if err != nil {
+		return false
+	}
+
+	// Restore the io.ReadCloser to its original state so it can be read later
+	r.Body = io.NopCloser(bytes.NewBuffer(payload))
+
+	signature := r.Header.Get("X-Hub-Signature-256")
+	if signature == "" {
+		return false
+	}
+
+	mac := hmac.New(sha256.New, []byte(os.Getenv("GITHUB_WEBHOOK_SECRET")))
+	mac.Write(payload)
+	expectedMAC := hex.EncodeToString(mac.Sum(nil))
+	return hmac.Equal([]byte(signature[5:]), []byte(expectedMAC))
 }
