@@ -26,8 +26,9 @@ type StarEvent struct {
 		StarGazersCount int    `json:"stargazers_count"`
 	} `json:"repository"`
 	Sender struct {
-		Login string `json:"login"`
-		URL   string `json:"url"`
+		Login   string `json:"login"`
+		URL     string `json:"url"`
+		HtmlUrl string `json:"html_url"`
 	}
 	StarredAt string `json:"starred_at"`
 }
@@ -47,7 +48,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	text := fmt.Sprintf(
 		"[%s](%s) starred [%s](%s), now it has %d stars\\.",
 		EscapeText("MarkdownV2", event.Sender.Login),
-		EscapeText("MarkdownV2", event.Sender.URL),
+		EscapeText("MarkdownV2", event.Sender.HtmlUrl),
 		EscapeText("MarkdownV2", event.Repository.FullName),
 		EscapeText("MarkdownV2", event.Repository.URL),
 		event.Repository.StarGazersCount,
