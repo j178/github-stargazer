@@ -46,10 +46,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	title := fmt.Sprintf("New GitHub Star on %s", event.Repository.FullName)
 	text := fmt.Sprintf(
 		"[%s](%s) starred [%s](%s), now it has %d stars.",
-		event.Sender.Login,
-		event.Sender.URL,
-		event.Repository.FullName,
-		event.Repository.URL,
+		EscapeText("MarkdownV2", event.Sender.Login),
+		EscapeText("MarkdownV2", event.Sender.URL),
+		EscapeText("MarkdownV2", event.Repository.FullName),
+		EscapeText("MarkdownV2", event.Repository.URL),
 		event.Repository.StarGazersCount,
 	)
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
@@ -94,7 +94,7 @@ func Notify(ctx context.Context, subject, message string) (err error) {
 		if err != nil {
 			return fmt.Errorf("telegram: %w", err)
 		}
-		message = EscapeText("MarkdownV2", message)
+		tg.SetParseMode("MarkdownV2")
 		chatIDStr := env("TELEGRAM_CHAT_ID")
 		chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
 		if err != nil {
