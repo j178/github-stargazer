@@ -11,8 +11,10 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/redis/rueidis"
@@ -85,35 +87,44 @@ func (s *Setting) IsAllowRepo(fullName string) bool {
 }
 
 var redis rueidis.Client
+var once sync.Once
 
-func init() {
-	u, err := url.Parse(config.KvURL)
-	if err != nil {
-		log.Fatalf("parse kv url failed: %s", err)
-	}
-	passwd, _ := u.User.Password()
-	opt := rueidis.ClientOption{
-		ForceSingleClient: true,
-		Username:          u.User.Username(),
-		Password:          passwd,
-		InitAddress: []string{
-			u.Host,
+func getRedis() rueidis.Client {
+	once.Do(
+		func() {
+			u, err := url.Parse(config.KvURL)
+			if err != nil {
+				log.Fatalf("parse kv url failed: %s", err)
+			}
+			passwd, _ := u.User.Password()
+			host, _, _ := net.SplitHostPort(u.Host)
+			opt := rueidis.ClientOption{
+				ForceSingleClient: true,
+				DisableCache:      true,
+				Username:          u.User.Username(),
+				Password:          passwd,
+				InitAddress: []string{
+					u.Host,
+				},
+				TLSConfig: &tls.Config{
+					ServerName: host,
+				},
+			}
+
+			r, err := rueidis.NewClient(opt)
+			if err != nil {
+				log.Fatalf("create redis client failed: %s", err)
+			}
+			redis = r
 		},
-	}
-	if u.Scheme == "rediss" {
-		opt.TLSConfig = &tls.Config{
-			ServerName: u.Host,
-		}
-	}
-	redis, err = rueidis.NewClient(opt)
-	if err != nil {
-		log.Fatalf("create redis client failed: %s", err)
-	}
+	)
+	return redis
 }
 
 func getSettings(login string) (*Setting, error) {
 	ctx := context.Background()
-	s, err := redis.Do(ctx, redis.B().Get().Key("github_stargazer:settings:"+login).Build()).AsBytes()
+	client := getRedis()
+	s, err := client.Do(ctx, client.B().Get().Key("github_stargazer:settings:"+login).Build()).AsBytes()
 	if err != nil {
 		return nil, err
 	}
@@ -131,9 +142,10 @@ func saveSettings(login string, setting Setting) error {
 		return err
 	}
 
-	err = redis.Do(
+	client := getRedis()
+	err = client.Do(
 		context.Background(),
-		redis.B().Set().Key("github_stargazer:settings:"+login).Value(string(b)).Build(),
+		client.B().Set().Key("github_stargazer:settings:"+login).Value(string(b)).Build(),
 	).Error()
 	if err != nil {
 		return err
