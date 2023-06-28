@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"log"
 	"os"
 )
 
@@ -16,7 +16,8 @@ func env(key string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
-	panic(fmt.Sprintf("environment variable %s is not set", key))
+	log.Fatalf("environment variable %s is not set", key)
+	return ""
 }
 
 var (

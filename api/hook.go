@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -88,12 +89,13 @@ var redis rueidis.Client
 func init() {
 	u, err := url.Parse(config.KvURL)
 	if err != nil {
-		panic(err)
+		log.Fatalf("parse kv url failed: %s", err)
 	}
 	passwd, _ := u.User.Password()
 	opt := rueidis.ClientOption{
-		Username: u.User.Username(),
-		Password: passwd,
+		ForceSingleClient: true,
+		Username:          u.User.Username(),
+		Password:          passwd,
 		InitAddress: []string{
 			u.Host,
 		},
@@ -105,7 +107,7 @@ func init() {
 	}
 	redis, err = rueidis.NewClient(opt)
 	if err != nil {
-		panic(err)
+		log.Fatalf("create redis client failed: %s", err)
 	}
 }
 
