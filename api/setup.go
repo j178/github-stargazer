@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -21,7 +22,9 @@ func Setup(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Hello, " + user))
+		// TODO configure page
+		// TODO check installation
+		w.Write([]byte(fmt.Sprintf("<p>Hello, %s</p><i>This is a configuration page.</i>", user)))
 		return
 	}
 
@@ -39,7 +42,8 @@ func Setup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Hello, " + user))
+	// TODO flash "saved"
+	w.Write([]byte("Saved"))
 	return
 }
 

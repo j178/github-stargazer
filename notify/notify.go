@@ -40,6 +40,7 @@ func GetNotifier(settings []map[string]string) (*notify.Notify, error) {
 			if err != nil {
 				return nil, fmt.Errorf("telegram: %w", err)
 			}
+			telegramService.SetParseMode("MarkdownV2")
 			telegramService.AddReceivers(chatID)
 			notifier.UseServices(telegramService)
 		case "discord":
