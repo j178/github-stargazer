@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/j178/github_stargazer/notify"
@@ -32,55 +31,8 @@ type StarEvent struct {
 	StarredAt string `json:"starred_at"`
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
-	if !validateSignature(r) {
-		http.Error(w, "Bad signature", http.StatusForbidden)
-		return
-	}
-
-	var event StarEvent
-	err := json.NewDecoder(r.Body).Decode(&event)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	var title, text string
-	switch event.Action {
-	case "deleted":
-		title = fmt.Sprintf("Lost GitHub Star on %s", utils.EscapeMarkdown(event.Repository.FullName))
-		text = fmt.Sprintf(
-			"[%s](%s) unstarred [%s](%s), now it has **%d** stars\\.",
-			utils.EscapeMarkdown(event.Sender.Login),
-			utils.EscapeMarkdown(event.Sender.HtmlUrl),
-			utils.EscapeMarkdown(event.Repository.FullName),
-			utils.EscapeMarkdown(event.Repository.HtmlUrl),
-			event.Repository.StarGazersCount,
-		)
-	case "created":
-		title = fmt.Sprintf("New GitHub Star on %s", utils.EscapeMarkdown(event.Repository.FullName))
-		text = fmt.Sprintf(
-			"[%s](%s) starred [%s](%s), now it has **%d** stars\\.",
-			utils.EscapeMarkdown(event.Sender.Login),
-			utils.EscapeMarkdown(event.Sender.HtmlUrl),
-			utils.EscapeMarkdown(event.Repository.FullName),
-			utils.EscapeMarkdown(event.Repository.HtmlUrl),
-			event.Repository.StarGazersCount,
-		)
-	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-	defer cancel()
-	err = notify.Notify(ctx, title, text)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("OK"))
-}
-
 func validateSignature(r *http.Request) bool {
-	if os.Getenv("GITHUB_WEBHOOK_SECRET") == "" {
+	if webhookSecret == "" {
 		return true
 	}
 
@@ -97,8 +49,139 @@ func validateSignature(r *http.Request) bool {
 		return false
 	}
 
-	mac := hmac.New(sha256.New, []byte(os.Getenv("GITHUB_WEBHOOK_SECRET")))
+	mac := hmac.New(sha256.New, []byte(webhookSecret))
 	mac.Write(payload)
 	expectedMAC := hex.EncodeToString(mac.Sum(nil))
 	return hmac.Equal([]byte(signature[len("sha256="):]), []byte(expectedMAC))
+}
+
+type Setting struct {
+	NotifySettings []map[string]string `json:"notify_settings"`
+	AllowRepos     []string            `json:"allow_repos"`
+	MuteRepos      []string            `json:"mute_repos"`
+}
+
+func (s *Setting) IsAllowRepo(fullName string) bool {
+	for _, repo := range s.MuteRepos {
+		if repo == fullName {
+			return false
+		}
+	}
+	if len(s.AllowRepos) == 0 {
+		return true
+	}
+	for _, repo := range s.AllowRepos {
+		if repo == fullName {
+			return true
+		}
+	}
+	return false
+}
+
+func getSettings(login string) (*Setting, error) {
+	ctx := context.Background()
+	s, err := redis.Do(ctx, redis.B().Get().Key("github_stargazer:settings:"+login).Build()).AsBytes()
+	if err != nil {
+		return nil, err
+	}
+	var setting Setting
+	err = json.Unmarshal(s, &setting)
+	if err != nil {
+		return nil, err
+	}
+	return &setting, nil
+}
+
+func saveSettings(login string, setting Setting) error {
+	b, err := json.Marshal(setting)
+	if err != nil {
+		return err
+	}
+
+	err = redis.Do(
+		context.Background(),
+		redis.B().Set().Key("github_stargazer:settings:"+login).Value(string(b)).Build(),
+	).Error()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func compose(evt *StarEvent) (string, string) {
+	var title, text string
+	switch evt.Action {
+	case "deleted":
+		title = fmt.Sprintf("Lost GitHub Star on %s", utils.EscapeMarkdown(evt.Repository.FullName))
+		text = fmt.Sprintf(
+			"[%s](%s) unstarred [%s](%s), now it has **%d** stars\\.",
+			utils.EscapeMarkdown(evt.Sender.Login),
+			utils.EscapeMarkdown(evt.Sender.HtmlUrl),
+			utils.EscapeMarkdown(evt.Repository.FullName),
+			utils.EscapeMarkdown(evt.Repository.HtmlUrl),
+			evt.Repository.StarGazersCount,
+		)
+	case "created":
+		title = fmt.Sprintf("New GitHub Star on %s", utils.EscapeMarkdown(evt.Repository.FullName))
+		text = fmt.Sprintf(
+			"[%s](%s) starred [%s](%s), now it has **%d** stars\\.",
+			utils.EscapeMarkdown(evt.Sender.Login),
+			utils.EscapeMarkdown(evt.Sender.HtmlUrl),
+			utils.EscapeMarkdown(evt.Repository.FullName),
+			utils.EscapeMarkdown(evt.Repository.HtmlUrl),
+			evt.Repository.StarGazersCount,
+		)
+	}
+	return title, text
+}
+
+func OnEvent(w http.ResponseWriter, r *http.Request) {
+	if !validateSignature(r) {
+		http.Error(w, "Bad signature", http.StatusForbidden)
+		return
+	}
+
+	if r.Header.Get("X-GitHub-Event") != "star" {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("Not a star event"))
+		return
+	}
+
+	var event StarEvent
+	err := json.NewDecoder(r.Body).Decode(&event)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	settings, err := getSettings(event.Sender.Login)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if !settings.IsAllowRepo(event.Repository.FullName) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("Repo not allowed"))
+		return
+	}
+
+	notifier, err := notify.GetNotifier(settings.NotifySettings)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	title, content := compose(&event)
+
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+	err = notifier.Send(ctx, title, content)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("Sent"))
 }
