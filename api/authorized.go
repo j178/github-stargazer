@@ -6,6 +6,8 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
+
+	"github.com/j178/github_stargazer/config"
 )
 
 // 开启 "Request user authorization (OAuth) during installation" 之后，安装的过程同时也是授权的过程
@@ -20,8 +22,8 @@ func Authorized(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cfg := oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
+		ClientID:     config.ClientID,
+		ClientSecret: config.ClientSecret,
 		Endpoint:     github.Endpoint,
 	}
 	token, err := cfg.Exchange(r.Context(), code)

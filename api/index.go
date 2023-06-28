@@ -5,13 +5,18 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
+	"github.com/redis/rueidis"
+
+	"github.com/j178/github_stargazer/config"
 	"github.com/j178/github_stargazer/notify"
 	"github.com/j178/github_stargazer/utils"
 )
@@ -32,7 +37,7 @@ type StarEvent struct {
 }
 
 func validateSignature(r *http.Request) bool {
-	if webhookSecret == "" {
+	if config.WebhookSecret == "" {
 		return true
 	}
 
@@ -49,7 +54,7 @@ func validateSignature(r *http.Request) bool {
 		return false
 	}
 
-	mac := hmac.New(sha256.New, []byte(webhookSecret))
+	mac := hmac.New(sha256.New, []byte(config.WebhookSecret))
 	mac.Write(payload)
 	expectedMAC := hex.EncodeToString(mac.Sum(nil))
 	return hmac.Equal([]byte(signature[len("sha256="):]), []byte(expectedMAC))
@@ -76,6 +81,32 @@ func (s *Setting) IsAllowRepo(fullName string) bool {
 		}
 	}
 	return false
+}
+
+var redis rueidis.Client
+
+func init() {
+	u, err := url.Parse(config.KvURL)
+	if err != nil {
+		panic(err)
+	}
+	passwd, _ := u.User.Password()
+	opt := rueidis.ClientOption{
+		Username: u.User.Username(),
+		Password: passwd,
+		InitAddress: []string{
+			u.Host,
+		},
+	}
+	if u.Scheme == "rediss" {
+		opt.TLSConfig = &tls.Config{
+			ServerName: u.Host,
+		}
+	}
+	redis, err = rueidis.NewClient(opt)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func getSettings(login string) (*Setting, error) {
