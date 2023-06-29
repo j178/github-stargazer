@@ -4,8 +4,11 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
+
+	"github.com/j178/github_stargazer/config"
 )
 
 func GetSettings(c *gin.Context) {
@@ -39,30 +42,29 @@ func UpdateSettings(c *gin.Context) {
 }
 
 func InstalledRepos(c *gin.Context) {
-	// TODO use installation token
-	accessToken := c.GetString("access_token")
+	user := c.GetString("login")
 
-	client := github.NewTokenClient(context.Background(), accessToken)
-	opts := &github.ListOptions{PerPage: 100}
-	repos, resp, err := client.Apps.ListUserRepos(context.Background(), 1, opts)
+	appTransport, err := ghinstallation.NewAppsTransport(http.DefaultTransport, config.AppID, config.AppPrivateKey)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	repoNames := make([]string, 0, repos.GetTotalCount())
-	for {
-		if resp.NextPage == 0 {
-			break
-		}
-		opts.Page = resp.NextPage
-		repos, resp, err = client.Apps.ListUserRepos(context.Background(), 1, opts)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		for _, repo := range repos.Repositories {
-			repoNames = append(repoNames, repo.GetFullName())
-		}
+	client := github.NewClient(&http.Client{Transport: appTransport})
+	installation, _, err := client.Apps.FindUserInstallation(context.Background(), user)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	installToken, _, err := client.Apps.CreateInstallationToken(context.Background(), installation.GetID(), nil)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	repoNames := make([]string, len(installToken.Repositories))
+	for i, repo := range installToken.Repositories {
+		repoNames[i] = repo.GetFullName()
 	}
 
 	c.JSON(http.StatusOK, repoNames)

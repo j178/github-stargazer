@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/j178/github_stargazer/api/middleware"
-	"github.com/j178/github_stargazer/api/routes"
 	"github.com/j178/github_stargazer/config"
+	"github.com/j178/github_stargazer/middleware"
+	"github.com/j178/github_stargazer/routes"
 )
 
 func initHandler() http.Handler {
