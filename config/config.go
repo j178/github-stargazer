@@ -25,4 +25,5 @@ var (
 	ClientID      = env("GITHUB_CLIENT_ID")
 	ClientSecret  = env("GITHUB_CLIENT_SECRET")
 	KvURL         = env("KV_URL")
+	SecretKey     = env("SECRET_KEY")
 )
