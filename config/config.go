@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 )
 
 func envOrDefault(key, defaultValue string) string {
@@ -31,7 +32,7 @@ var (
 	SecretKey     []byte
 )
 
-func init() {
+func loadEnv() {
 	appIdStr := env("GITHUB_APP_ID")
 	var err error
 	AppID, err = strconv.ParseInt(appIdStr, 10, 64)
@@ -45,4 +46,10 @@ func init() {
 	WebhookSecret = []byte(envOrDefault("GITHUB_WEBHOOK_SECRET", ""))
 	KvURL = env("KV_URL")
 	SecretKey = []byte(env("SECRET_KEY"))
+}
+
+var once sync.Once
+
+func Load() {
+	once.Do(loadEnv)
 }

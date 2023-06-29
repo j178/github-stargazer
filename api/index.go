@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 
@@ -10,12 +11,11 @@ import (
 	"github.com/j178/github_stargazer/routes"
 )
 
-func initHandler() http.Handler {
+func InitHandler() http.Handler {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-
 	r.GET(
-		"/health", func(c *gin.Context) {
+		"/api/health", func(c *gin.Context) {
 			c.JSON(200, gin.H{"status": "ok"})
 		},
 	)
@@ -37,8 +37,17 @@ func initHandler() http.Handler {
 	return r.Handler()
 }
 
-var handler = initHandler()
+var (
+	handler http.Handler
+	once    sync.Once
+)
 
 func Index(w http.ResponseWriter, r *http.Request) {
+	config.Load()
+	once.Do(
+		func() {
+			handler = InitHandler()
+		},
+	)
 	handler.ServeHTTP(w, r)
 }

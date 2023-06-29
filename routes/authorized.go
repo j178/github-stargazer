@@ -23,15 +23,15 @@ func Authorized(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "code is empty"})
 		return
 	}
+	returnUrl := "/"
 	state := c.Query("state")
-	if state == "" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "state is empty"})
-		return
-	}
-	returnUrl, err := decodeState(state, config.SecretKey)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
+	if state != "" {
+		var err error
+		returnUrl, err = decodeState(state, config.SecretKey)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	cfg := oauth2.Config{
