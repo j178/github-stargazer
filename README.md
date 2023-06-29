@@ -11,4 +11,3 @@ After deployment on Vercel, create a new webhook on the repositories you want to
 You only need to enable the `star` event type:
 
 <img width="385" alt="image" src="https://user-images.githubusercontent.com/10510431/228465784-67183434-91f6-4f6b-92ed-b84fbf39a505.png">
-

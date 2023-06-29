@@ -1,12 +1,28 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+type JWTClaims struct {
+	OAuthToken        string `json:"access_token"`
+	InstallationToken string `json:"installation_token"`
+	InstallationID    int64  `json:"installation_id"`
+	jwt.RegisteredClaims
+}
+
+func (c *JWTClaims) Validate() error {
+	if c.OAuthToken == "" || c.InstallationToken == "" || c.InstallationID == 0 {
+		return errors.New("invalid claims")
+	}
+
+	return nil
+}
 
 func CheckJWT(secret []byte) gin.HandlerFunc {
 	keyFunc := func(token *jwt.Token) (any, error) {
@@ -20,19 +36,20 @@ func CheckJWT(secret []byte) gin.HandlerFunc {
 			return
 		}
 
-		token, err := jwt.Parse(session, keyFunc, jwt.WithLeeway(5*time.Second))
+		token, err := jwt.ParseWithClaims(
+			session,
+			&JWTClaims{},
+			keyFunc,
+			jwt.WithLeeway(5*time.Second),
+			jwt.WithValidMethods([]string{"HS256"}),
+		)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
-		claims := token.Claims.(jwt.MapClaims)
-		if claims["login"] == nil || claims["access_token"] == nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid session"})
-			return
-		}
+		claims := token.Claims.(*JWTClaims)
 
-		c.Set("login", claims["login"])
-		c.Set("access_token", claims["access_token"])
+		c.Set("jwt", claims)
 		c.Next()
 	}
 }

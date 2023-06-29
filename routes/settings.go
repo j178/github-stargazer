@@ -1,18 +1,15 @@
 package routes
 
 import (
-	"context"
 	"net/http"
 
-	"github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
-
-	"github.com/j178/github_stargazer/config"
+	"github.com/j178/github_stargazer/middleware"
 )
 
 func GetSettings(c *gin.Context) {
-	user := c.GetString("login")
+	user := c.MustGet("jwt").(*middleware.JWTClaims).Subject
 	setting, err := getSettings(user)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -23,7 +20,7 @@ func GetSettings(c *gin.Context) {
 }
 
 func UpdateSettings(c *gin.Context) {
-	user := c.GetString("login")
+	user := c.MustGet("jwt").(*middleware.JWTClaims).Subject
 
 	var setting Setting
 	err := c.ShouldBindJSON(&setting)
@@ -42,13 +39,9 @@ func UpdateSettings(c *gin.Context) {
 }
 
 func InstalledRepos(c *gin.Context) {
-	user := c.GetString("login")
-	client, err := getAppClient(c, user)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	jwt := c.MustGet("jwt").(*middleware.JWTClaims)
 
+	client := github.NewTokenClient(c, jwt.InstallationToken)
 	opts := &github.ListOptions{PerPage: 100}
 	var repoNames []string
 	for {
@@ -67,22 +60,4 @@ func InstalledRepos(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, repoNames)
-}
-
-func getAppClient(ctx context.Context, login string) (*github.Client, error) {
-	// 获取 installationID
-	atr, err := ghinstallation.NewAppsTransport(http.DefaultTransport, config.AppID, config.AppPrivateKey)
-	if err != nil {
-		return nil, err
-	}
-	client := github.NewClient(&http.Client{Transport: atr})
-	installation, _, err := client.Apps.FindUserInstallation(ctx, login)
-	if err != nil {
-		return nil, err
-	}
-
-	// 生成 installation token, 然后获取 installation 有权限的 repo
-	tr := ghinstallation.NewFromAppsTransport(atr, installation.GetID())
-	client = github.NewClient(&http.Client{Transport: tr})
-	return client, nil
 }
