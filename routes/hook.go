@@ -79,8 +79,7 @@ func getRedis() rueidis.Client {
 	return redis
 }
 
-func getSettings(login string) (*Setting, error) {
-	ctx := context.Background()
+func getSettings(ctx context.Context, login string) (*Setting, error) {
 	client := getRedis()
 	s, err := client.Do(ctx, client.B().Get().Key("github_stargazer:settings:"+login).Build()).AsBytes()
 	if rueidis.IsRedisNil(err) {
@@ -97,7 +96,7 @@ func getSettings(login string) (*Setting, error) {
 	return &setting, nil
 }
 
-func saveSettings(login string, setting Setting) error {
+func saveSettings(ctx context.Context, login string, setting Setting) error {
 	b, err := json.Marshal(setting)
 	if err != nil {
 		return err
@@ -105,7 +104,7 @@ func saveSettings(login string, setting Setting) error {
 
 	client := getRedis()
 	err = client.Do(
-		context.Background(),
+		ctx,
 		client.B().Set().Key("github_stargazer:settings:"+login).Value(string(b)).Build(),
 	).Error()
 	if err != nil {
@@ -159,7 +158,7 @@ func OnEvent(c *gin.Context) {
 	}
 	evt, _ := event.(*github.StarEvent)
 
-	settings, err := getSettings(evt.Sender.GetLogin())
+	settings, err := getSettings(c, evt.Sender.GetLogin())
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return

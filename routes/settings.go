@@ -10,7 +10,7 @@ import (
 
 func GetSettings(c *gin.Context) {
 	user := c.MustGet("jwt").(*middleware.JWTClaims).Subject
-	setting, err := getSettings(user)
+	setting, err := getSettings(c, user)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -29,7 +29,7 @@ func UpdateSettings(c *gin.Context) {
 		return
 	}
 
-	err = saveSettings(user, setting)
+	err = saveSettings(c, user, setting)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
