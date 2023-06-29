@@ -1,3 +1,8 @@
 .vercel
 .env*
 .idea
+node_modules
+
+# next.js
+.next/
+/out/
