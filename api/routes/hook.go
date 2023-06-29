@@ -165,7 +165,7 @@ func OnEvent(c *gin.Context) {
 		return
 	}
 	if settings == nil {
-		c.String(http.StatusOK, "settings not found")
+		c.String(http.StatusOK, "Settings not found")
 		return
 	}
 

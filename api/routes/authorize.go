@@ -15,7 +15,7 @@ import (
 func Authorize(c *gin.Context) {
 	returnUrl := c.Query("return_url")
 	if returnUrl == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "return_url is empty")
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "return_url is empty"})
 		return
 	}
 	// encrypt return url as state
@@ -33,20 +33,20 @@ func Authorize(c *gin.Context) {
 	c.Redirect(http.StatusFound, url)
 }
 
-func encodeState(state, secretKey string) string {
+func encodeState(state string, secretKey []byte) string {
 	jwtToken := jwt.NewWithClaims(
 		jwt.SigningMethodHS256, jwt.MapClaims{
 			"state": state,
 		},
 	)
-	token, _ := jwtToken.SignedString([]byte(secretKey))
+	token, _ := jwtToken.SignedString(secretKey)
 	return token
 }
 
-func decodeState(state, secretKey string) (string, error) {
+func decodeState(state string, secretKey []byte) (string, error) {
 	token, err := jwt.Parse(
 		state, func(token *jwt.Token) (any, error) {
-			return []byte(secretKey), nil
+			return secretKey, nil
 		},
 	)
 	if err != nil {

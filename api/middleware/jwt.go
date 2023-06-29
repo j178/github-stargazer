@@ -16,18 +16,18 @@ func CheckJWT(secret []byte) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session, err := c.Cookie("session")
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 
 		token, err := jwt.Parse(session, keyFunc, jwt.WithLeeway(5*time.Second))
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
 		claims := token.Claims.(jwt.MapClaims)
 		if claims["login"] == nil || claims["access_token"] == nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, "invalid session")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid session"})
 			return
 		}
 

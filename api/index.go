@@ -11,6 +11,7 @@ import (
 )
 
 func initHandler() http.Handler {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
 	r.GET(
@@ -26,7 +27,7 @@ func initHandler() http.Handler {
 	}
 	// from ourselves, needs JWT token
 	{
-		checkJWT := middleware.CheckJWT([]byte(config.SecretKey))
+		checkJWT := middleware.CheckJWT(config.SecretKey)
 		r.GET("/api/authorize", checkJWT, routes.Authorize)
 		r.GET("/api/settings", checkJWT, routes.GetSettings)
 		r.POST("/api/settings", checkJWT, routes.UpdateSettings)

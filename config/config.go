@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 )
 
 func envOrDefault(key, defaultValue string) string {
@@ -21,9 +22,27 @@ func env(key string) string {
 }
 
 var (
-	WebhookSecret = envOrDefault("GITHUB_WEBHOOK_SECRET", "")
-	ClientID      = env("GITHUB_CLIENT_ID")
-	ClientSecret  = env("GITHUB_CLIENT_SECRET")
-	KvURL         = env("KV_URL")
-	SecretKey     = env("SECRET_KEY")
+	AppID         int64
+	AppPrivateKey []byte
+	ClientID      string
+	ClientSecret  string
+	WebhookSecret []byte
+	KvURL         string
+	SecretKey     []byte
 )
+
+func init() {
+	appIdStr := env("GITHUB_APP_ID")
+	var err error
+	AppID, err = strconv.ParseInt(appIdStr, 10, 64)
+	if err != nil {
+		log.Fatalf("parse GITHUB_APP_ID: %v", err)
+	}
+
+	AppPrivateKey = []byte(env("GITHUB_APP_PRIVATE_KEY"))
+	ClientID = env("GITHUB_CLIENT_ID")
+	ClientSecret = env("GITHUB_CLIENT_SECRET")
+	WebhookSecret = []byte(envOrDefault("GITHUB_WEBHOOK_SECRET", ""))
+	KvURL = env("KV_URL")
+	SecretKey = []byte(env("SECRET_KEY"))
+}

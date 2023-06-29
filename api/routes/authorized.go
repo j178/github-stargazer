@@ -20,17 +20,17 @@ import (
 func Authorized(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, "code is empty")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "code is empty"})
 		return
 	}
 	state := c.Query("state")
 	if state == "" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, "state is empty")
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "state is empty"})
 		return
 	}
 	returnUrl, err := decodeState(state, config.SecretKey)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, err.Error())
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -41,7 +41,7 @@ func Authorized(c *gin.Context) {
 	}
 	token, err := cfg.Exchange(c, code)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -49,7 +49,7 @@ func Authorized(c *gin.Context) {
 	client := github.NewTokenClient(context.Background(), token.AccessToken)
 	user, _, err := client.Users.Get(context.Background(), "")
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -59,9 +59,9 @@ func Authorized(c *gin.Context) {
 			"login":        user.Login,
 		},
 	)
-	session, err := jwtToken.SignedString([]byte(config.SecretKey))
+	session, err := jwtToken.SignedString(config.SecretKey)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
