@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/go-github/v53/github"
+	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	oauthGitHub "golang.org/x/oauth2/github"
 
@@ -31,7 +32,7 @@ func Authorized(c *gin.Context) {
 		var err error
 		returnUrl, err = decodeState(state, config.SecretKey)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": errors.WithMessage(err, "decode state")})
 			return
 		}
 	}
@@ -43,7 +44,7 @@ func Authorized(c *gin.Context) {
 	}
 	token, err := cfg.Exchange(c, code)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": errors.WithMessage(err, "exchange token")})
 		return
 	}
 
@@ -51,13 +52,16 @@ func Authorized(c *gin.Context) {
 	client := github.NewTokenClient(c, token.AccessToken)
 	user, _, err := client.Users.Get(c, "")
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": errors.WithMessage(err, "get user info"))})
 		return
 	}
 
 	err = cache.SaveOAuthToken(c, user.GetLogin(), token)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(
+			http.StatusInternalServerError,
+			gin.H{"error": errors.WithMessage(err, "save oauth token")},
+		)
 		return
 	}
 
@@ -69,11 +73,13 @@ func Authorized(c *gin.Context) {
 	)
 	session, err := jwtToken.SignedString(config.SecretKey)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+		c.AbortWithStatusJSON(
+			http.StatusInternalServerError, gin.H{
+				"error": errors.WithMessage(err, "generate session",,
+				return
+			}
 
-	// refresh token expires in 6 months
-	c.SetCookie("session", session, 6*30*24*3600, "/", "", true, true)
-	c.Redirect(http.StatusFound, returnUrl)
-}
+		// refresh token expires in 6 months
+		c.SetCookie("session", session, 6*30*24*3600, "/", "", true, true)
+		c.Redirect(http.StatusFound, returnUrl)
+	}
