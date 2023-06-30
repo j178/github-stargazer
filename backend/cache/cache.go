@@ -54,18 +54,20 @@ func (c *redisCache) Get(ctx context.Context, key string, value interface{}) err
 }
 
 func (c *redisCache) Set(ctx context.Context, key string, value interface{}, expires time.Duration) error {
-	switch expires {
-	case DEFAULT:
+	if expires == DEFAULT {
 		expires = c.defaultExpiration
-	case FOREVER:
-		expires = time.Duration(0)
 	}
 
 	v, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
-	cmd := c.redis.B().Set().Key(key).Value(string(v)).Ex(expires).Build()
+	var cmd rueidis.Completed
+	if expires > 0 {
+		cmd = c.redis.B().Set().Key(key).Value(string(v)).Build()
+	} else {
+		cmd = c.redis.B().Set().Key(key).Value(string(v)).Ex(expires).Build()
+	}
 	err = c.redis.Do(ctx, cmd).Error()
 	return err
 }
