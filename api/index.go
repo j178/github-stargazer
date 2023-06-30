@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 
 	"github.com/j178/github_stargazer/backend/config"
@@ -16,8 +14,6 @@ import (
 func initRouter() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-	store := cookie.NewStore()
-	r.Use(sessions.Sessions("session", store))
 
 	r.GET(
 		"/api/health", func(c *gin.Context) {
