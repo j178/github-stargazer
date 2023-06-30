@@ -9,11 +9,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/go-github/v53/github"
-	"github.com/j178/github_stargazer/middleware"
 	"golang.org/x/oauth2"
 	oauthGitHub "golang.org/x/oauth2/github"
 
-	"github.com/j178/github_stargazer/config"
+	"github.com/j178/github_stargazer/internal/middleware"
+
+	"github.com/j178/github_stargazer/internal/config"
 )
 
 // 开启 "Request user authorization (OAuth) during installation" 之后，安装的过程同时也是授权的过程
@@ -28,6 +29,7 @@ func Authorized(c *gin.Context) {
 	}
 	returnUrl := "/"
 	state := c.Query("state")
+	// Install & Authorize redirects do not include `state`
 	if state != "" {
 		var err error
 		returnUrl, err = decodeState(state, config.SecretKey)

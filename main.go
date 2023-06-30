@@ -6,7 +6,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/j178/github_stargazer/api"
-	"github.com/j178/github_stargazer/config"
+	"github.com/j178/github_stargazer/internal/config"
 )
 
 func main() {

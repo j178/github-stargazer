@@ -16,9 +16,9 @@ import (
 	"github.com/google/go-github/v53/github"
 	"github.com/redis/rueidis"
 
-	"github.com/j178/github_stargazer/config"
-	"github.com/j178/github_stargazer/notify"
-	"github.com/j178/github_stargazer/utils"
+	"github.com/j178/github_stargazer/internal/config"
+	"github.com/j178/github_stargazer/internal/notify"
+	"github.com/j178/github_stargazer/internal/utils"
 )
 
 type Setting struct {
@@ -141,7 +141,7 @@ func compose(evt *github.StarEvent) (string, string) {
 }
 
 func OnEvent(c *gin.Context) {
-	payload, err := github.ValidatePayload(c.Request, []byte(config.WebhookSecret))
+	payload, err := github.ValidatePayload(c.Request, config.WebhookSecret)
 	if err != nil {
 		c.String(http.StatusForbidden, "Bad signature")
 		return

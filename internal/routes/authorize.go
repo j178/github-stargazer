@@ -9,14 +9,13 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 
-	"github.com/j178/github_stargazer/config"
+	"github.com/j178/github_stargazer/internal/config"
 )
 
 func Authorize(c *gin.Context) {
 	returnUrl := c.Query("return_url")
 	if returnUrl == "" {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "return_url is empty"})
-		return
+		returnUrl = "/"
 	}
 	// encrypt return url as state
 	state := encodeState(returnUrl, config.SecretKey)
