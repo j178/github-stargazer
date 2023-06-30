@@ -19,7 +19,11 @@ func Authorize(c *gin.Context) {
 	}
 	// encrypt return url as state
 	state := encodeState(returnUrl, config.SecretKey)
-	origin := fmt.Sprintf("%s://%s", c.Request.URL.Scheme, c.Request.URL.Host)
+	proto := "https"
+	if c.Request.TLS == nil {
+		proto = "http"
+	}
+	origin := fmt.Sprintf("%s://%s", proto, c.Request.Host)
 	redirectUrl := fmt.Sprintf("%s/api/authorized", origin)
 
 	cfg := oauth2.Config{
