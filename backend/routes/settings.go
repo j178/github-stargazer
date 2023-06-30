@@ -13,7 +13,7 @@ func GetSettings(c *gin.Context) {
 	login := c.GetString("login")
 	setting, err := cache.GetSettings(c, login)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		Abort(c, http.StatusNotFound, err, "")
 		return
 	}
 
@@ -26,13 +26,13 @@ func UpdateSettings(c *gin.Context) {
 	var setting cache.Setting
 	err := c.ShouldBindJSON(&setting)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		Abort(c, http.StatusBadRequest, err, "")
 		return
 	}
 
 	err = cache.SaveSettings(c, login, setting)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		Abort(c, http.StatusInternalServerError, err, "save settings")
 		return
 	}
 
@@ -44,7 +44,7 @@ func InstalledRepos(c *gin.Context) {
 
 	installationToken, err := cache.GetInstallationToken(c, login)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		Abort(c, http.StatusInternalServerError, err, "get installation token")
 		return
 	}
 
@@ -54,7 +54,7 @@ func InstalledRepos(c *gin.Context) {
 	for {
 		repos, resp, err := client.Apps.ListRepos(c, opts)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			Abort(c, http.StatusInternalServerError, err, "list repos")
 			return
 		}
 		for _, repo := range repos.Repositories {

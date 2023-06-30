@@ -19,10 +19,22 @@ import (
 // 用户授权之后，GitHub 会带 code 将用户重定向到这里
 // 这里设置 cookie session 后重定向回到之前的页面
 
+func Abort(c *gin.Context, code int, err error, msg string) {
+	if code == 0 {
+		code = http.StatusInternalServerError
+	}
+	if err == nil {
+		err = errors.New(msg)
+	} else {
+		err = errors.WithMessage(err, msg)
+	}
+	c.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
+}
+
 func Authorized(c *gin.Context) {
 	code := c.Query("code")
 	if code == "" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "code is empty"})
+		Abort(c, http.StatusBadRequest, nil, "code is empty")
 		return
 	}
 	returnUrl := "/"
@@ -32,7 +44,7 @@ func Authorized(c *gin.Context) {
 		var err error
 		returnUrl, err = decodeState(state, config.SecretKey)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": errors.WithMessage(err, "decode state")})
+			Abort(c, http.StatusUnauthorized, err, "decode state")
 			return
 		}
 	}
@@ -44,7 +56,7 @@ func Authorized(c *gin.Context) {
 	}
 	token, err := cfg.Exchange(c, code)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": errors.WithMessage(err, "exchange token")})
+		Abort(c, http.StatusInternalServerError, err, "exchange token")
 		return
 	}
 
@@ -52,16 +64,13 @@ func Authorized(c *gin.Context) {
 	client := github.NewTokenClient(c, token.AccessToken)
 	user, _, err := client.Users.Get(c, "")
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": errors.WithMessage(err, "get user info"))})
+		Abort(c, http.StatusInternalServerError, err, "get user info")
 		return
 	}
 
 	err = cache.SaveOAuthToken(c, user.GetLogin(), token)
 	if err != nil {
-		c.AbortWithStatusJSON(
-			http.StatusInternalServerError,
-			gin.H{"error": errors.WithMessage(err, "save oauth token")},
-		)
+		Abort(c, http.StatusInternalServerError, err, "save oauth token")
 		return
 	}
 
@@ -73,13 +82,11 @@ func Authorized(c *gin.Context) {
 	)
 	session, err := jwtToken.SignedString(config.SecretKey)
 	if err != nil {
-		c.AbortWithStatusJSON(
-			http.StatusInternalServerError, gin.H{
-				"error": errors.WithMessage(err, "generate session",,
-				return
-			}
-
-		// refresh token expires in 6 months
-		c.SetCookie("session", session, 6*30*24*3600, "/", "", true, true)
-		c.Redirect(http.StatusFound, returnUrl)
+		Abort(c, http.StatusInternalServerError, err, "generate session")
+		return
 	}
+
+	// refresh token expires in 6 months
+	c.SetCookie("session", session, 6*30*24*3600, "/", "", true, true)
+	c.Redirect(http.StatusFound, returnUrl)
+}
