@@ -44,7 +44,7 @@ func Authorized(c *gin.Context) {
 		var err error
 		returnUrl, err = decodeState(state, config.SecretKey)
 		if err != nil {
-			Abort(c, http.StatusUnauthorized, err, "decode state")
+			Abort(c, http.StatusBadRequest, err, "decode state")
 			return
 		}
 	}

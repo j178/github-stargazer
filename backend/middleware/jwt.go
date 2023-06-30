@@ -28,6 +28,7 @@ func CheckJWT(secret []byte) gin.HandlerFunc {
 			jwt.WithValidMethods([]string{"HS256"}),
 		)
 		if err != nil {
+			c.SetCookie("session", "", -1, "/", "", true, true)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 			return
 		}
