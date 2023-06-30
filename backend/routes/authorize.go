@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2/github"
 
 	"github.com/j178/github_stargazer/backend/config"
+	"github.com/j178/github_stargazer/backend/utils"
 )
 
 func Authorize(c *gin.Context) {
@@ -19,11 +20,7 @@ func Authorize(c *gin.Context) {
 	}
 	// encrypt return url as state
 	state := encodeState(returnUrl, config.SecretKey)
-	proto := "https"
-	if c.Request.TLS == nil {
-		proto = "http"
-	}
-	origin := fmt.Sprintf("%s://%s", proto, c.Request.Host)
+	origin := fmt.Sprintf("%s://%s", utils.RequestScheme(c), c.Request.Host)
 	redirectUrl := fmt.Sprintf("%s/api/authorized", origin)
 
 	cfg := oauth2.Config{
