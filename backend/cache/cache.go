@@ -64,9 +64,9 @@ func (c *redisCache) Set(ctx context.Context, key string, value interface{}, exp
 	}
 	var cmd rueidis.Completed
 	if expires > 0 {
-		cmd = c.redis.B().Set().Key(key).Value(string(v)).Build()
-	} else {
 		cmd = c.redis.B().Set().Key(key).Value(string(v)).Ex(expires).Build()
+	} else {
+		cmd = c.redis.B().Set().Key(key).Value(string(v)).Build()
 	}
 	err = c.redis.Do(ctx, cmd).Error()
 	return err
