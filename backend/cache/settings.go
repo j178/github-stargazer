@@ -2,6 +2,8 @@ package cache
 
 import (
 	"context"
+
+	"github.com/redis/rueidis"
 )
 
 type Setting struct {
@@ -30,6 +32,9 @@ func (s *Setting) IsAllowRepo(fullName string) bool {
 func GetSettings(ctx context.Context, login string) (*Setting, error) {
 	var setting Setting
 	err := Get(ctx, "settings", login, &setting)
+	if rueidis.IsRedisNil(err) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

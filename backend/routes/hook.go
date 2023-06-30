@@ -60,7 +60,8 @@ func OnEvent(c *gin.Context) {
 	}
 	evt, _ := event.(*github.StarEvent)
 
-	settings, err := cache.GetSettings(c, evt.Sender.GetLogin())
+	// TODO 安装到 org 时如何处理？
+	settings, err := cache.GetSettings(c, evt.Repo.Owner.GetLogin())
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
