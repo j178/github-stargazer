@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
 
-	"github.com/j178/github_stargazer/internal/middleware"
+	"github.com/j178/github_stargazer/backend/middleware"
 )
 
 func GetSettings(c *gin.Context) {

@@ -9,7 +9,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
 
-	"github.com/j178/github_stargazer/internal/config"
+	"github.com/j178/github_stargazer/backend/config"
 )
 
 func Authorize(c *gin.Context) {

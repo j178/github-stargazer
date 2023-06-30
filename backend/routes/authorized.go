@@ -12,9 +12,9 @@ import (
 	"golang.org/x/oauth2"
 	oauthGitHub "golang.org/x/oauth2/github"
 
-	"github.com/j178/github_stargazer/internal/middleware"
+	"github.com/j178/github_stargazer/backend/middleware"
 
-	"github.com/j178/github_stargazer/internal/config"
+	"github.com/j178/github_stargazer/backend/config"
 )
 
 // 开启 "Request user authorization (OAuth) during installation" 之后，安装的过程同时也是授权的过程

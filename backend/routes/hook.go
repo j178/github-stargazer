@@ -16,9 +16,9 @@ import (
 	"github.com/google/go-github/v53/github"
 	"github.com/redis/rueidis"
 
-	"github.com/j178/github_stargazer/internal/config"
-	"github.com/j178/github_stargazer/internal/notify"
-	"github.com/j178/github_stargazer/internal/utils"
+	"github.com/j178/github_stargazer/backend/config"
+	"github.com/j178/github_stargazer/backend/notify"
+	"github.com/j178/github_stargazer/backend/utils"
 )
 
 type Setting struct {
