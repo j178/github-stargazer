@@ -2,116 +2,18 @@ package routes
 
 import (
 	"context"
-	"crypto/tls"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net"
 	"net/http"
-	"net/url"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
-	"github.com/redis/rueidis"
 
+	"github.com/j178/github_stargazer/backend/cache"
 	"github.com/j178/github_stargazer/backend/config"
 	"github.com/j178/github_stargazer/backend/notify"
 	"github.com/j178/github_stargazer/backend/utils"
 )
-
-type Setting struct {
-	NotifySettings []map[string]string `json:"notify_settings"`
-	AllowRepos     []string            `json:"allow_repos"`
-	MuteRepos      []string            `json:"mute_repos"`
-}
-
-func (s *Setting) IsAllowRepo(fullName string) bool {
-	for _, repo := range s.MuteRepos {
-		if repo == fullName {
-			return false
-		}
-	}
-	if len(s.AllowRepos) == 0 {
-		return true
-	}
-	for _, repo := range s.AllowRepos {
-		if repo == fullName {
-			return true
-		}
-	}
-	return false
-}
-
-var redis rueidis.Client
-var once sync.Once
-
-func getRedis() rueidis.Client {
-	once.Do(
-		func() {
-			u, err := url.Parse(config.KvURL)
-			if err != nil {
-				log.Fatalf("parse kv url failed: %s", err)
-			}
-			passwd, _ := u.User.Password()
-			host, _, _ := net.SplitHostPort(u.Host)
-			opt := rueidis.ClientOption{
-				ForceSingleClient: true,
-				DisableCache:      true,
-				Username:          u.User.Username(),
-				Password:          passwd,
-				InitAddress: []string{
-					u.Host,
-				},
-				TLSConfig: &tls.Config{
-					ServerName: host,
-				},
-			}
-
-			r, err := rueidis.NewClient(opt)
-			if err != nil {
-				log.Fatalf("create redis client failed: %s", err)
-			}
-			redis = r
-		},
-	)
-	return redis
-}
-
-func getSettings(ctx context.Context, login string) (*Setting, error) {
-	client := getRedis()
-	s, err := client.Do(ctx, client.B().Get().Key("github_stargazer:settings:"+login).Build()).AsBytes()
-	if rueidis.IsRedisNil(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	var setting Setting
-	err = json.Unmarshal(s, &setting)
-	if err != nil {
-		return nil, err
-	}
-	return &setting, nil
-}
-
-func saveSettings(ctx context.Context, login string, setting Setting) error {
-	b, err := json.Marshal(setting)
-	if err != nil {
-		return err
-	}
-
-	client := getRedis()
-	err = client.Do(
-		ctx,
-		client.B().Set().Key("github_stargazer:settings:"+login).Value(string(b)).Build(),
-	).Error()
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func compose(evt *github.StarEvent) (string, string) {
 	var title, text string
@@ -158,7 +60,7 @@ func OnEvent(c *gin.Context) {
 	}
 	evt, _ := event.(*github.StarEvent)
 
-	settings, err := getSettings(c, evt.Sender.GetLogin())
+	settings, err := cache.GetSettings(c, evt.Sender.GetLogin())
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return

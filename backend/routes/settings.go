@@ -6,12 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
 
-	"github.com/j178/github_stargazer/backend/middleware"
+	"github.com/j178/github_stargazer/backend/cache"
 )
 
 func GetSettings(c *gin.Context) {
-	user := c.MustGet("jwt").(*middleware.JWTClaims).Subject
-	setting, err := getSettings(c, user)
+	login := c.GetString("login")
+	setting, err := cache.GetSettings(c, login)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -21,16 +21,16 @@ func GetSettings(c *gin.Context) {
 }
 
 func UpdateSettings(c *gin.Context) {
-	user := c.MustGet("jwt").(*middleware.JWTClaims).Subject
+	login := c.GetString("login")
 
-	var setting Setting
+	var setting cache.Setting
 	err := c.ShouldBindJSON(&setting)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err = saveSettings(c, user, setting)
+	err = cache.SaveSettings(c, login, setting)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -40,9 +40,15 @@ func UpdateSettings(c *gin.Context) {
 }
 
 func InstalledRepos(c *gin.Context) {
-	jwt := c.MustGet("jwt").(*middleware.JWTClaims)
+	login := c.GetString("login")
 
-	client := github.NewTokenClient(c, jwt.InstallationToken)
+	installationToken, err := cache.GetInstallationToken(c, login)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	client := github.NewTokenClient(c, installationToken)
 	opts := &github.ListOptions{PerPage: 100}
 	var repoNames []string
 	for {

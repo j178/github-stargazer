@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 
 	"github.com/j178/github_stargazer/backend/config"
@@ -11,9 +13,12 @@ import (
 	"github.com/j178/github_stargazer/backend/routes"
 )
 
-func InitHandler() http.Handler {
+func initRouter() *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+	store := cookie.NewStore()
+	r.Use(sessions.Sessions("session", store))
+
 	r.GET(
 		"/api/health", func(c *gin.Context) {
 			c.JSON(200, gin.H{"status": "ok"})
@@ -25,16 +30,16 @@ func InitHandler() http.Handler {
 		r.GET("/api/authorized", routes.Authorized)
 		r.POST("/api/hook", routes.OnEvent)
 	}
-	// from ourselves, needs JWT token
+	// from ourselves, may need JWT token
+	r.GET("/api/authorize", routes.Authorize)
 	{
 		checkJWT := middleware.CheckJWT(config.SecretKey)
-		r.GET("/api/authorize", checkJWT, routes.Authorize)
 		r.GET("/api/settings", checkJWT, routes.GetSettings)
 		r.POST("/api/settings", checkJWT, routes.UpdateSettings)
 		r.GET("/api/repos", checkJWT, routes.InstalledRepos)
 	}
 
-	return r.Handler()
+	return r
 }
 
 var (
@@ -42,12 +47,16 @@ var (
 	once    sync.Once
 )
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	config.Load()
+func Handler() http.Handler {
 	once.Do(
 		func() {
-			handler = InitHandler()
+			handler = initRouter().Handler()
 		},
 	)
-	handler.ServeHTTP(w, r)
+	return handler
+}
+
+func Index(w http.ResponseWriter, r *http.Request) {
+	config.Load()
+	Handler().ServeHTTP(w, r)
 }

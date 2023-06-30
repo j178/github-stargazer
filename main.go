@@ -13,5 +13,5 @@ func main() {
 	_ = godotenv.Load()
 	config.Load()
 
-	_ = http.ListenAndServe(":8080", api.InitHandler())
+	_ = http.ListenAndServe(":8080", api.Handler())
 }
