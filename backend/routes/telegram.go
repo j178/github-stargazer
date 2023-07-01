@@ -91,7 +91,18 @@ func OnTelegramUpdate(c *gin.Context) {
 	chatID := update.Message.Chat.ID
 	tgUsername := update.Message.From.UserName
 
-	text := strings.TrimSpace(strings.TrimPrefix(update.Message.Text, "/start"))
+	text := strings.TrimSpace(update.Message.Text)
+	if strings.HasPrefix(text, "/start") {
+		text = strings.TrimSpace(strings.TrimPrefix(text, "/start"))
+		if text == "" {
+			reply := tgbotapi.NewMessage(chatID, "please input connect string")
+			_, err = Bot().Send(reply)
+			if err != nil {
+				log.Printf("send message: %v", err)
+			}
+		}
+	}
+
 	v, err := jwt.ParseWithClaims(
 		text, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
 			return config.SecretKey, nil
