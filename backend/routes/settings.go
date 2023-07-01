@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
+	"github.com/j178/github_stargazer/backend/notify"
 	"github.com/samber/lo"
 
 	"github.com/j178/github_stargazer/backend/cache"
@@ -42,7 +43,7 @@ func UpdateSettings(c *gin.Context) {
 			return item.GetAccount().GetLogin() == account
 		},
 	) {
-		Abort(c, http.StatusForbidden, nil, fmt.Sprintf("account %s is not associated with login %s", account, login))
+		Abort(c, http.StatusForbidden, nil, fmt.Sprintf("app not installed to %s, or you have no permission", account))
 		return
 	}
 
@@ -50,6 +51,13 @@ func UpdateSettings(c *gin.Context) {
 	err = c.ShouldBindJSON(&setting)
 	if err != nil {
 		Abort(c, http.StatusBadRequest, err, "")
+		return
+	}
+
+	// check notify settings (check token is valid too)
+	_, err = notify.GetNotifier(setting.NotifySettings)
+	if err != nil {
+		Abort(c, http.StatusBadRequest, err, "invalid notify settings")
 		return
 	}
 

@@ -2,14 +2,14 @@ package notify
 
 import (
 	"fmt"
-	"strconv"
 
-	"github.com/j178/github_stargazer/backend/config"
 	"github.com/nikoksr/notify"
-	"github.com/nikoksr/notify/service/bark"
-	"github.com/nikoksr/notify/service/discord"
-	"github.com/nikoksr/notify/service/telegram"
 )
+
+type Notifier interface {
+	notify.Notifier
+	FromSettings(settings map[string]string) error
+}
 
 func GetNotifier(settings []map[string]string) (*notify.Notify, error) {
 	notifier := notify.New()
@@ -17,45 +17,26 @@ func GetNotifier(settings []map[string]string) (*notify.Notify, error) {
 		service := setting["service"]
 		switch service {
 		case "bark":
-			key := setting["key"]
-			server := setting["server"]
-			if key == "" {
-				return nil, fmt.Errorf("bark: key is empty")
-			}
-			if server == "" {
-				server = bark.DefaultServerURL
-			}
-			barkService := bark.NewWithServers(key, server)
-			notifier.UseServices(barkService)
-		case "telegram":
-			token := setting["token"]
-			if token == "" || token == "default" {
-				// use our bot token
-				token = config.TelegramBotToken
-			}
-			chatIDStr := setting["chat_id"]
-			if token == "" || chatIDStr == "" {
-				return nil, fmt.Errorf("telegram: token or chat_id is empty")
-			}
-			chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
+			bark := &barkService{}
+			err := bark.FromSettings(setting)
 			if err != nil {
-				return nil, fmt.Errorf("telegram: parse chat_id: %w", err)
+				return nil, fmt.Errorf("bark: %w", err)
 			}
-			telegramService, err := telegram.New(token)
+			notifier.UseServices(bark)
+		case "telegram":
+			tg := &telegramService{}
+			err := tg.FromSettings(setting)
 			if err != nil {
 				return nil, fmt.Errorf("telegram: %w", err)
 			}
-			telegramService.SetParseMode("MarkdownV2")
-			telegramService.AddReceivers(chatID)
-			notifier.UseServices(telegramService)
+			notifier.UseServices(tg)
 		case "discord":
-			// TODO support discord webhook
-			webhookURL := setting["webhook_url"]
-			if webhookURL == "" {
-				return nil, fmt.Errorf("discord: webhook_url is empty")
+			discord := &discordService{}
+			err := discord.FromSettings(setting)
+			if err != nil {
+				return nil, fmt.Errorf("discord: %w", err)
 			}
-			discordService := discord.New()
-			discordService.AddReceivers(webhookURL)
+			notifier.UseServices(discord)
 		default:
 			return nil, fmt.Errorf("unknown service: %s", service)
 		}
