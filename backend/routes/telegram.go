@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -101,9 +102,20 @@ func OnTelegramUpdate(c *gin.Context) {
 		jwt.WithLeeway(5*time.Second),
 	)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"error": "not connect string"})
+		c.JSON(http.StatusOK, gin.H{"error": "invalid connect string"})
 
-		reply := tgbotapi.NewMessage(chatID, "this is not a connect string")
+		errMsg := ""
+		if errors.Is(err, jwt.ErrTokenMalformed) {
+			errMsg = "malformed token"
+		} else if errors.Is(err, jwt.ErrTokenSignatureInvalid) {
+			fmt.Println("invalid signature")
+		} else if errors.Is(err, jwt.ErrTokenExpired) || errors.Is(err, jwt.ErrTokenNotValidYet) {
+			errMsg = "token expired or not active yet"
+		} else {
+			errMsg = "unknown error"
+		}
+
+		reply := tgbotapi.NewMessage(chatID, "invalid connect string: "+errMsg)
 		_, err = Bot().Send(reply)
 		if err != nil {
 			log.Printf("send message: %v", err)
