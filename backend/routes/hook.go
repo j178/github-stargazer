@@ -72,9 +72,12 @@ func OnEvent(c *gin.Context) {
 		wg := pool.New().WithContext(c).WithMaxGoroutines(10)
 		for _, setting := range settings {
 			setting := setting
+			if !setting.IsAllowRepo(evt.Repo.GetFullName()) {
+				continue
+			}
 			wg.Go(
 				func(ctx context.Context) error {
-					return Notify(ctx, evt, setting)
+					return sendNotify(ctx, evt, setting)
 				},
 			)
 		}
@@ -90,11 +93,7 @@ func OnEvent(c *gin.Context) {
 	return
 }
 
-func Notify(ctx context.Context, evt *github.StarEvent, setting *cache.Setting) error {
-	if !setting.IsAllowRepo(evt.Repo.GetFullName()) {
-		return nil
-	}
-
+func sendNotify(ctx context.Context, evt *github.StarEvent, setting *cache.Setting) error {
 	notifier, err := notify.GetNotifier(setting.NotifySettings)
 	if err != nil {
 		return err

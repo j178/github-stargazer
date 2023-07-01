@@ -43,6 +43,7 @@ func GetNotifier(settings []map[string]string) (*notify.Notify, error) {
 			if err != nil {
 				return nil, fmt.Errorf("http: %w", err)
 			}
+			notifier.UseServices(http)
 		default:
 			return nil, fmt.Errorf("unknown service: %s", service)
 		}
