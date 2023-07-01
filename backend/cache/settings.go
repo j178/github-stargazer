@@ -82,3 +82,10 @@ func SaveSettings(ctx context.Context, account, login string, setting Setting) e
 	err = redis.Do(ctx, cmd).Error()
 	return err
 }
+
+func DeleteSettings(ctx context.Context, account, login string) error {
+	redis := Redis()
+	cmd := redis.B().Hdel().Key(keyFunc("settings", account)).Field(login).Build()
+	err := redis.Do(ctx, cmd).Error()
+	return err
+}

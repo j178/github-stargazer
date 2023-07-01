@@ -1,6 +1,6 @@
 # GitHub Stargazer
 
-Install this app to your GitHub account, and you will receive notifications when someone starred your project.
+Install this app to your GitHub account or an organization, and you will receive notifications when someone starred your project.
 
 Click https://github.com/apps/one-more-star/installations/new/ to install.
 
@@ -10,6 +10,8 @@ Click https://github.com/apps/one-more-star/installations/new/ to install.
 
 ## TODO
 
-- [ ] org installation
-- [ ] telegram bot connect
-- [ ] test notification
+- [x] personal account installation
+- [x] org installation
+- [x] telegram bot connect
+- [x] test notification
+- [ ] message template config

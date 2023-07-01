@@ -34,6 +34,7 @@ func initRouter() *gin.Engine {
 		admin.GET("/api/installations", routes.Installations)
 		admin.GET("/api/settings/:account", routes.GetSettings)
 		admin.POST("/api/settings/:account", routes.UpdateSettings)
+		admin.DELETE("/api/settings/:account", routes.DeleteSettings)
 		admin.POST("/api/settings/test", routes.TestNotify)
 		admin.GET("/api/repos/:installationID", routes.InstalledRepos)
 		admin.POST("/api/connect/telegram", routes.GenerateTelegramConnectToken)

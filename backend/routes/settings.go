@@ -70,6 +70,19 @@ func UpdateSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
+func DeleteSettings(c *gin.Context) {
+	login := c.GetString("login")
+	account := c.Param("account")
+
+	err := cache.DeleteSettings(c, account, login)
+	if err != nil {
+		Abort(c, http.StatusInternalServerError, err, "delete settings")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
+}
+
 func getInstallations(ctx context.Context, login string) ([]*github.Installation, error) {
 	token, err := cache.GetOAuthToken(ctx, login)
 	if err != nil {
