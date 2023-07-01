@@ -108,22 +108,34 @@ func keyFunc(name string, id string) string {
 }
 
 var defaultCache CacheStore
-var once sync.Once
+var cacheOnce sync.Once
 
 func Default() CacheStore {
-	once.Do(
+	cacheOnce.Do(
 		func() {
-			redis, err := getRedis()
-			if err != nil {
-				log.Fatalf("create redis client failed: %s", err)
-			}
 			defaultCache = &redisCache{
-				redis:             redis,
+				redis:             Redis(),
 				defaultExpiration: DefaultExpiration,
 			}
 		},
 	)
 	return defaultCache
+}
+
+var redis rueidis.Client
+var redisOnce sync.Once
+
+func Redis() rueidis.Client {
+	redisOnce.Do(
+		func() {
+			r, err := getRedis()
+			if err != nil {
+				log.Fatalf("create redis client failed: %s", err)
+			}
+			redis = r
+		},
+	)
+	return redis
 }
 
 func Get(ctx context.Context, name, key string, value interface{}) error {

@@ -30,8 +30,9 @@ func initRouter() *gin.Engine {
 	r.GET("/api/authorize", routes.Authorize)
 	{
 		checkJWT := middleware.CheckJWT(config.SecretKey)
-		r.GET("/api/settings", checkJWT, routes.GetSettings)
-		r.POST("/api/settings", checkJWT, routes.UpdateSettings)
+		r.GET("/api/installations", checkJWT, routes.Installations)
+		r.GET("/api/:account/settings", checkJWT, routes.GetSettings)
+		r.POST("/api/:account/settings", checkJWT, routes.UpdateSettings)
 		r.GET("/api/repos", checkJWT, routes.InstalledRepos)
 	}
 

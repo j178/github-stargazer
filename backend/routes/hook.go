@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
+	"github.com/sourcegraph/conc/pool"
 
 	"github.com/j178/github_stargazer/backend/cache"
 	"github.com/j178/github_stargazer/backend/config"
@@ -45,52 +45,65 @@ func compose(evt *github.StarEvent) (string, string) {
 func OnEvent(c *gin.Context) {
 	payload, err := github.ValidatePayload(c.Request, config.WebhookSecret)
 	if err != nil {
-		c.String(http.StatusForbidden, "Bad signature")
+		Abort(c, http.StatusBadRequest, err, "validate payload")
 		return
 	}
+
 	webhookType := github.WebHookType(c.Request)
-	if webhookType != "star" {
-		c.String(http.StatusOK, "Not a star event")
-		return
-	}
 	event, err := github.ParseWebHook(webhookType, payload)
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		Abort(c, http.StatusBadRequest, err, "parse webhook")
 		return
 	}
-	evt, _ := event.(*github.StarEvent)
 
-	// TODO 安装到 org 时如何处理？
-	settings, err := cache.GetSettings(c, evt.Repo.Owner.GetLogin())
+	switch webhookType {
+	case "star":
+		evt, _ := event.(*github.StarEvent)
+		settings, err := cache.GetAllSettings(c, evt.Repo.Owner.GetLogin())
+		if err != nil {
+			Abort(c, http.StatusInternalServerError, err, "get all settings")
+			return
+		}
+		if len(settings) == 0 {
+			c.String(http.StatusOK, "Settings not found")
+			return
+		}
+
+		wg := pool.New().WithContext(c).WithMaxGoroutines(10)
+		for _, setting := range settings {
+			wg.Go(
+				func(ctx context.Context) error {
+					return Notify(ctx, evt, setting)
+				},
+			)
+		}
+		err = wg.Wait()
+		if err != nil {
+			Abort(c, http.StatusInternalServerError, err, "notify")
+			return
+		}
+
+	default:
+		c.String(http.StatusOK, "Not interested event")
+	}
+	return
+}
+
+func Notify(ctx context.Context, evt *github.StarEvent, setting *cache.Setting) error {
+	if !setting.IsAllowRepo(evt.Repo.GetFullName()) {
+		return nil
+	}
+
+	notifier, err := notify.GetNotifier(setting.NotifySettings)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
-	}
-	if settings == nil {
-		c.String(http.StatusOK, "Settings not found")
-		return
-	}
-
-	if !settings.IsAllowRepo(evt.Repo.GetFullName()) {
-		c.String(http.StatusOK, "Repo muted")
-		return
-	}
-
-	notifier, err := notify.GetNotifier(settings.NotifySettings)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+		return err
 	}
 
 	title, content := compose(evt)
 
-	ctx, cancel := context.WithTimeout(c, 3*time.Second)
-	defer cancel()
 	err = notifier.Send(ctx, title, content)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+		return err
 	}
-
-	c.String(http.StatusOK, "Sent")
+	return nil
 }
