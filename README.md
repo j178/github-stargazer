@@ -14,4 +14,5 @@ Click https://github.com/apps/one-more-star/installations/new/ to install.
 - [x] org installation
 - [x] telegram bot connect
 - [x] test notification
+- [ ] frontend config ui
 - [ ] message template config
