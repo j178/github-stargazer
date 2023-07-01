@@ -8,8 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
-	"github.com/j178/github_stargazer/backend/notify"
 	"github.com/samber/lo"
+
+	"github.com/j178/github_stargazer/backend/notify"
 
 	"github.com/j178/github_stargazer/backend/cache"
 )
@@ -158,6 +159,23 @@ func InstalledRepos(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, repoNames)
+}
+
+func CheckSettings(c *gin.Context) {
+	var setting cache.Setting
+	err := c.ShouldBindJSON(&setting)
+	if err != nil {
+		Abort(c, http.StatusBadRequest, err, "")
+		return
+	}
+
+	_, err = notify.GetNotifier(setting.NotifySettings)
+	if err != nil {
+		Abort(c, http.StatusBadRequest, err, "invalid notify settings")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func TestNotify(c *gin.Context) {
