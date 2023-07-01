@@ -11,6 +11,7 @@ require (
 	github.com/nikoksr/notify v0.38.1
 	github.com/pkg/errors v0.9.1
 	github.com/redis/rueidis v1.0.10
+	github.com/samber/lo v1.38.1
 	github.com/sourcegraph/conc v0.3.0
 	golang.org/x/oauth2 v0.9.0
 )
@@ -51,6 +52,7 @@ require (
 	go.uber.org/multierr v1.9.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/crypto v0.10.0 // indirect
+	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 	golang.org/x/net v0.11.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/sys v0.9.0 // indirect

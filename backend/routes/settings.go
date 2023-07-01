@@ -1,11 +1,14 @@
 package routes
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
+	"github.com/samber/lo"
 
 	"github.com/j178/github_stargazer/backend/cache"
 )
@@ -27,8 +30,24 @@ func UpdateSettings(c *gin.Context) {
 	login := c.GetString("login")
 	account := c.Param("account")
 
+	// check account is associated with login
+	// TODO cache this
+	installations, err := getInstallations(c, login)
+	if err != nil {
+		Abort(c, http.StatusInternalServerError, err, "get installations")
+		return
+	}
+	if !lo.ContainsBy(
+		installations, func(item *github.Installation) bool {
+			return item.GetAccount().GetLogin() == account
+		},
+	) {
+		Abort(c, http.StatusForbidden, nil, fmt.Sprintf("account %s is not associated with login %s", account, login))
+		return
+	}
+
 	var setting cache.Setting
-	err := c.ShouldBindJSON(&setting)
+	err = c.ShouldBindJSON(&setting)
 	if err != nil {
 		Abort(c, http.StatusBadRequest, err, "")
 		return
@@ -43,48 +62,51 @@ func UpdateSettings(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-type Installation struct {
-	ID          int64  `json:"id"`
-	Account     string `json:"account"`
-	AccountType string `json:"account_type"`
-}
-
-func Installations(c *gin.Context) {
-	login := c.GetString("login")
-
-	token, err := cache.GetOAuthToken(c, login)
+func getInstallations(ctx context.Context, login string) ([]*github.Installation, error) {
+	token, err := cache.GetOAuthToken(ctx, login)
 	if err != nil {
-		Abort(c, http.StatusInternalServerError, err, "get access token")
-		return
+		return nil, err
 	}
 
-	client := github.NewTokenClient(c, token)
+	client := github.NewTokenClient(ctx, token)
 	opts := &github.ListOptions{PerPage: 100}
 
-	var installations []Installation
+	var installations []*github.Installation
 	for {
-		ins, resp, err := client.Apps.ListUserInstallations(c, opts)
+		ins, resp, err := client.Apps.ListUserInstallations(ctx, opts)
 		if err != nil {
-			Abort(c, http.StatusInternalServerError, err, "list installations")
-			return
+			return nil, err
 		}
-		for _, i := range ins {
-			installations = append(
-				installations,
-				Installation{
-					ID:          i.GetID(),
-					Account:     i.Account.GetLogin(),
-					AccountType: i.Account.GetType(),
-				},
-			)
-		}
+		installations = append(installations, ins...)
 		if resp.NextPage == 0 {
 			break
 		}
 		opts.Page = resp.NextPage
 	}
 
-	c.JSON(http.StatusOK, installations)
+	return installations, nil
+}
+
+func Installations(c *gin.Context) {
+	login := c.GetString("login")
+
+	installations, err := getInstallations(c, login)
+	if err != nil {
+		Abort(c, http.StatusInternalServerError, err, "get installations")
+		return
+	}
+
+	result := lo.Map(
+		installations, func(item *github.Installation, index int) map[string]any {
+			return map[string]any{
+				"id":           item.GetID(),
+				"account":      item.GetAccount().GetLogin(),
+				"account_type": item.GetAccount().GetType(),
+			}
+		},
+	)
+
+	c.JSON(http.StatusOK, result)
 }
 
 func InstalledRepos(c *gin.Context) {
