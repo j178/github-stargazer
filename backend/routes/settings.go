@@ -146,3 +146,26 @@ func InstalledRepos(c *gin.Context) {
 
 	c.JSON(http.StatusOK, repoNames)
 }
+
+func TestNotify(c *gin.Context) {
+	var setting cache.Setting
+	err := c.ShouldBindJSON(&setting)
+	if err != nil {
+		Abort(c, http.StatusBadRequest, err, "")
+		return
+	}
+
+	notifier, err := notify.GetNotifier(setting.NotifySettings)
+	if err != nil {
+		Abort(c, http.StatusBadRequest, err, "invalid notify settings")
+		return
+	}
+
+	err = notifier.Send(c, "test", "this is a test message")
+	if err != nil {
+		Abort(c, http.StatusInternalServerError, err, "send test notify")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
+}
