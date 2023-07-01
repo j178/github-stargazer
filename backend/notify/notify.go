@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/j178/github_stargazer/backend/config"
 	"github.com/nikoksr/notify"
 	"github.com/nikoksr/notify/service/bark"
 	"github.com/nikoksr/notify/service/discord"
@@ -28,6 +29,10 @@ func GetNotifier(settings []map[string]string) (*notify.Notify, error) {
 			notifier.UseServices(barkService)
 		case "telegram":
 			token := setting["token"]
+			if token == "" || token == "default" {
+				// use our bot token
+				token = config.TelegramBotToken
+			}
 			chatIDStr := setting["chat_id"]
 			if token == "" || chatIDStr == "" {
 				return nil, fmt.Errorf("telegram: token or chat_id is empty")
