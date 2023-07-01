@@ -31,7 +31,7 @@ var (
 	KvURL            string
 	SecretKey        []byte
 	TelegramBotToken string
-	VercelURL        string
+	BaseURL          string
 )
 
 func loadEnv() {
@@ -49,7 +49,7 @@ func loadEnv() {
 	KvURL = env("KV_URL")
 	SecretKey = []byte(env("SECRET_KEY"))
 	TelegramBotToken = env("TELEGRAM_BOT_TOKEN")
-	VercelURL = "https://" + env("VERCEL_URL")
+	BaseURL = env("BASE_URL")
 }
 
 var once sync.Once

@@ -22,7 +22,7 @@ func setup() {
 		log.Fatal("init telegram bot: %w", err)
 	}
 
-	webhook, _ := tgbotapi.NewWebhook(config.VercelURL + "/api/telegram")
+	webhook, _ := tgbotapi.NewWebhook(config.BaseURL + "/api/telegram")
 
 	_, err = bot.Request(webhook)
 	if err != nil {
