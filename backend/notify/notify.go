@@ -37,6 +37,12 @@ func GetNotifier(settings []map[string]string) (*notify.Notify, error) {
 				return nil, fmt.Errorf("discord: %w", err)
 			}
 			notifier.UseServices(discord)
+		case "http":
+			http := &httpService{}
+			err := http.FromSettings(setting)
+			if err != nil {
+				return nil, fmt.Errorf("http: %w", err)
+			}
 		default:
 			return nil, fmt.Errorf("unknown service: %s", service)
 		}
