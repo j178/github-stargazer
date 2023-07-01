@@ -11,7 +11,7 @@ import (
 )
 
 func GetSettings(c *gin.Context) {
-	login := c.Query("login")
+	login := c.GetString("login")
 	account := c.Param("account")
 
 	settings, err := cache.GetSettings(c, account, login)
@@ -24,7 +24,7 @@ func GetSettings(c *gin.Context) {
 }
 
 func UpdateSettings(c *gin.Context) {
-	login := c.Query("login")
+	login := c.GetString("login")
 	account := c.Param("account")
 
 	var setting cache.Setting
@@ -88,7 +88,7 @@ func Installations(c *gin.Context) {
 }
 
 func InstalledRepos(c *gin.Context) {
-	installationIDStr := c.Query("installation_id")
+	installationIDStr := c.Param("installation_id")
 	installationID, err := strconv.ParseInt(installationIDStr, 10, 64)
 	if err != nil {
 		Abort(c, http.StatusBadRequest, nil, "invalid installationID")
