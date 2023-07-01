@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -64,7 +65,7 @@ func GetTelegramConnect(c *gin.Context) {
 	var connect map[string]any
 	err := cache.Get(c, "telegram_connect", login, &connect)
 	if err == cache.ErrCacheMiss {
-		c.JSON(404, gin.H{"status": "not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
 	if err != nil {
@@ -72,7 +73,7 @@ func GetTelegramConnect(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, connect)
+	c.JSON(http.StatusOK, connect)
 }
 
 func OnTelegramUpdate(c *gin.Context) {
@@ -81,10 +82,14 @@ func OnTelegramUpdate(c *gin.Context) {
 		Abort(c, http.StatusBadRequest, err, "handle update")
 		return
 	}
+
 	if update.Message == nil {
-		c.JSON(http.StatusOK, gin.H{"error": "not message"})
+		c.JSON(http.StatusOK, gin.H{"status": "not a message"})
 		return
 	}
+
+	chatID := update.Message.Chat.ID
+	tgUsername := update.Message.From.UserName
 
 	text := strings.TrimSpace(strings.TrimPrefix(update.Message.Text, "/start"))
 	v, err := jwt.ParseWithClaims(
@@ -97,13 +102,17 @@ func OnTelegramUpdate(c *gin.Context) {
 	)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"error": "not connect string"})
+
+		reply := tgbotapi.NewMessage(chatID, "this is not a connect string")
+		_, err = Bot().Send(reply)
+		if err != nil {
+			log.Printf("send message: %v", err)
+		}
 		return
 	}
 
 	claims, _ := v.Claims.(*jwt.RegisteredClaims)
 	account := claims.Subject
-	chatID := update.Message.Chat.ID
-	tgUsername := update.Message.From.UserName
 
 	connect := map[string]any{
 		"account":           account,
@@ -113,8 +122,20 @@ func OnTelegramUpdate(c *gin.Context) {
 	err = cache.Set(c, "telegram_connect", account, connect, 10*time.Minute)
 	if err != nil {
 		Abort(c, http.StatusInternalServerError, err, "set cache")
+
+		reply := tgbotapi.NewMessage(chatID, "internal server error")
+		_, err = Bot().Send(reply)
+		if err != nil {
+			log.Printf("send message: %v", err)
+		}
 		return
 	}
 
-	c.JSON(200, gin.H{"status": "ok"})
+	reply := tgbotapi.NewMessage(chatID, fmt.Sprintf("bind to %s, chat_id=%d", account, chatID))
+	_, err = Bot().Send(reply)
+	if err != nil {
+		log.Printf("send message: %v", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
