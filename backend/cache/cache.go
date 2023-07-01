@@ -26,6 +26,10 @@ const (
 	FOREVER = time.Duration(-1)
 )
 
+var (
+	ErrCacheMiss = fmt.Errorf("cache: key not found")
+)
+
 // CacheStore is the interface of a Default backend
 type CacheStore interface {
 	// Get retrieves an item from the Default. Returns the item or nil, and a bool indicating
@@ -47,6 +51,9 @@ type redisCache struct {
 func (c *redisCache) Get(ctx context.Context, key string, value interface{}) error {
 	cmd := c.redis.B().Get().Key(key).Build()
 	v, err := c.redis.Do(ctx, cmd).AsBytes()
+	if rueidis.IsRedisNil(err) {
+		return ErrCacheMiss
+	}
 	if err != nil {
 		return err
 	}

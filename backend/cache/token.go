@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/redis/rueidis"
 	"golang.org/x/oauth2"
 	oauthGitHub "golang.org/x/oauth2/github"
 
@@ -67,7 +66,7 @@ func GetInstallationToken(ctx context.Context, installationID int64) (string, er
 	err := Get(ctx, string(InstallationTokenType), installationIDStr, &token)
 	valid := true
 	// 不存在，也可以凭空创建
-	if rueidis.IsRedisNil(err) {
+	if err == ErrCacheMiss {
 		valid = false
 	} else if err != nil {
 		return "", err

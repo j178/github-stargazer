@@ -71,6 +71,7 @@ func OnEvent(c *gin.Context) {
 
 		wg := pool.New().WithContext(c).WithMaxGoroutines(10)
 		for _, setting := range settings {
+			setting := setting
 			wg.Go(
 				func(ctx context.Context) error {
 					return Notify(ctx, evt, setting)

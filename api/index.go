@@ -30,10 +30,18 @@ func initRouter() *gin.Engine {
 	r.GET("/api/authorize", routes.Authorize)
 	{
 		checkJWT := middleware.CheckJWT(config.SecretKey)
-		r.GET("/api/installations", checkJWT, routes.Installations)
-		r.GET("/api/settings/:account", checkJWT, routes.GetSettings)
-		r.POST("/api/settings/:account", checkJWT, routes.UpdateSettings)
-		r.GET("/api/repos/:installationID", checkJWT, routes.InstalledRepos)
+		admin := r.Group("", checkJWT)
+		admin.GET("/api/installations", routes.Installations)
+		admin.GET("/api/settings/:account", routes.GetSettings)
+		admin.POST("/api/settings/:account", routes.UpdateSettings)
+		admin.GET("/api/repos/:installationID", routes.InstalledRepos)
+		admin.POST("/api/connect/telegram", routes.GenerateTelegramConnectToken)
+		admin.GET("/api/connect/telegram", routes.GetTelegramConnect)
+	}
+
+	// from Telegram
+	{
+		r.POST("/api/telegram", routes.OnTelegramUpdate)
 	}
 
 	return r

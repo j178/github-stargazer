@@ -23,13 +23,15 @@ func env(key string) string {
 }
 
 var (
-	AppID         int64
-	AppPrivateKey []byte
-	ClientID      string
-	ClientSecret  string
-	WebhookSecret []byte
-	KvURL         string
-	SecretKey     []byte
+	AppID            int64
+	AppPrivateKey    []byte
+	ClientID         string
+	ClientSecret     string
+	WebhookSecret    []byte
+	KvURL            string
+	SecretKey        []byte
+	TelegramBotToken string
+	VercelURL        string
 )
 
 func loadEnv() {
@@ -46,6 +48,8 @@ func loadEnv() {
 	WebhookSecret = []byte(envOrDefault("GITHUB_WEBHOOK_SECRET", ""))
 	KvURL = env("KV_URL")
 	SecretKey = []byte(env("SECRET_KEY"))
+	TelegramBotToken = env("TELEGRAM_BOT_TOKEN")
+	VercelURL = "https://" + env("VERCEL_URL")
 }
 
 var once sync.Once
