@@ -19,7 +19,7 @@ type webhookService struct {
 func (s *webhookService) Configure(settings map[string]string) error {
 	urlStr := settings["url"]
 	if urlStr == "" {
-		return errors.New("http: url is empty")
+		return errors.New("url is empty")
 	}
 
 	method := settings["method"]
@@ -34,14 +34,14 @@ func (s *webhookService) Configure(settings map[string]string) error {
 	if body != "" {
 		tmpl, err := template.New("body").Parse(body)
 		if err != nil {
-			return fmt.Errorf("http: %w", err)
+			return err
 		}
 		s.body = tmpl
 	}
 
 	req, err := http.NewRequest(method, urlStr, nil)
 	if err != nil {
-		return fmt.Errorf("http: %w", err)
+		return err
 	}
 	s.req = req
 
@@ -84,7 +84,7 @@ func (s *webhookService) Send(ctx context.Context, title, message string) error 
 		var bodyStr bytes.Buffer
 		err := s.body.Execute(&bodyStr, bodyData)
 		if err != nil {
-			return fmt.Errorf("http: %w", err)
+			return err
 		}
 
 		req.Body = io.NopCloser(&bodyStr)
@@ -92,7 +92,7 @@ func (s *webhookService) Send(ctx context.Context, title, message string) error 
 
 	_, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("http: %w", err)
+		return fmt.Errorf("webhook send: %w", err)
 	}
 	return nil
 }

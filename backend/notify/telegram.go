@@ -2,7 +2,6 @@ package notify
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 	"sync"
@@ -39,11 +38,11 @@ func (t *telegramService) Configure(settings map[string]string) error {
 	token := settings["token"]
 	chatIDStr := settings["chat_id"]
 	if chatIDStr == "" {
-		return errors.New("telegram: chat_id is empty")
+		return errors.New("chat_id is empty")
 	}
 	chatID, err := strconv.ParseInt(chatIDStr, 10, 64)
 	if err != nil {
-		return errors.New("telegram: invalid chat_id")
+		return errors.New("invalid chat_id")
 	}
 
 	var tg *tgbotapi.BotAPI
@@ -52,7 +51,7 @@ func (t *telegramService) Configure(settings map[string]string) error {
 	} else {
 		tg, err = tgbotapi.NewBotAPI(token)
 		if err != nil {
-			return fmt.Errorf("telegram: %w", err)
+			return err
 		}
 	}
 
@@ -75,7 +74,7 @@ func (t *telegramService) Send(ctx context.Context, subject, message string) err
 	default:
 		_, err := t.client.Send(msg)
 		if err != nil {
-			return errors.Wrapf(err, "failed to send message to Telegram chat '%d'", t.chatID)
+			return errors.Wrapf(err, "telegram: failed to send message to Telegram chat '%d'", t.chatID)
 		}
 	}
 

@@ -11,10 +11,10 @@ type barkService struct {
 }
 
 func (s *barkService) Configure(settings map[string]string) error {
-	key := settings["device_token"]
+	key := settings["key"]
 	server := settings["server"]
 	if key == "" {
-		return errors.New("bark: device_token is empty")
+		return errors.New("key is empty")
 	}
 	if server == "" {
 		server = bark.DefaultServerURL

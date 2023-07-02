@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/samber/lo"
@@ -26,7 +27,7 @@ func (s *discordService) Configure(settings map[string]string) error {
 	webhookID := settings["webhook_id"]
 	webhookToken := settings["webhook_token"]
 	if webhookID == "" || webhookToken == "" {
-		return errors.New("discord: webhook_id or webhook_token is empty")
+		return errors.New("webhook_id or webhook_token is empty")
 	}
 
 	s.webhookID = webhookID
@@ -47,7 +48,7 @@ func (s *discordService) Send(ctx context.Context, title, message string) error 
 	// https://discord.com/developers/docs/resources/webhook#execute-webhook
 	_, err := session.WebhookExecute(s.webhookID, s.webhookToken, false, &params, discordgo.WithContext(ctx))
 	if err != nil {
-		return err
+		return fmt.Errorf("discord webhook: %w", err)
 	}
 
 	return nil
