@@ -11,14 +11,14 @@ TODO: 这里应该有一个粗糙的原型图
 相关接口:
 
 - GET /api/installations 获取用户安装的账户列表
-- GET /api/repos/:installationID 获取这个 installation 允许访问的 repo 列表，用于配置消息推送方式时的 repo 选择
+- GET /api/repos/:installationID 获取这个 installation 允许访问的 repo 列表，用于配置 allow_repos 和 mute_repos 时的 repo 选择
 
 ## 消息推送方式配置
 
 配置信息格式：
 
 - allow_repos: 只接受这些 repo 的 star 事件
-- mute repos: 不接受这些 repo 的 star 事件
+- mute_repos: 忽略这些 repo 的 star 事件
 - notify_settings: 消息推送方式列表
   - service: 消息推送服务，目前支持 telegram, discord, bark, webhook
   - 其他字段根据 service 的不同而不同
