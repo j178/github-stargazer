@@ -89,18 +89,22 @@ func OnTelegramUpdate(c *gin.Context) {
 		return
 	}
 
-	chatID := update.Message.Chat.ID
-	tgUsername := update.Message.From.UserName
+	chatID := update.FromChat().ID
+	tgUsername := update.SentFrom().UserName
 
 	text := strings.TrimSpace(update.Message.Text)
 	if strings.HasPrefix(text, "/start") {
 		text = strings.TrimSpace(strings.TrimPrefix(text, "/start"))
-		if text == "" {
-			reply := tgbotapi.NewMessage(chatID, "please input connect string")
-			_, err = Bot().Send(reply)
-			if err != nil {
-				log.Printf("send message: %v", err)
-			}
+	}
+	if text == "" {
+		msg := "Hi, welcome to use GitHub Stargazer Bot. Please send your connect string."
+		if update.Message.Chat.IsGroup() {
+			msg = "Hi, welcome to use GitHub Stargazer Bot. Please reply this message with your connect string."
+		}
+		reply := tgbotapi.NewMessage(chatID, msg)
+		_, err = Bot().Send(reply)
+		if err != nil {
+			log.Printf("send message: %v", err)
 		}
 	}
 
@@ -113,9 +117,10 @@ func OnTelegramUpdate(c *gin.Context) {
 		jwt.WithLeeway(5*time.Second),
 	)
 	if err != nil {
+		log.Printf("parse connect string: %v", err)
 		c.JSON(http.StatusOK, gin.H{"error": "invalid connect string"})
 
-		reply := tgbotapi.NewMessage(chatID, "cannot bind: "+err.Error())
+		reply := tgbotapi.NewMessage(chatID, fmt.Sprintf("invalid connect string: %q", text))
 		_, err = Bot().Send(reply)
 		if err != nil {
 			log.Printf("send message: %v", err)
@@ -143,7 +148,7 @@ func OnTelegramUpdate(c *gin.Context) {
 		return
 	}
 
-	reply := tgbotapi.NewMessage(chatID, fmt.Sprintf("bind to %s, chat_id=%d", account, chatID))
+	reply := tgbotapi.NewMessage(chatID, fmt.Sprintf("Bind to %s, chat_id=%d", account, chatID))
 	_, err = Bot().Send(reply)
 	if err != nil {
 		log.Printf("send message: %v", err)
