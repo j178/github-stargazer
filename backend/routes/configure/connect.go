@@ -11,19 +11,22 @@ import (
 	"github.com/j178/github_stargazer/backend/config"
 	"github.com/j178/github_stargazer/backend/routes"
 	"github.com/j178/github_stargazer/backend/utils"
+	"github.com/samber/lo"
 )
 
 const ConnectTokenExpire = 10 * time.Minute
 
+var ConnectTokenPlatforms = []string{"telegram", "discord", "slack"}
+
 func GenerateConnectToken(c *gin.Context) {
 	login := c.GetString("login")
 	platform := c.Param("platform")
-	if platform == "" {
-		routes.Abort(c, http.StatusBadRequest, nil, "platform is empty")
+	if !lo.Contains(ConnectTokenPlatforms, platform) {
+		routes.Abort(c, http.StatusBadRequest, nil, "invalid platform")
 		return
 	}
 
-	count, err := cache.Get[int64](c, cache.Key{"connect_token_count", login})
+	count, err := cache.Get[int64](c, cache.Key{"connect_token_count", login, platform})
 	if err != nil && err != cache.ErrCacheMiss {
 		routes.Abort(c, http.StatusInternalServerError, err, "get connect token count")
 		return
@@ -44,7 +47,7 @@ func GenerateConnectToken(c *gin.Context) {
 		return
 	}
 
-	_, err = cache.Incr(c, cache.Key{"connect_token_count", login}, 60*time.Second)
+	_, err = cache.Incr(c, cache.Key{"connect_token_count", login, platform}, 60*time.Second)
 	if err != nil {
 		routes.Abort(c, http.StatusInternalServerError, err, "incr connect token count")
 		return
