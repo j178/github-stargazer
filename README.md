@@ -1,8 +1,8 @@
 # GitHub Stargazer
 
-Install this app to your GitHub account or an organization, and you will receive notifications when someone starred your project.
+Install [this app](https://github.com/apps/stars-notifier) to your GitHub account or an organization, and you will receive notifications when someone starred your project.
 
-Click https://github.com/apps/one-more-star/installations/new/ to install.
+Click https://github.com/apps/stars-notifier/installations/new/ to install.
 
 ## Want to run your own instance?
 
