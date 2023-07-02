@@ -164,6 +164,20 @@ func Delete(ctx context.Context, key Key) error {
 	return Default().Delete(ctx, key.String())
 }
 
+func Incr(ctx context.Context, key Key, expire time.Duration) (int64, error) {
+	cmds := []rueidis.Completed{
+		Redis().B().Incr().Key(key.String()).Build(),
+		Redis().B().Expire().Key(key.String()).Seconds(int64(expire / time.Second)).Build(),
+	}
+	vals := Redis().DoMulti(ctx, cmds...)
+	for _, v := range vals {
+		if v.Error() != nil {
+			return 0, v.Error()
+		}
+	}
+	return vals[0].AsInt64()
+}
+
 func GetOrCreate[T any](
 	ctx context.Context,
 	key Key,

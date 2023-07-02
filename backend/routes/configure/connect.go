@@ -16,9 +16,20 @@ import (
 const ConnectTokenExpire = 10 * time.Minute
 
 func GenerateConnectToken(c *gin.Context) {
+	login := c.GetString("login")
 	platform := c.Param("platform")
 	if platform == "" {
 		routes.Abort(c, http.StatusBadRequest, nil, "platform is empty")
+		return
+	}
+
+	count, err := cache.Get[int64](c, cache.Key{"connect_token_count", login})
+	if err != nil {
+		routes.Abort(c, http.StatusInternalServerError, err, "get connect token count")
+		return
+	}
+	if count >= 2 {
+		routes.Abort(c, http.StatusForbidden, nil, "exceed connect token count limit")
 		return
 	}
 
@@ -30,6 +41,12 @@ func GenerateConnectToken(c *gin.Context) {
 	err = cache.Set(c, cache.Key{"connect", token}, map[string]any{}, ConnectTokenExpire)
 	if err != nil {
 		routes.Abort(c, http.StatusInternalServerError, err, "set cache")
+		return
+	}
+
+	_, err = cache.Incr(c, cache.Key{"connect_token_count", login}, 60*time.Second)
+	if err != nil {
+		routes.Abort(c, http.StatusInternalServerError, err, "incr connect token count")
 		return
 	}
 

@@ -53,7 +53,7 @@ func OnUpdate(c *gin.Context) {
 		msg := "Send `/start <connect token>` to connect your GitHub account"
 		if update.Message.Chat.IsGroup() || update.Message.Chat.IsSuperGroup() {
 			msg = fmt.Sprintf(
-				"`Send /start@%s <connect token>` to connect your GitHub account",
+				"Send `/start@%s <connect token>` to connect your GitHub account",
 				config.TelegramBotUsername,
 			)
 		}
