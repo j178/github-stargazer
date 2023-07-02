@@ -38,7 +38,7 @@ func GenerateConnectToken(c *gin.Context) {
 		routes.Abort(c, http.StatusInternalServerError, err, "generate token")
 		return
 	}
-	err = cache.Set(c, cache.Key{"connect", token}, map[string]any{}, ConnectTokenExpire)
+	err = cache.Set(c, cache.Key{"connect", token}, map[string]any{"platform": platform}, ConnectTokenExpire)
 	if err != nil {
 		routes.Abort(c, http.StatusInternalServerError, err, "set cache")
 		return
@@ -88,13 +88,16 @@ func GetConnectResult(c *gin.Context) {
 	c.JSON(http.StatusOK, r)
 }
 
-func SetConnectResult(ctx context.Context, token string, result map[string]any) error {
+func SetConnectResult(ctx context.Context, token string, platform string, result map[string]any) error {
 	prev, err := cache.Get[map[string]any](ctx, cache.Key{"connect", token})
 	if err != nil {
 		return err
 	}
-	if len(prev) > 0 {
+	if len(prev) > 1 { // not only `platform`
 		return fmt.Errorf("token already used")
+	}
+	if p := prev["platform"]; p == nil || p.(string) != platform {
+		return fmt.Errorf("platform not match")
 	}
 
 	err = cache.Set(ctx, cache.Key{"connect", token}, result, ConnectTokenExpire)

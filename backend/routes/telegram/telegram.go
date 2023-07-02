@@ -72,7 +72,7 @@ func OnUpdate(c *gin.Context) {
 		"telegram_username": tgUsername,
 	}
 
-	err = configure.SetConnectResult(c, commandArgs, connect)
+	err = configure.SetConnectResult(c, commandArgs, "telegram", connect)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"error": "invalid connect token"})
 
