@@ -10,7 +10,7 @@ type barkService struct {
 	*bark.Service
 }
 
-func (s *barkService) FromSettings(settings map[string]string) error {
+func (s *barkService) Configure(settings map[string]string) error {
 	key := settings["key"]
 	server := settings["server"]
 	if key == "" {

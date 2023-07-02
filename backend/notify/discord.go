@@ -21,7 +21,7 @@ type discordService struct {
 
 // TODO: add discord bot support
 
-func (s *discordService) FromSettings(settings map[string]string) error {
+func (s *discordService) Configure(settings map[string]string) error {
 	// How to create a discord webhook: https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks
 	webhookID := settings["webhook_id"]
 	webhookToken := settings["webhook_token"]

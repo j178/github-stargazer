@@ -16,7 +16,7 @@ type webhookService struct {
 	body *template.Template
 }
 
-func (s *webhookService) FromSettings(settings map[string]string) error {
+func (s *webhookService) Configure(settings map[string]string) error {
 	urlStr := settings["url"]
 	if urlStr == "" {
 		return errors.New("http: url is empty")

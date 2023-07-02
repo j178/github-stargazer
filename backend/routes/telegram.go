@@ -35,7 +35,8 @@ func Bot() *tgbotapi.BotAPI {
 }
 
 const (
-	Issuer = "telegram-connect"
+	Issuer      = "telegram-connect"
+	BotUsername = "gh_stargazer_bot"
 )
 
 func GenerateTelegramConnectToken(c *gin.Context) {
@@ -50,7 +51,12 @@ func GenerateTelegramConnectToken(c *gin.Context) {
 		},
 	)
 	tokenString, _ := token.SignedString(config.SecretKey)
-	c.JSON(http.StatusOK, gin.H{"connect_string": tokenString})
+	c.JSON(
+		http.StatusOK, gin.H{
+			"bot_url":        "https://t.me/" + BotUsername,
+			"connect_string": tokenString,
+		},
+	)
 }
 
 // 轮询获取绑定结果
