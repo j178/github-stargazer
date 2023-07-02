@@ -38,3 +38,16 @@ func RequestScheme(c *gin.Context) string {
 	}
 	return "http"
 }
+
+// Or returns the first of its arguments that is not equal to the zero value.
+// If no argument is non-zero, it returns the zero value.
+// Taken from: https://go-review.googlesource.com/c/go/+/504883
+func Or[T comparable](vals ...T) T {
+	var zero T
+	for _, val := range vals {
+		if val != zero {
+			return val
+		}
+	}
+	return zero
+}

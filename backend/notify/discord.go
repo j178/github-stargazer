@@ -4,20 +4,26 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/samber/lo"
+	"github.com/j178/github_stargazer/backend/utils"
 )
 
 const (
+	authorUrl       = "https://github.com/apps/stars-notifier"
 	defaultUsername = "Star++"
 	defaultAvatar   = "https://github-stargazer.vercel.app/avatar.png"
+	// https://www.spycolor.com/fd9a00
+	defaultColor = "fd9a00"
 )
 
 type discordService struct {
 	webhookID    string
 	webhookToken string
-	params       discordgo.WebhookParams
+	username     string
+	avatarURL    string
+	color        int
 }
 
 // TODO: add discord bot support
@@ -32,17 +38,32 @@ func (s *discordService) Configure(settings map[string]string) error {
 
 	s.webhookID = webhookID
 	s.webhookToken = webhookToken
-	s.params = discordgo.WebhookParams{
-		Username:  lo.Ternary(settings["username"] != "", settings["username"], defaultUsername),
-		AvatarURL: lo.Ternary(settings["avatar_url"] != "", settings["avatar_url"], defaultAvatar),
+	s.username = utils.Or(settings["username"], defaultUsername)
+	s.avatarURL = utils.Or(settings["avatar_url"], defaultAvatar)
+
+	color := utils.Or(settings["color"], defaultColor)
+	var err error
+	s.color, err = strconv.Atoi(color)
+	if err != nil {
+		return fmt.Errorf("invalid color")
 	}
 	return nil
 }
 
 func (s *discordService) Send(ctx context.Context, title, message string) error {
-	content := title + "\n" + message
-	params := s.params
-	params.Content = content
+	params := discordgo.WebhookParams{}
+	params.Embeds = []*discordgo.MessageEmbed{
+		{
+			Author: &discordgo.MessageEmbedAuthor{
+				Name:    s.username,
+				IconURL: s.avatarURL,
+				URL:     authorUrl,
+			},
+			Color:       s.color,
+			Title:       title,
+			Description: message,
+		},
+	}
 
 	session, _ := discordgo.New("")
 	// https://discord.com/developers/docs/resources/webhook#execute-webhook
