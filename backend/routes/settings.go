@@ -20,6 +20,21 @@ func GetSettings(c *gin.Context) {
 	login := c.GetString("login")
 	account := c.Param("account")
 
+	// check account is associated with login
+	installations, err := cache.GetOrCreate[[]string](
+		c, cache.Key{"installations", login}, 24*time.Hour, func() ([]string, error) {
+			return getInstallationAccounts(c, login)
+		},
+	)
+	if err != nil {
+		Abort(c, http.StatusInternalServerError, err, "get installations")
+		return
+	}
+	if !lo.Contains(installations, account) {
+		Abort(c, http.StatusForbidden, nil, fmt.Sprintf("app not installed to %s, or you have no permission", account))
+		return
+	}
+
 	settings, err := cache.GetSettings(c, account, login)
 	if err != nil {
 		Abort(c, http.StatusNotFound, err, "")
