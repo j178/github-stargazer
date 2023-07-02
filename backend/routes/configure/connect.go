@@ -24,7 +24,7 @@ func GenerateConnectToken(c *gin.Context) {
 	}
 
 	count, err := cache.Get[int64](c, cache.Key{"connect_token_count", login})
-	if err != nil {
+	if err != nil && err != cache.ErrCacheMiss {
 		routes.Abort(c, http.StatusInternalServerError, err, "get connect token count")
 		return
 	}
