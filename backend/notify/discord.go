@@ -23,7 +23,7 @@ type discordService struct {
 	webhookToken string
 	username     string
 	avatarURL    string
-	color        int
+	color        int64
 }
 
 // TODO: add discord bot support
@@ -43,7 +43,7 @@ func (s *discordService) Configure(settings map[string]string) error {
 
 	color := utils.Or(settings["color"], defaultColor)
 	var err error
-	s.color, err = strconv.Atoi(color)
+	s.color, err = strconv.ParseInt(color, 16, 32)
 	if err != nil {
 		return fmt.Errorf("invalid color")
 	}
@@ -59,7 +59,7 @@ func (s *discordService) Send(ctx context.Context, title, message string) error 
 				IconURL: s.avatarURL,
 				URL:     authorUrl,
 			},
-			Color:       s.color,
+			Color:       int(s.color),
 			Title:       title,
 			Description: message,
 		},
