@@ -27,7 +27,7 @@ func GenerateConnectToken(c *gin.Context) {
 		routes.Abort(c, http.StatusInternalServerError, err, "generate token")
 		return
 	}
-	err = cache.Set(c, cache.Key{"connect", token}, map[string]string{}, ConnectTokenExpire)
+	err = cache.Set(c, cache.Key{"connect", token}, map[string]any{}, ConnectTokenExpire)
 	if err != nil {
 		routes.Abort(c, http.StatusInternalServerError, err, "set cache")
 		return
@@ -58,7 +58,7 @@ func GetConnectResult(c *gin.Context) {
 		return
 	}
 
-	r, err := cache.Get[map[string]string](c, cache.Key{"connect", token})
+	r, err := cache.Get[map[string]any](c, cache.Key{"connect", token})
 	if err == cache.ErrCacheMiss {
 		routes.Abort(c, http.StatusNotFound, err, "token not found")
 		return
@@ -72,7 +72,7 @@ func GetConnectResult(c *gin.Context) {
 }
 
 func SetConnectResult(ctx context.Context, token string, result map[string]any) error {
-	_, err := cache.Get[string](ctx, cache.Key{"connect", token})
+	_, err := cache.Get[map[string]any](ctx, cache.Key{"connect", token})
 	if err != nil {
 		return err
 	}

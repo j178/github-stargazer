@@ -50,9 +50,12 @@ func OnUpdate(c *gin.Context) {
 	commandArgs := update.Message.CommandArguments()
 
 	if commandArgs == "" {
-		msg := "`/start <connect token>` to connect your GitHub account"
+		msg := "Send `/start <connect token>` to connect your GitHub account"
 		if update.Message.Chat.IsGroup() {
-			msg = fmt.Sprintf("`/start@%s <connect token>` to connect your GitHub account", config.TelegramBotUsername)
+			msg = fmt.Sprintf(
+				"`Send /start@%s <connect token>` to connect your GitHub account",
+				config.TelegramBotUsername,
+			)
 		}
 		reply := tgbotapi.NewMessage(chatID, msg)
 		reply.ReplyToMessageID = replyTo
