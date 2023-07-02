@@ -72,9 +72,12 @@ func GetConnectResult(c *gin.Context) {
 }
 
 func SetConnectResult(ctx context.Context, token string, result map[string]any) error {
-	_, err := cache.Get[map[string]any](ctx, cache.Key{"connect", token})
+	prev, err := cache.Get[map[string]any](ctx, cache.Key{"connect", token})
 	if err != nil {
 		return err
+	}
+	if len(prev) > 0 {
+		return fmt.Errorf("token already used")
 	}
 
 	err = cache.Set(ctx, cache.Key{"connect", token}, result, ConnectTokenExpire)
