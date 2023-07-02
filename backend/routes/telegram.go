@@ -91,11 +91,17 @@ func OnTelegramUpdate(c *gin.Context) {
 
 	chatID := update.FromChat().ID
 	tgUsername := update.SentFrom().UserName
-
+	replyTo := update.Message.MessageID
 	text := strings.TrimSpace(update.Message.Text)
-	if strings.HasPrefix(text, "/start") {
-		text = strings.TrimSpace(strings.TrimPrefix(text, "/start"))
+
+	// strip command prefix
+	if update.Message.IsCommand() {
+		parts := strings.SplitN(update.Message.Text, " ", 2)
+		if len(parts) == 2 {
+			text = strings.TrimSpace(parts[1])
+		}
 	}
+
 	if text == "" {
 		msg := "Hi, welcome to use GitHub Stargazer Bot. Please send your connect string."
 		if update.Message.Chat.IsGroup() {
@@ -106,6 +112,7 @@ func OnTelegramUpdate(c *gin.Context) {
 		if err != nil {
 			log.Printf("send message: %v", err)
 		}
+		return
 	}
 
 	v, err := jwt.ParseWithClaims(
@@ -120,7 +127,9 @@ func OnTelegramUpdate(c *gin.Context) {
 		log.Printf("parse connect string: %v", err)
 		c.JSON(http.StatusOK, gin.H{"error": "invalid connect string"})
 
-		reply := tgbotapi.NewMessage(chatID, fmt.Sprintf("invalid connect string: %q", text))
+		reply := tgbotapi.NewMessage(chatID, fmt.Sprintf("Invalid connect string: %q", text))
+		reply.ReplyToMessageID = replyTo
+
 		_, err = Bot().Send(reply)
 		if err != nil {
 			log.Printf("send message: %v", err)
@@ -141,6 +150,8 @@ func OnTelegramUpdate(c *gin.Context) {
 		Abort(c, http.StatusInternalServerError, err, "set cache")
 
 		reply := tgbotapi.NewMessage(chatID, "internal server error")
+		reply.ReplyToMessageID = replyTo
+
 		_, err = Bot().Send(reply)
 		if err != nil {
 			log.Printf("send message: %v", err)
@@ -148,7 +159,12 @@ func OnTelegramUpdate(c *gin.Context) {
 		return
 	}
 
-	reply := tgbotapi.NewMessage(chatID, fmt.Sprintf("Bind to %s, chat_id=%d", account, chatID))
+	reply := tgbotapi.NewMessage(
+		chatID,
+		fmt.Sprintf("Bind to %s, new star notifications will be sent here.", account),
+	)
+	reply.ReplyToMessageID = replyTo
+
 	_, err = Bot().Send(reply)
 	if err != nil {
 		log.Printf("send message: %v", err)
