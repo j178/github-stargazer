@@ -20,10 +20,6 @@ func GetSettings(c *gin.Context) {
 	login := c.GetString("login")
 	account := c.Param("account")
 
-	if !checkAccountAssociation(c, login, account) {
-		return
-	}
-
 	settings, err := cache.GetSettings(c, account, login)
 	if err != nil {
 		Abort(c, http.StatusNotFound, err, "")
@@ -67,10 +63,6 @@ func UpdateSettings(c *gin.Context) {
 func DeleteSettings(c *gin.Context) {
 	login := c.GetString("login")
 	account := c.Param("account")
-
-	if !checkAccountAssociation(c, login, account) {
-		return
-	}
 
 	err := cache.DeleteSettings(c, account, login)
 	if err != nil {
@@ -120,7 +112,7 @@ func getInstallationAccounts(ctx context.Context, login string) ([]string, error
 }
 
 // check account is associated with login
-func checkAccountAssociation(c *gin.Context, login, account string) bool {
+func checkAccountAssociation(c *gin.Context, account, login string) bool {
 	installations, err := cache.GetOrCreate[[]string](
 		c, cache.Key{"installations", login}, 24*time.Hour, func() ([]string, error) {
 			return getInstallationAccounts(c, login)
