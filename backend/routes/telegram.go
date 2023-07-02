@@ -14,29 +14,24 @@ import (
 
 	"github.com/j178/github_stargazer/backend/cache"
 	"github.com/j178/github_stargazer/backend/config"
+	"github.com/j178/github_stargazer/backend/notify"
 )
 
-func setup() {
-	var err error
-	bot, err = tgbotapi.NewBotAPI(config.TelegramBotToken)
-	if err != nil {
-		log.Fatal("init telegram bot: %w", err)
-	}
-
+func setupWebhook() {
+	bot := notify.DefaultTelegramBot()
 	webhook, _ := tgbotapi.NewWebhook(config.BaseURL + "/api/telegram")
 
-	_, err = bot.Request(webhook)
+	_, err := bot.Request(webhook)
 	if err != nil {
 		log.Fatal("set telegram webhook: %w", err)
 	}
 }
 
-var bot *tgbotapi.BotAPI
 var once sync.Once
 
 func Bot() *tgbotapi.BotAPI {
-	once.Do(setup)
-	return bot
+	once.Do(setupWebhook)
+	return notify.DefaultTelegramBot()
 }
 
 const (
