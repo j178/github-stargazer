@@ -60,7 +60,7 @@ curl --location 'https://github-stargazer.vercel.app/api/settings/j178' \
 
 ### Telegram Bot 关联
 
-通过 POST /api/connect/telegram 生成一个 jwt token，指引用户打开 https://t.me/gh_stargazer_bot 并发送这个 token。
+通过 POST /api/connect/telegram 生成一个 token，指引用户打开 https://t.me/gh_stargazer_bot?start=<token> 。
 bot 会将用户的 telegram username, chat id 与当前的 account 关联起来，之后就可以通过 telegram bot 推送消息给用户。
 
-前端通过轮询 GET /api/connect/telegram 获取关联状态，如果关联成功，会返回用户的 telegram username, chat id。
+前端通过轮询 GET /api/connect/telegram/:token 获取关联状态，如果关联成功，会返回用户的 telegram username, chat id。

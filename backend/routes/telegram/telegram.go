@@ -39,7 +39,7 @@ func OnUpdate(c *gin.Context) {
 		return
 	}
 
-	if update.Message.Command() != "/start" {
+	if update.Message.Command() != "start" {
 		c.JSON(http.StatusOK, gin.H{"status": "not /start command"})
 		return
 	}
