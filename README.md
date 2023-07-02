@@ -18,3 +18,5 @@ Click https://github.com/apps/stars-notifier/installations/new/ to install.
 - [x] custom HTTP request notification
 - [ ] message template config
 - [ ] detailed log
+- [ ] discord bot
+- [ ] slack bot

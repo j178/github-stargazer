@@ -33,7 +33,7 @@ func UpdateSettings(c *gin.Context) {
 	login := c.GetString("login")
 	account := c.Param("account")
 
-	if !checkAccountAssociation(c, login, account) {
+	if !checkAccountAssociation(c, account, login) {
 		return
 	}
 
