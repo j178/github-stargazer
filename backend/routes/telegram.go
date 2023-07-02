@@ -77,6 +77,20 @@ func GetTelegramConnect(c *gin.Context) {
 	c.JSON(http.StatusOK, connect)
 }
 
+func selfJoinChat(update *tgbotapi.Update) bool {
+	if update.Message == nil {
+		return false
+	}
+
+	for _, member := range update.Message.NewChatMembers {
+		if member.UserName == BotUsername {
+			return true
+		}
+	}
+
+	return false
+}
+
 func OnTelegramUpdate(c *gin.Context) {
 	update, err := Bot().HandleUpdate(c.Request)
 	if err != nil {
@@ -84,7 +98,7 @@ func OnTelegramUpdate(c *gin.Context) {
 		return
 	}
 
-	if update.Message == nil || update.Message.Text == "" {
+	if update.Message == nil || (update.Message.Text == "" && !selfJoinChat(update)) {
 		c.JSON(http.StatusOK, gin.H{"status": "not a message"})
 		return
 	}
