@@ -96,7 +96,7 @@ func OnTelegramUpdate(c *gin.Context) {
 
 	// strip command prefix
 	if update.Message.IsCommand() {
-		parts := strings.SplitN(update.Message.Text, " ", 2)
+		parts := strings.SplitN(text, " ", 2)
 		if len(parts) == 2 {
 			text = strings.TrimSpace(parts[1])
 		} else {
@@ -110,6 +110,8 @@ func OnTelegramUpdate(c *gin.Context) {
 			msg = "Hi, welcome to use GitHub Stargazer Bot. Please reply this message with your connect string."
 		}
 		reply := tgbotapi.NewMessage(chatID, msg)
+		reply.ReplyToMessageID = replyTo
+
 		_, err = Bot().Send(reply)
 		if err != nil {
 			log.Printf("send message: %v", err)
