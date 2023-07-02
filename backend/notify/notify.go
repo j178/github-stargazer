@@ -6,6 +6,8 @@ import (
 	"github.com/nikoksr/notify"
 )
 
+// 参考 github.com/nikoksr/notify, github.com/goreleaser/goreleaser 和 github.com/megaease/easeprobe
+
 type Notifier interface {
 	notify.Notifier
 	FromSettings(settings map[string]string) error
@@ -15,6 +17,7 @@ func GetNotifier(settings []map[string]string) (*notify.Notify, error) {
 	notifier := notify.New()
 	for _, setting := range settings {
 		service := setting["service"]
+		// TODO: add slack, mastodon, etc.
 		switch service {
 		case "bark":
 			bark := &barkService{}
@@ -37,8 +40,8 @@ func GetNotifier(settings []map[string]string) (*notify.Notify, error) {
 				return nil, fmt.Errorf("discord: %w", err)
 			}
 			notifier.UseServices(discord)
-		case "http":
-			http := &httpService{}
+		case "webhook":
+			http := &webhookService{}
 			err := http.FromSettings(setting)
 			if err != nil {
 				return nil, fmt.Errorf("http: %w", err)

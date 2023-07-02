@@ -17,3 +17,4 @@ Click https://github.com/apps/one-more-star/installations/new/ to install.
 - [ ] frontend config ui
 - [x] custom HTTP request notification
 - [ ] message template config
+- [ ] detailed log

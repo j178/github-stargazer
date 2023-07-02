@@ -11,12 +11,12 @@ import (
 	"text/template"
 )
 
-type httpService struct {
+type webhookService struct {
 	req  *http.Request
 	body *template.Template
 }
 
-func (s *httpService) FromSettings(settings map[string]string) error {
+func (s *webhookService) FromSettings(settings map[string]string) error {
 	urlStr := settings["url"]
 	if urlStr == "" {
 		return errors.New("http: url is empty")
@@ -73,7 +73,7 @@ func parseHeaders(headers string, h http.Header) {
 	}
 }
 
-func (s *httpService) Send(ctx context.Context, title, message string) error {
+func (s *webhookService) Send(ctx context.Context, title, message string) error {
 	req := s.req.Clone(ctx)
 
 	if s.body != nil {
