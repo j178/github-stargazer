@@ -1,6 +1,6 @@
 # 配置页面
 
-用户安装账户之后，会重定向到这个配置页面，用来配置消息的推送方式。
+用户安装 App 之后，会重定向到这个配置页面，用来配置消息的推送方式。
 
 TODO: 这里应该有一个粗糙的原型图
 
@@ -30,6 +30,33 @@ TODO: 这里应该有一个粗糙的原型图
 - DELETE /api/settings/:account 删除用户的配置信息
 - POST /api/settings/check 检查配置信息是否正确
 - POST /api/settings/test 发送测试消息
+
+最关键的就是 POST /api/settings/:account，其他接口都是辅助的。示例：
+
+```sh
+curl --location 'https://github-stargazer.vercel.app/api/settings/j178' \
+--header 'Cookie: session=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqMTc4IiwiZXhwIjoxNjg4MzA3MzQxfQ.18C6qQ3E1ogMAz11MRy_ntDJ3gB6nn7GK2EmINCf2oc' \
+--header 'Content-Type: application/json' \
+--data '{
+    "notify_settings": [
+        {
+            "service": "telegram",
+            "chat_id": "379650434"
+        },
+        {
+            "service": "discord",
+            "webhook_id": "112493303843915455",
+            "webhook_token": "2TuyPdT1Pty9BNfs5kqpamj5sH1pcJRSIhETrdZzmBLn7lQcbDrNdwFr0BigVcq47mf"
+        },
+        {
+            "service": "bark",
+            "key": "U4EbzbdojJSzyT8YDtDQrV"
+        }
+    ],
+    "allow_repos": null,
+    "mute_repos": null
+}'
+```
 
 ### Telegram Bot 关联
 
