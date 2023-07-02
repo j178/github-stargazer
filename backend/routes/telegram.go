@@ -99,6 +99,8 @@ func OnTelegramUpdate(c *gin.Context) {
 		parts := strings.SplitN(update.Message.Text, " ", 2)
 		if len(parts) == 2 {
 			text = strings.TrimSpace(parts[1])
+		} else {
+			text = ""
 		}
 	}
 
