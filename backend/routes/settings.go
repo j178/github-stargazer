@@ -20,18 +20,7 @@ func GetSettings(c *gin.Context) {
 	login := c.GetString("login")
 	account := c.Param("account")
 
-	// check account is associated with login
-	installations, err := cache.GetOrCreate[[]string](
-		c, cache.Key{"installations", login}, 24*time.Hour, func() ([]string, error) {
-			return getInstallationAccounts(c, login)
-		},
-	)
-	if err != nil {
-		Abort(c, http.StatusInternalServerError, err, "get installations")
-		return
-	}
-	if !lo.Contains(installations, account) {
-		Abort(c, http.StatusForbidden, nil, fmt.Sprintf("app not installed to %s, or you have no permission", account))
+	if !checkAccountAssociation(c, login, account) {
 		return
 	}
 
@@ -48,23 +37,12 @@ func UpdateSettings(c *gin.Context) {
 	login := c.GetString("login")
 	account := c.Param("account")
 
-	// check account is associated with login
-	installations, err := cache.GetOrCreate[[]string](
-		c, cache.Key{"installations", login}, 24*time.Hour, func() ([]string, error) {
-			return getInstallationAccounts(c, login)
-		},
-	)
-	if err != nil {
-		Abort(c, http.StatusInternalServerError, err, "get installations")
-		return
-	}
-	if !lo.Contains(installations, account) {
-		Abort(c, http.StatusForbidden, nil, fmt.Sprintf("app not installed to %s, or you have no permission", account))
+	if !checkAccountAssociation(c, login, account) {
 		return
 	}
 
 	var setting cache.Setting
-	err = c.ShouldBindJSON(&setting)
+	err := c.ShouldBindJSON(&setting)
 	if err != nil {
 		Abort(c, http.StatusBadRequest, err, "")
 		return
@@ -89,6 +67,10 @@ func UpdateSettings(c *gin.Context) {
 func DeleteSettings(c *gin.Context) {
 	login := c.GetString("login")
 	account := c.Param("account")
+
+	if !checkAccountAssociation(c, login, account) {
+		return
+	}
 
 	err := cache.DeleteSettings(c, account, login)
 	if err != nil {
@@ -135,6 +117,24 @@ func getInstallationAccounts(ctx context.Context, login string) ([]string, error
 		},
 	)
 	return accounts, nil
+}
+
+// check account is associated with login
+func checkAccountAssociation(c *gin.Context, login, account string) bool {
+	installations, err := cache.GetOrCreate[[]string](
+		c, cache.Key{"installations", login}, 24*time.Hour, func() ([]string, error) {
+			return getInstallationAccounts(c, login)
+		},
+	)
+	if err != nil {
+		Abort(c, http.StatusInternalServerError, err, "get installations")
+		return false
+	}
+	if !lo.Contains(installations, account) {
+		Abort(c, http.StatusForbidden, nil, fmt.Sprintf("app not installed to %s, or you have no permission", account))
+		return false
+	}
+	return true
 }
 
 func Installations(c *gin.Context) {
