@@ -10,6 +10,10 @@ type barkService struct {
 	*bark.Service
 }
 
+func (s *barkService) Name() string {
+	return "bark"
+}
+
 func (s *barkService) Configure(settings map[string]string) error {
 	key := settings["key"]
 	server := settings["server"]

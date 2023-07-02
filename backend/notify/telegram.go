@@ -34,6 +34,10 @@ type telegramService struct {
 	chatID int64
 }
 
+func (t *telegramService) Name() string {
+	return "telegram"
+}
+
 func (t *telegramService) Configure(settings map[string]string) error {
 	token := settings["token"]
 	chatIDStr := settings["chat_id"]

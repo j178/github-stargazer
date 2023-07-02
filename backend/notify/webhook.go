@@ -16,6 +16,10 @@ type webhookService struct {
 	body *template.Template
 }
 
+func (s *webhookService) Name() string {
+	return "webhook"
+}
+
 func (s *webhookService) Configure(settings map[string]string) error {
 	urlStr := settings["url"]
 	if urlStr == "" {

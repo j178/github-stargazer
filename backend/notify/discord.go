@@ -28,6 +28,10 @@ type discordService struct {
 
 // TODO: add discord bot support
 
+func (s *discordService) Name() string {
+	return "discord"
+}
+
 func (s *discordService) Configure(settings map[string]string) error {
 	// How to create a discord webhook: https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks
 	webhookID := settings["webhook_id"]

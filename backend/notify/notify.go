@@ -10,46 +10,34 @@ import (
 
 type Notifier interface {
 	notify.Notifier
+	Name() string
 	Configure(settings map[string]string) error
 }
 
 func GetNotifier(settings []map[string]string) (*notify.Notify, error) {
 	notifier := notify.New()
 	for _, setting := range settings {
-		service := setting["service"]
+		serviceName := setting["service"]
+		var service Notifier
 		// TODO: add slack, mastodon, etc.
-		switch service {
+		switch serviceName {
 		case "bark":
-			bark := &barkService{}
-			err := bark.Configure(setting)
-			if err != nil {
-				return nil, fmt.Errorf("bark: %w", err)
-			}
-			notifier.UseServices(bark)
+			service = &barkService{}
 		case "telegram":
-			tg := &telegramService{}
-			err := tg.Configure(setting)
-			if err != nil {
-				return nil, fmt.Errorf("telegram: %w", err)
-			}
-			notifier.UseServices(tg)
+			service = &telegramService{}
 		case "discord":
-			discord := &discordService{}
-			err := discord.Configure(setting)
-			if err != nil {
-				return nil, fmt.Errorf("discord: %w", err)
-			}
-			notifier.UseServices(discord)
+			service = &discordService{}
 		case "webhook":
-			webhook := &webhookService{}
-			err := webhook.Configure(setting)
-			if err != nil {
-				return nil, fmt.Errorf("webhook: %w", err)
-			}
-			notifier.UseServices(webhook)
+			service = &webhookService{}
 		default:
 			return nil, fmt.Errorf("unknown service: %s", service)
 		}
+
+		err := service.Configure(setting)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", service.Name(), err)
+		}
+		notifier.UseServices(service)
 	}
 
 	return notifier, nil
