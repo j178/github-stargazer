@@ -34,9 +34,8 @@ func UpdateSettings(c *gin.Context) {
 	account := c.Param("account")
 
 	// check account is associated with login
-	// TODO cache this
 	installations, err := cache.GetOrCreate[[]string](
-		c, "installations", login, 24*time.Hour, func() ([]string, error) {
+		c, cache.Key{"installations", login}, 24*time.Hour, func() ([]string, error) {
 			return getInstallationAccounts(c, login)
 		},
 	)
@@ -143,7 +142,7 @@ func Installations(c *gin.Context) {
 		accounts[i] = item.Account.GetLogin()
 	}
 
-	_ = cache.Set(c, "installations", login, accounts, 24*time.Hour)
+	_ = cache.Set(c, cache.Key{"installations", login}, accounts, 24*time.Hour)
 
 	c.JSON(http.StatusOK, result)
 }

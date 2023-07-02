@@ -34,7 +34,7 @@ func (s *Setting) IsAllowRepo(fullName string) bool {
 
 func GetSettings(ctx context.Context, account string, login string) (*Setting, error) {
 	redis := Redis()
-	cmd := redis.B().Hget().Key(keyFunc("settings", account)).Field(login).Build()
+	cmd := redis.B().Hget().Key(Key{"settings", account}.String()).Field(login).Build()
 	val, err := redis.Do(ctx, cmd).AsBytes()
 	if rueidis.IsRedisNil(err) {
 		return nil, nil
@@ -53,7 +53,7 @@ func GetSettings(ctx context.Context, account string, login string) (*Setting, e
 
 func GetAllSettings(ctx context.Context, account string) (map[string]*Setting, error) {
 	redis := Redis()
-	cmd := redis.B().Hgetall().Key(keyFunc("settings", account)).Build()
+	cmd := redis.B().Hgetall().Key(Key{"settings", account}.String()).Build()
 	val, err := redis.Do(ctx, cmd).AsMap()
 	if err != nil {
 		return nil, err
@@ -78,14 +78,14 @@ func SaveSettings(ctx context.Context, account, login string, setting Setting) e
 	if err != nil {
 		return err
 	}
-	cmd := redis.B().Hset().Key(keyFunc("settings", account)).FieldValue().FieldValue(login, string(val)).Build()
+	cmd := redis.B().Hset().Key(Key{"settings", account}.String()).FieldValue().FieldValue(login, string(val)).Build()
 	err = redis.Do(ctx, cmd).Error()
 	return err
 }
 
 func DeleteSettings(ctx context.Context, account, login string) error {
 	redis := Redis()
-	cmd := redis.B().Hdel().Key(keyFunc("settings", account)).Field(login).Build()
+	cmd := redis.B().Hdel().Key(Key{"settings", account}.String()).Field(login).Build()
 	err := redis.Do(ctx, cmd).Error()
 	return err
 }

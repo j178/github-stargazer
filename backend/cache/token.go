@@ -21,7 +21,7 @@ const (
 )
 
 func GetOAuthToken(ctx context.Context, login string) (string, error) {
-	token, err := Get[oauth2.Token](ctx, string(OAuthTokenType), login)
+	token, err := Get[oauth2.Token](ctx, Key{string(OAuthTokenType), login})
 	// 不存在，则无法凭空创建。已存在，则可以根据 refresh_token 刷新
 	if err != nil {
 		return "", err
@@ -42,7 +42,7 @@ func GetOAuthToken(ctx context.Context, login string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = Set(ctx, string(OAuthTokenType), login, newToken, FOREVER)
+	err = Set(ctx, Key{string(OAuthTokenType), login}, newToken, FOREVER)
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +50,7 @@ func GetOAuthToken(ctx context.Context, login string) (string, error) {
 }
 
 func SaveOAuthToken(ctx context.Context, login string, token *oauth2.Token) error {
-	return Set(ctx, string(OAuthTokenType), login, token, FOREVER)
+	return Set(ctx, Key{string(OAuthTokenType), login}, token, FOREVER)
 }
 
 type InstallationToken struct {
@@ -61,7 +61,7 @@ type InstallationToken struct {
 
 func GetInstallationToken(ctx context.Context, installationID int64) (string, error) {
 	installationIDStr := strconv.FormatInt(installationID, 10)
-	token, err := Get[InstallationToken](ctx, string(InstallationTokenType), installationIDStr)
+	token, err := Get[InstallationToken](ctx, Key{string(InstallationTokenType), installationIDStr})
 	valid := true
 	// 不存在，也可以凭空创建
 	if err == ErrCacheMiss {
@@ -88,7 +88,7 @@ func GetInstallationToken(ctx context.Context, installationID int64) (string, er
 	// The installation access token will expire after 1 hour.
 	token.ExpiresAt = time.Now().Add(1 * time.Hour).Unix()
 
-	err = Set(ctx, string(InstallationTokenType), installationIDStr, token, FOREVER)
+	err = Set(ctx, Key{string(InstallationTokenType), installationIDStr}, token, FOREVER)
 	if err != nil {
 		return "", err
 	}

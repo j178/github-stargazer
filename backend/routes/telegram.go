@@ -58,7 +58,7 @@ func GenerateTelegramConnectToken(c *gin.Context) {
 func GetTelegramConnect(c *gin.Context) {
 	login := c.GetString("login")
 
-	connect, err := cache.Get[map[string]any](c, "telegram_connect", login)
+	connect, err := cache.Get[map[string]any](c, cache.Key{"telegram_connect", login})
 	if err == cache.ErrCacheMiss {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
@@ -125,7 +125,7 @@ func OnTelegramUpdate(c *gin.Context) {
 		"chatID":            chatID,
 		"telegram_username": tgUsername,
 	}
-	err = cache.Set(c, "telegram_connect", account, connect, 10*time.Minute)
+	err = cache.Set(c, cache.Key{"telegram_connect", account}, connect, 10*time.Minute)
 	if err != nil {
 		Abort(c, http.StatusInternalServerError, err, "set cache")
 

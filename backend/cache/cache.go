@@ -8,12 +8,12 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
-	"github.com/redis/rueidis"
-
 	"github.com/j178/github_stargazer/backend/config"
+	"github.com/redis/rueidis"
 )
 
 const (
@@ -110,8 +110,13 @@ func getRedis() (rueidis.Client, error) {
 	return r, err
 }
 
-func keyFunc(name string, id string) string {
-	return fmt.Sprintf("%s:%s:%s", RedisKeyPrefix, name, id)
+type Key []string
+
+func (k Key) String() string {
+	if len(k) < 2 {
+		panic("key must be at least 2 parts")
+	}
+	return fmt.Sprintf("%s:%s", RedisKeyPrefix, strings.Join(k, ":"))
 }
 
 var defaultCache CacheStore
@@ -145,28 +150,28 @@ func Redis() rueidis.Client {
 	return redis
 }
 
-func Get[T any](ctx context.Context, name, key string) (T, error) {
+func Get[T any](ctx context.Context, key Key) (T, error) {
 	var z T
-	err := Default().Get(ctx, keyFunc(name, key), &z)
+	err := Default().Get(ctx, key.String(), &z)
 	return z, err
 }
 
-func Set[T any](ctx context.Context, name, key string, value T, expire time.Duration) error {
-	return Default().Set(ctx, keyFunc(name, key), value, expire)
+func Set[T any](ctx context.Context, key Key, value T, expire time.Duration) error {
+	return Default().Set(ctx, key.String(), value, expire)
 }
 
-func Delete(ctx context.Context, name, key string) error {
-	return Default().Delete(ctx, keyFunc(name, key))
+func Delete(ctx context.Context, key Key) error {
+	return Default().Delete(ctx, key.String())
 }
 
 func GetOrCreate[T any](
 	ctx context.Context,
-	name, key string,
+	key Key,
 	expire time.Duration,
 	create func() (T, error),
 ) (T, error) {
 	var z T
-	value, err := Get[T](ctx, name, key)
+	value, err := Get[T](ctx, key)
 	if err == nil {
 		return value, nil
 	}
@@ -179,7 +184,7 @@ func GetOrCreate[T any](
 		return z, err
 	}
 
-	err = Set(ctx, name, key, v, expire)
+	err = Set(ctx, key, v, expire)
 
 	return v, err
 }
