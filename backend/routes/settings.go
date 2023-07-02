@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
@@ -34,16 +35,16 @@ func UpdateSettings(c *gin.Context) {
 
 	// check account is associated with login
 	// TODO cache this
-	installations, err := getInstallations(c, login)
+	installations, err := cache.GetOrCreate[[]string](
+		c, "installations", login, 24*time.Hour, func() ([]string, error) {
+			return getInstallationAccounts(c, login)
+		},
+	)
 	if err != nil {
 		Abort(c, http.StatusInternalServerError, err, "get installations")
 		return
 	}
-	if !lo.ContainsBy(
-		installations, func(item *github.Installation) bool {
-			return item.GetAccount().GetLogin() == account
-		},
-	) {
+	if !lo.Contains(installations, account) {
 		Abort(c, http.StatusForbidden, nil, fmt.Sprintf("app not installed to %s, or you have no permission", account))
 		return
 	}
@@ -109,6 +110,19 @@ func getInstallations(ctx context.Context, login string) ([]*github.Installation
 	return installations, nil
 }
 
+func getInstallationAccounts(ctx context.Context, login string) ([]string, error) {
+	l, err := getInstallations(ctx, login)
+	if err != nil {
+		return nil, err
+	}
+	accounts := lo.Map(
+		l, func(item *github.Installation, _ int) string {
+			return item.Account.GetLogin()
+		},
+	)
+	return accounts, nil
+}
+
 func Installations(c *gin.Context) {
 	login := c.GetString("login")
 
@@ -118,15 +132,18 @@ func Installations(c *gin.Context) {
 		return
 	}
 
-	result := lo.Map(
-		installations, func(item *github.Installation, index int) map[string]any {
-			return map[string]any{
-				"id":           item.GetID(),
-				"account":      item.GetAccount().GetLogin(),
-				"account_type": item.GetAccount().GetType(),
-			}
-		},
-	)
+	result := make([]map[string]any, len(installations))
+	accounts := make([]string, len(installations))
+	for i, item := range installations {
+		result[i] = map[string]any{
+			"id":           item.GetID(),
+			"account":      item.Account.GetLogin(),
+			"account_type": item.Account.GetType(),
+		}
+		accounts[i] = item.Account.GetLogin()
+	}
+
+	_ = cache.Set(c, "installations", login, accounts, 24*time.Hour)
 
 	c.JSON(http.StatusOK, result)
 }

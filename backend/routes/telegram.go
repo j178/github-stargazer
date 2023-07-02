@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/j178/github_stargazer/backend/cache"
 	"github.com/j178/github_stargazer/backend/config"
 )
@@ -62,8 +63,7 @@ func GenerateTelegramConnectToken(c *gin.Context) {
 func GetTelegramConnect(c *gin.Context) {
 	login := c.GetString("login")
 
-	var connect map[string]any
-	err := cache.Get(c, "telegram_connect", login, &connect)
+	connect, err := cache.Get[map[string]any](c, "telegram_connect", login)
 	if err == cache.ErrCacheMiss {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return

@@ -21,8 +21,7 @@ const (
 )
 
 func GetOAuthToken(ctx context.Context, login string) (string, error) {
-	var token oauth2.Token
-	err := Get(ctx, string(OAuthTokenType), login, &token)
+	token, err := Get[oauth2.Token](ctx, string(OAuthTokenType), login)
 	// 不存在，则无法凭空创建。已存在，则可以根据 refresh_token 刷新
 	if err != nil {
 		return "", err
@@ -61,9 +60,8 @@ type InstallationToken struct {
 }
 
 func GetInstallationToken(ctx context.Context, installationID int64) (string, error) {
-	var token InstallationToken
 	installationIDStr := strconv.FormatInt(installationID, 10)
-	err := Get(ctx, string(InstallationTokenType), installationIDStr, &token)
+	token, err := Get[InstallationToken](ctx, string(InstallationTokenType), installationIDStr)
 	valid := true
 	// 不存在，也可以凭空创建
 	if err == ErrCacheMiss {

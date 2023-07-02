@@ -145,14 +145,41 @@ func Redis() rueidis.Client {
 	return redis
 }
 
-func Get(ctx context.Context, name, key string, value interface{}) error {
-	return Default().Get(ctx, keyFunc(name, key), value)
+func Get[T any](ctx context.Context, name, key string) (T, error) {
+	var z T
+	err := Default().Get(ctx, keyFunc(name, key), &z)
+	return z, err
 }
 
-func Set(ctx context.Context, name, key string, value interface{}, expire time.Duration) error {
+func Set[T any](ctx context.Context, name, key string, value T, expire time.Duration) error {
 	return Default().Set(ctx, keyFunc(name, key), value, expire)
 }
 
 func Delete(ctx context.Context, name, key string) error {
 	return Default().Delete(ctx, keyFunc(name, key))
+}
+
+func GetOrCreate[T any](
+	ctx context.Context,
+	name, key string,
+	expire time.Duration,
+	create func() (T, error),
+) (T, error) {
+	var z T
+	value, err := Get[T](ctx, name, key)
+	if err == nil {
+		return value, nil
+	}
+	if err != ErrCacheMiss {
+		return z, err
+	}
+
+	v, err := create()
+	if err != nil {
+		return z, err
+	}
+
+	err = Set(ctx, name, key, v, expire)
+
+	return v, err
 }
