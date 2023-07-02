@@ -77,7 +77,7 @@ func Authorized(c *gin.Context) {
 	jwtToken := jwt.NewWithClaims(
 		jwt.SigningMethodHS256, jwt.RegisteredClaims{
 			Subject:   user.GetLogin(),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(6 * 30 * 24 * time.Hour)),
 		},
 	)
 	session, err := jwtToken.SignedString(config.SecretKey)
