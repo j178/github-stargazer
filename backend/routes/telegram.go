@@ -84,7 +84,7 @@ func OnTelegramUpdate(c *gin.Context) {
 		return
 	}
 
-	if update.Message == nil {
+	if update.Message == nil || update.Message.Text == "" {
 		c.JSON(http.StatusOK, gin.H{"status": "not a message"})
 		return
 	}
