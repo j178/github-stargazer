@@ -22,6 +22,10 @@ func env(key string) string {
 	return ""
 }
 
+const (
+	TelegramBotUsername = "gh_stargazer_bot"
+)
+
 var (
 	AppID            int64
 	AppPrivateKey    []byte

@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/go-github/v53/github"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 	oauthGitHub "golang.org/x/oauth2/github"
 
@@ -18,18 +17,6 @@ import (
 // 开启 "Request user authorization (OAuth) during installation" 之后，安装的过程同时也是授权的过程
 // 用户授权之后，GitHub 会带 code 将用户重定向到这里
 // 这里设置 cookie session 后重定向回到之前的页面
-
-func Abort(c *gin.Context, code int, err error, msg string) {
-	if code == 0 {
-		code = http.StatusInternalServerError
-	}
-	if err == nil {
-		err = errors.New(msg)
-	} else {
-		err = errors.WithMessage(err, msg)
-	}
-	c.AbortWithStatusJSON(code, gin.H{"error": err.Error()})
-}
 
 func Authorized(c *gin.Context) {
 	code := c.Query("code")
@@ -42,7 +29,7 @@ func Authorized(c *gin.Context) {
 	// Install & Authorize redirects do not include `state`
 	if state != "" {
 		var err error
-		returnUrl, err = decodeState(state, config.SecretKey)
+		returnUrl, err = DecodeState(state, config.SecretKey)
 		if err != nil {
 			Abort(c, http.StatusBadRequest, err, "decode state")
 			return

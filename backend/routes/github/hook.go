@@ -1,4 +1,4 @@
-package routes
+package github
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
+	"github.com/j178/github_stargazer/backend/routes"
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/j178/github_stargazer/backend/cache"
@@ -45,14 +46,14 @@ func compose(evt *github.StarEvent) (string, string) {
 func OnEvent(c *gin.Context) {
 	payload, err := github.ValidatePayload(c.Request, config.WebhookSecret)
 	if err != nil {
-		Abort(c, http.StatusBadRequest, err, "validate payload")
+		routes.Abort(c, http.StatusBadRequest, err, "validate payload")
 		return
 	}
 
 	webhookType := github.WebHookType(c.Request)
 	event, err := github.ParseWebHook(webhookType, payload)
 	if err != nil {
-		Abort(c, http.StatusBadRequest, err, "parse webhook")
+		routes.Abort(c, http.StatusBadRequest, err, "parse webhook")
 		return
 	}
 
@@ -61,7 +62,7 @@ func OnEvent(c *gin.Context) {
 		evt, _ := event.(*github.StarEvent)
 		settings, err := cache.GetAllSettings(c, evt.Repo.Owner.GetLogin())
 		if err != nil {
-			Abort(c, http.StatusInternalServerError, err, "get all settings")
+			routes.Abort(c, http.StatusInternalServerError, err, "get all settings")
 			return
 		}
 		if len(settings) == 0 {
@@ -83,14 +84,13 @@ func OnEvent(c *gin.Context) {
 		}
 		err = wg.Wait()
 		if err != nil {
-			Abort(c, http.StatusInternalServerError, err, "notify")
+			routes.Abort(c, http.StatusInternalServerError, err, "notify")
 			return
 		}
 
 	default:
 		c.String(http.StatusOK, "Not interested event")
 	}
-	return
 }
 
 func sendNotify(ctx context.Context, evt *github.StarEvent, setting *cache.Setting) error {

@@ -1,4 +1,4 @@
-package routes
+package configure
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
+	"github.com/j178/github_stargazer/backend/routes"
 	"github.com/samber/lo"
 
 	"github.com/j178/github_stargazer/backend/notify"
@@ -22,7 +23,7 @@ func GetSettings(c *gin.Context) {
 
 	settings, err := cache.GetSettings(c, account, login)
 	if err != nil {
-		Abort(c, http.StatusNotFound, err, "")
+		routes.Abort(c, http.StatusNotFound, err, "")
 		return
 	}
 
@@ -40,20 +41,20 @@ func UpdateSettings(c *gin.Context) {
 	var setting cache.Setting
 	err := c.ShouldBindJSON(&setting)
 	if err != nil {
-		Abort(c, http.StatusBadRequest, err, "")
+		routes.Abort(c, http.StatusBadRequest, err, "")
 		return
 	}
 
 	// check notify settings (check token is valid too)
 	_, err = notify.GetNotifier(setting.NotifySettings)
 	if err != nil {
-		Abort(c, http.StatusBadRequest, err, "invalid notify settings")
+		routes.Abort(c, http.StatusBadRequest, err, "invalid notify settings")
 		return
 	}
 
 	err = cache.SaveSettings(c, account, login, setting)
 	if err != nil {
-		Abort(c, http.StatusInternalServerError, err, "save settings")
+		routes.Abort(c, http.StatusInternalServerError, err, "save settings")
 		return
 	}
 
@@ -66,7 +67,7 @@ func DeleteSettings(c *gin.Context) {
 
 	err := cache.DeleteSettings(c, account, login)
 	if err != nil {
-		Abort(c, http.StatusInternalServerError, err, "delete settings")
+		routes.Abort(c, http.StatusInternalServerError, err, "delete settings")
 		return
 	}
 
@@ -119,11 +120,16 @@ func checkAccountAssociation(c *gin.Context, account, login string) bool {
 		},
 	)
 	if err != nil {
-		Abort(c, http.StatusInternalServerError, err, "get installations")
+		routes.Abort(c, http.StatusInternalServerError, err, "get installations")
 		return false
 	}
 	if !lo.Contains(installations, account) {
-		Abort(c, http.StatusForbidden, nil, fmt.Sprintf("app not installed to %s, or you have no permission", account))
+		routes.Abort(
+			c,
+			http.StatusForbidden,
+			nil,
+			fmt.Sprintf("app not installed to %s, or you have no permission", account),
+		)
 		return false
 	}
 	return true
@@ -134,7 +140,7 @@ func Installations(c *gin.Context) {
 
 	installations, err := getInstallations(c, login)
 	if err != nil {
-		Abort(c, http.StatusInternalServerError, err, "get installations")
+		routes.Abort(c, http.StatusInternalServerError, err, "get installations")
 		return
 	}
 
@@ -158,18 +164,22 @@ func InstalledRepos(c *gin.Context) {
 	installationIDStr := c.Param("installation_id")
 	installationID, err := strconv.ParseInt(installationIDStr, 10, 64)
 	if err != nil {
-		Abort(c, http.StatusBadRequest, nil, "invalid installationID")
+		routes.Abort(c, http.StatusBadRequest, nil, "invalid installationID")
 		return
 	}
 
 	token, err := cache.GetInstallationToken(c, installationID)
+	if err != nil {
+		routes.Abort(c, http.StatusInternalServerError, err, "get token")
+	}
+
 	var repoNames []string
 	client := github.NewTokenClient(c, token)
 	opts := &github.ListOptions{PerPage: 100}
 	for {
 		repos, resp, err := client.Apps.ListRepos(c, opts)
 		if err != nil {
-			Abort(c, http.StatusInternalServerError, err, "list repos")
+			routes.Abort(c, http.StatusInternalServerError, err, "list repos")
 			return
 		}
 		for _, repo := range repos.Repositories {
@@ -188,13 +198,13 @@ func CheckSettings(c *gin.Context) {
 	var setting cache.Setting
 	err := c.ShouldBindJSON(&setting)
 	if err != nil {
-		Abort(c, http.StatusBadRequest, err, "")
+		routes.Abort(c, http.StatusBadRequest, err, "")
 		return
 	}
 
 	_, err = notify.GetNotifier(setting.NotifySettings)
 	if err != nil {
-		Abort(c, http.StatusBadRequest, err, "invalid notify settings")
+		routes.Abort(c, http.StatusBadRequest, err, "invalid notify settings")
 		return
 	}
 
@@ -205,19 +215,19 @@ func TestNotify(c *gin.Context) {
 	var setting cache.Setting
 	err := c.ShouldBindJSON(&setting)
 	if err != nil {
-		Abort(c, http.StatusBadRequest, err, "")
+		routes.Abort(c, http.StatusBadRequest, err, "")
 		return
 	}
 
 	notifier, err := notify.GetNotifier(setting.NotifySettings)
 	if err != nil {
-		Abort(c, http.StatusBadRequest, err, "invalid notify settings")
+		routes.Abort(c, http.StatusBadRequest, err, "invalid notify settings")
 		return
 	}
 
 	err = notifier.Send(c, "test", "this is a test message")
 	if err != nil {
-		Abort(c, http.StatusInternalServerError, err, "send test notify")
+		routes.Abort(c, http.StatusInternalServerError, err, "send test notify")
 		return
 	}
 

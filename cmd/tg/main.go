@@ -26,7 +26,7 @@ func main() {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 			msg.ReplyToMessageID = update.Message.MessageID
 
-			bot.Send(msg)
+			_, _ = bot.Send(msg)
 		}
 	}
 }

@@ -5,6 +5,9 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/j178/github_stargazer/backend/routes/configure"
+	"github.com/j178/github_stargazer/backend/routes/github"
+	"github.com/j178/github_stargazer/backend/routes/telegram"
 
 	"github.com/j178/github_stargazer/backend/config"
 	"github.com/j178/github_stargazer/backend/middleware"
@@ -21,30 +24,34 @@ func initRouter() *gin.Engine {
 		},
 	)
 
-	// from GitHub
+	// Auth
 	{
+		// redirected from GitHub
 		r.GET("/api/authorized", routes.Authorized)
-		r.POST("/api/hook", routes.OnEvent)
+		// redirect to GitHub
+		r.GET("/api/authorize", routes.Authorize)
 	}
-	// from ourselves, may need JWT token
-	r.GET("/api/authorize", routes.Authorize)
+	{
+		// GitHub webhook
+		r.POST("/api/hook", github.OnEvent)
+	}
+	// Configure UI API
 	{
 		checkJWT := middleware.CheckJWT(config.SecretKey)
 		admin := r.Group("", checkJWT)
-		admin.GET("/api/installations", routes.Installations)
-		admin.GET("/api/settings/:account", routes.GetSettings)
-		admin.POST("/api/settings/:account", routes.UpdateSettings)
-		admin.DELETE("/api/settings/:account", routes.DeleteSettings)
-		admin.POST("/api/settings/check", routes.CheckSettings)
-		admin.POST("/api/settings/test", routes.TestNotify)
-		admin.GET("/api/repos/:installationID", routes.InstalledRepos)
-		admin.POST("/api/connect/telegram", routes.GenerateTelegramConnectToken)
-		admin.GET("/api/connect/telegram", routes.GetTelegramConnect)
+		admin.GET("/api/installations", configure.Installations)
+		admin.GET("/api/settings/:account", configure.GetSettings)
+		admin.POST("/api/settings/:account", configure.UpdateSettings)
+		admin.DELETE("/api/settings/:account", configure.DeleteSettings)
+		admin.POST("/api/settings/check", configure.CheckSettings)
+		admin.POST("/api/settings/test", configure.TestNotify)
+		admin.GET("/api/repos/:installationID", configure.InstalledRepos)
+		admin.POST("/api/connect/:platform", configure.GenerateConnectToken)
+		admin.GET("/api/connect/:platform/:token", configure.GetConnectResult)
 	}
-
-	// from Telegram
+	// Telegram webhook
 	{
-		r.POST("/api/telegram", routes.OnTelegramUpdate)
+		r.POST("/api/telegram", telegram.OnUpdate)
 	}
 
 	return r

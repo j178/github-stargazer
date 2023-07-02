@@ -98,6 +98,9 @@ func GetInstallationToken(ctx context.Context, installationID int64) (string, er
 
 func createInstallationToken(ctx context.Context, installationID int64) (string, error) {
 	tr, err := ghinstallation.New(http.DefaultTransport, config.AppID, installationID, config.AppPrivateKey)
+	if err != nil {
+		return "", err
+	}
 	token, err := tr.Token(ctx)
 	if err != nil {
 		return "", err
