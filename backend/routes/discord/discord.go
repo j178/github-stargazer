@@ -2,6 +2,7 @@ package discord
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/bwmarrin/discordgo"
@@ -27,6 +28,8 @@ func OnInteraction(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"status": "invalid interaction"})
 		return
 	}
+
+	log.Printf("discord interaction: %+v", interaction)
 
 	switch interaction.Type {
 	case discordgo.InteractionPing:

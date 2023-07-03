@@ -40,6 +40,8 @@ func OnUpdate(c *gin.Context) {
 		return
 	}
 
+	log.Printf("update: %+v", update)
+
 	if update.Message.Command() != "start" {
 		c.JSON(http.StatusOK, gin.H{"status": "not /start command"})
 		return
