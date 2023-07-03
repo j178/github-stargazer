@@ -23,19 +23,20 @@ func env(key string) string {
 }
 
 const (
-	TelegramBotUsername = "gh_stargazer_bot"
+	defaultTelegramBotUsername = "gh_stargazer_bot"
 )
 
 var (
-	AppID            int64
-	AppPrivateKey    []byte
-	ClientID         string
-	ClientSecret     string
-	WebhookSecret    []byte
-	KvURL            string
-	SecretKey        []byte
-	TelegramBotToken string
-	BaseURL          string
+	AppID               int64
+	AppPrivateKey       []byte
+	ClientID            string
+	ClientSecret        string
+	WebhookSecret       []byte
+	KvURL               string
+	SecretKey           []byte
+	TelegramBotToken    string
+	BaseURL             string
+	TelegramBotUsername string
 )
 
 func loadEnv() {
@@ -54,6 +55,7 @@ func loadEnv() {
 	SecretKey = []byte(env("SECRET_KEY"))
 	TelegramBotToken = env("TELEGRAM_BOT_TOKEN")
 	BaseURL = env("BASE_URL")
+	TelegramBotUsername = envOrDefault("TELEGRAM_BOT_USERNAME", defaultTelegramBotUsername)
 }
 
 var once sync.Once

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+
 	"github.com/j178/github_stargazer/backend/routes"
 	"github.com/j178/github_stargazer/backend/routes/configure"
 
@@ -59,6 +60,7 @@ func OnUpdate(c *gin.Context) {
 		}
 		reply := tgbotapi.NewMessage(chatID, msg)
 		reply.ReplyToMessageID = replyTo
+		reply.ParseMode = "MarkdownV2"
 
 		_, err = Bot().Send(reply)
 		if err != nil {
