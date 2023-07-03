@@ -24,8 +24,6 @@ func DefaultDiscordBot() *discordgo.Session {
 			if err != nil {
 				log.Fatal("init discord bot: %w", err)
 			}
-			// TODO 怎么设置
-			defaultDiscordBot.Identify.Intents = discordgo.IntentGuildMessageTyping
 		},
 	)
 	return defaultDiscordBot

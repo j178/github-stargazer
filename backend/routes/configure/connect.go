@@ -63,7 +63,10 @@ func GenerateConnectToken(c *gin.Context) {
 		resp["bot_url"] = fmt.Sprintf("https://t.me/%s?start=%s", config.TelegramBotUsername, token)
 		resp["bot_group_url"] = fmt.Sprintf("https://t.me/%s?startgroup=%s", config.TelegramBotUsername, token)
 	case "discord":
-		// TODO
+		resp["bot_url"] = fmt.Sprintf(
+			"https://discord.com/api/oauth2/authorize?client_id=%s&permissions=2048&scope=bot%%20applications.commands",
+			config.DiscordAppID,
+		)
 	case "slack":
 		// TODO
 	}
