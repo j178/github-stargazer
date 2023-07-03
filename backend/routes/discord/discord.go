@@ -40,11 +40,13 @@ func OnInteraction(c *gin.Context) {
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{},
 		}
-		// TODO: how to reply in channel?
 		data := interaction.ApplicationCommandData()
-		token := data.Options[0].StringValue()
+		token := ""
+		if len(data.Options) > 0 {
+			token = data.Options[0].StringValue()
+		}
 		if token == "" {
-			reply.Data.Content = "Send `/start <connect token>` to connect your GitHub account"
+			reply.Data.Content = "Use `/connect` command to connect your GitHub account"
 			c.JSON(http.StatusOK, reply)
 			return
 		}
