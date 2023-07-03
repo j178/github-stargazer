@@ -1,15 +1,40 @@
 package notify
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"log"
+	"strconv"
+	"sync"
 
-	"github.com/nikoksr/notify/service/discord"
-
+	"github.com/bwmarrin/discordgo"
 	"github.com/j178/github_stargazer/backend/config"
+	"github.com/j178/github_stargazer/backend/utils"
 )
 
+var defaultDiscordBotOnce sync.Once
+var defaultDiscordBot *discordgo.Session
+
+func DefaultDiscordBot() *discordgo.Session {
+	defaultDiscordBotOnce.Do(
+		func() {
+			var err error
+			defaultDiscordBot, err = discordgo.New("Bot " + config.DiscordBotToken)
+			if err != nil {
+				log.Fatal("init discord bot: %w", err)
+			}
+		},
+	)
+	return defaultDiscordBot
+}
+
 type discordBotService struct {
-	*discord.Discord
+	bot       *discordgo.Session
+	channelID string
+	username  string
+	avatarURL string
+	color     int64
 }
 
 func (d *discordBotService) Name() string {
@@ -22,17 +47,45 @@ func (d *discordBotService) Configure(settings map[string]string) error {
 	if channelID == "" {
 		return errors.New("token or channel_id is empty")
 	}
-	if token == "" || token == "default" {
-		token = config.DiscordBotToken
-	}
 
-	disc := discord.New()
-	err := disc.AuthenticateWithBotToken(token)
+	d.username = utils.Or(settings["username"], defaultUsername)
+	d.avatarURL = utils.Or(settings["avatar_url"], defaultAvatar)
+	color := utils.Or(settings["color"], defaultColor)
+	var err error
+	d.color, err = strconv.ParseInt(color, 16, 32)
 	if err != nil {
-		return err
+		return fmt.Errorf("invalid color")
 	}
-	disc.AddReceivers(channelID)
-	d.Discord = disc
 
+	var bot *discordgo.Session
+	if token == "" || token == "default" {
+		bot = DefaultDiscordBot()
+	} else {
+		var err error
+		bot, err = discordgo.New("Bot " + token)
+		if err != nil {
+			return err
+		}
+	}
+	d.bot = bot
+
+	return nil
+}
+
+func (d *discordBotService) Send(ctx context.Context, title, message string) error {
+	embed := &discordgo.MessageEmbed{
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:    d.username,
+			IconURL: d.avatarURL,
+			URL:     authorUrl,
+		},
+		Color:       int(d.color),
+		Title:       title,
+		Description: message,
+	}
+	_, err := d.bot.ChannelMessageSendEmbed(d.channelID, embed)
+	if err != nil {
+		return fmt.Errorf("discord bot send message: %w", err)
+	}
 	return nil
 }

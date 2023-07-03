@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crypto/ed25519"
 	"log"
 	"os"
 	"strconv"
@@ -37,6 +38,8 @@ var (
 	SecretKey           []byte
 	TelegramBotToken    string
 	TelegramBotUsername string
+	DiscordAppID        string
+	DiscordPublicKey    ed25519.PublicKey
 	DiscordBotToken     string
 )
 
@@ -57,6 +60,8 @@ func loadEnv() {
 	SecretKey = []byte(env("SECRET_KEY"))
 	TelegramBotToken = env("TELEGRAM_BOT_TOKEN")
 	TelegramBotUsername = envOrDefault("TELEGRAM_BOT_USERNAME", defaultTelegramBotUsername)
+	DiscordAppID = env("DISCORD_APP_ID")
+	DiscordPublicKey = ed25519.PublicKey(env("DISCORD_PUBLIC_KEY"))
 	DiscordBotToken = env("DISCORD_BOT_TOKEN")
 }
 

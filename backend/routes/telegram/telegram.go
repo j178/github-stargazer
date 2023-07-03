@@ -18,7 +18,7 @@ import (
 
 func setupWebhook() {
 	bot := notify.DefaultTelegramBot()
-	webhook, _ := tgbotapi.NewWebhook(config.BaseURL + "/api/telegram")
+	webhook, _ := tgbotapi.NewWebhook(config.BaseURL + "/api/webhook/telegram")
 
 	_, err := bot.Request(webhook)
 	if err != nil {

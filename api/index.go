@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/j178/github_stargazer/backend/routes/configure"
+	"github.com/j178/github_stargazer/backend/routes/discord"
 	"github.com/j178/github_stargazer/backend/routes/github"
 	"github.com/j178/github_stargazer/backend/routes/telegram"
 
@@ -33,7 +34,7 @@ func initRouter() *gin.Engine {
 	}
 	{
 		// GitHub webhook
-		r.POST("/api/hook", github.OnEvent)
+		r.POST("/api/webhook/github", github.OnEvent)
 	}
 	// Configure UI API
 	{
@@ -51,7 +52,11 @@ func initRouter() *gin.Engine {
 	}
 	// Telegram webhook
 	{
-		r.POST("/api/telegram", telegram.OnUpdate)
+		r.POST("/api/webhook/telegram", telegram.OnUpdate)
+	}
+	// Discord interactions endpoint
+	{
+		r.POST("/api/webhook/discord", discord.OnInteraction)
 	}
 
 	return r
