@@ -24,6 +24,8 @@ func DefaultDiscordBot() *discordgo.Session {
 			if err != nil {
 				log.Fatal("init discord bot: %w", err)
 			}
+			// TODO 怎么设置
+			defaultDiscordBot.Identify.Intents = discordgo.IntentGuildMessageTyping
 		},
 	)
 	return defaultDiscordBot
@@ -48,6 +50,7 @@ func (d *discordBotService) Configure(settings map[string]string) error {
 		return errors.New("token or channel_id is empty")
 	}
 
+	d.channelID = channelID
 	d.username = utils.Or(settings["username"], defaultUsername)
 	d.avatarURL = utils.Or(settings["avatar_url"], defaultAvatar)
 	color := utils.Or(settings["color"], defaultColor)
@@ -61,7 +64,6 @@ func (d *discordBotService) Configure(settings map[string]string) error {
 	if token == "" || token == "default" {
 		bot = DefaultDiscordBot()
 	} else {
-		var err error
 		bot, err = discordgo.New("Bot " + token)
 		if err != nil {
 			return err
@@ -83,7 +85,7 @@ func (d *discordBotService) Send(ctx context.Context, title, message string) err
 		Title:       title,
 		Description: message,
 	}
-	_, err := d.bot.ChannelMessageSendEmbed(d.channelID, embed)
+	_, err := d.bot.ChannelMessageSendEmbed(d.channelID, embed, discordgo.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("discord bot send message: %w", err)
 	}

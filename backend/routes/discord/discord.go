@@ -52,7 +52,7 @@ func OnInteraction(c *gin.Context) {
 		}
 		err := configure.SetConnectResult(c, token, "discord", connect)
 		if err != nil {
-			reply.Data.Content = fmt.Sprintf("Invalid connect token: %q", err)
+			reply.Data.Content = fmt.Sprintf("Invalid connect token: %q", token)
 			c.JSON(http.StatusOK, reply)
 			return
 		}
