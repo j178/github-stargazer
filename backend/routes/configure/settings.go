@@ -17,6 +17,8 @@ import (
 	"github.com/j178/github_stargazer/backend/cache"
 )
 
+const MaxSettingsCount = 10
+
 func GetSettings(c *gin.Context) {
 	login := c.GetString("login")
 	account := c.Param("account")
@@ -42,6 +44,11 @@ func UpdateSettings(c *gin.Context) {
 	err := c.ShouldBindJSON(&setting)
 	if err != nil {
 		routes.Abort(c, http.StatusBadRequest, err, "")
+		return
+	}
+
+	if len(setting.NotifySettings) > MaxSettingsCount {
+		routes.Abort(c, http.StatusBadRequest, nil, fmt.Sprintf("max settings count is %d", MaxSettingsCount))
 		return
 	}
 
@@ -202,6 +209,11 @@ func CheckSettings(c *gin.Context) {
 		return
 	}
 
+	if len(setting.NotifySettings) > MaxSettingsCount {
+		routes.Abort(c, http.StatusBadRequest, nil, fmt.Sprintf("max settings count is %d", MaxSettingsCount))
+		return
+	}
+
 	_, err = notify.GetNotifier(setting.NotifySettings)
 	if err != nil {
 		routes.Abort(c, http.StatusBadRequest, err, "invalid notify settings")
@@ -216,6 +228,11 @@ func TestNotify(c *gin.Context) {
 	err := c.ShouldBindJSON(&setting)
 	if err != nil {
 		routes.Abort(c, http.StatusBadRequest, err, "")
+		return
+	}
+
+	if len(setting.NotifySettings) > MaxSettingsCount {
+		routes.Abort(c, http.StatusBadRequest, nil, fmt.Sprintf("max settings count is %d", MaxSettingsCount))
 		return
 	}
 
