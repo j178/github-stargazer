@@ -12,8 +12,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/j178/github_stargazer/backend/config"
 	"github.com/redis/rueidis"
+
+	"github.com/j178/github_stargazer/backend/config"
 )
 
 const (
@@ -41,6 +42,8 @@ type CacheStore interface {
 
 	// Delete removes an item from the Default. Does nothing if the key is not in the Default.
 	Delete(ctx context.Context, key string) error
+
+	Incr(ctx context.Context, key string, value *int64, expires time.Duration) error
 }
 
 type redisCache struct {
@@ -83,6 +86,32 @@ func (c *redisCache) Delete(ctx context.Context, key string) error {
 	cmd := c.redis.B().Del().Key(key).Build()
 	err := c.redis.Do(ctx, cmd).Error()
 	return err
+}
+
+func (c *redisCache) Incr(ctx context.Context, key string, value *int64, expires time.Duration) error {
+	if expires == DEFAULT {
+		expires = c.defaultExpiration
+	}
+
+	var err error
+	if expires > 0 {
+		cmds := []rueidis.Completed{
+			c.redis.B().Incr().Key(key).Build(),
+			c.redis.B().Expire().Key(key).Seconds(int64(expires / time.Second)).Build(),
+		}
+		vals := c.redis.DoMulti(ctx, cmds...)
+		for _, v := range vals {
+			if v.Error() != nil {
+				return v.Error()
+			}
+		}
+		*value, err = vals[0].AsInt64()
+		return err
+	} else {
+		cmd := c.redis.B().Incr().Key(key).Build()
+		*value, err = c.redis.Do(ctx, cmd).AsInt64()
+		return err
+	}
 }
 
 func getRedis() (rueidis.Client, error) {
@@ -165,17 +194,9 @@ func Delete(ctx context.Context, key Key) error {
 }
 
 func Incr(ctx context.Context, key Key, expire time.Duration) (int64, error) {
-	cmds := []rueidis.Completed{
-		Redis().B().Incr().Key(key.String()).Build(),
-		Redis().B().Expire().Key(key.String()).Seconds(int64(expire / time.Second)).Build(),
-	}
-	vals := Redis().DoMulti(ctx, cmds...)
-	for _, v := range vals {
-		if v.Error() != nil {
-			return 0, v.Error()
-		}
-	}
-	return vals[0].AsInt64()
+	var z int64
+	err := Default().Incr(ctx, key.String(), &z, expire)
+	return z, err
 }
 
 func GetOrCreate[T any](
