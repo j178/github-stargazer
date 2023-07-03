@@ -19,7 +19,7 @@ const (
 	defaultColor = "fd9a00"
 )
 
-type discordService struct {
+type discordWebhookService struct {
 	webhookID    string
 	webhookToken string
 	username     string
@@ -29,11 +29,11 @@ type discordService struct {
 
 // TODO: add discord bot support
 
-func (s *discordService) Name() string {
-	return "discord"
+func (s *discordWebhookService) Name() string {
+	return "discord_webhook"
 }
 
-func (s *discordService) Configure(settings map[string]string) error {
+func (s *discordWebhookService) Configure(settings map[string]string) error {
 	// How to create a discord webhook: https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks
 	webhookID := settings["webhook_id"]
 	webhookToken := settings["webhook_token"]
@@ -55,7 +55,7 @@ func (s *discordService) Configure(settings map[string]string) error {
 	return nil
 }
 
-func (s *discordService) Send(ctx context.Context, title, message string) error {
+func (s *discordWebhookService) Send(ctx context.Context, title, message string) error {
 	params := discordgo.WebhookParams{}
 	params.Embeds = []*discordgo.MessageEmbed{
 		{

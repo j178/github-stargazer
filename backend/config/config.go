@@ -27,6 +27,7 @@ const (
 )
 
 var (
+	BaseURL             string
 	AppID               int64
 	AppPrivateKey       []byte
 	ClientID            string
@@ -35,8 +36,8 @@ var (
 	KvURL               string
 	SecretKey           []byte
 	TelegramBotToken    string
-	BaseURL             string
 	TelegramBotUsername string
+	DiscordBotToken     string
 )
 
 func loadEnv() {
@@ -47,6 +48,7 @@ func loadEnv() {
 		log.Fatalf("parse GITHUB_APP_ID: %v", err)
 	}
 
+	BaseURL = env("BASE_URL")
 	AppPrivateKey = []byte(env("GITHUB_APP_PRIVATE_KEY"))
 	ClientID = env("GITHUB_CLIENT_ID")
 	ClientSecret = env("GITHUB_CLIENT_SECRET")
@@ -54,8 +56,8 @@ func loadEnv() {
 	KvURL = env("KV_URL")
 	SecretKey = []byte(env("SECRET_KEY"))
 	TelegramBotToken = env("TELEGRAM_BOT_TOKEN")
-	BaseURL = env("BASE_URL")
 	TelegramBotUsername = envOrDefault("TELEGRAM_BOT_USERNAME", defaultTelegramBotUsername)
+	DiscordBotToken = env("DISCORD_BOT_TOKEN")
 }
 
 var once sync.Once

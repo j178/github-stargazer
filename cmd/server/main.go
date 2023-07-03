@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	_ = godotenv.Load()
+	_ = godotenv.Load(".env", ".env.local")
 	config.Load()
 
 	_ = http.ListenAndServe(":8080", api.Handler())

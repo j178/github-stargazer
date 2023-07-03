@@ -57,8 +57,10 @@ func GetNotifier(settings []map[string]string) (*Notify, error) {
 			service = &barkService{}
 		case "telegram":
 			service = &telegramService{}
-		case "discord":
-			service = &discordService{}
+		case "discord_webhook":
+			service = &discordWebhookService{}
+		case "discord_bot":
+			service = &discordBotService{}
 		case "webhook":
 			service = &webhookService{}
 		default:
