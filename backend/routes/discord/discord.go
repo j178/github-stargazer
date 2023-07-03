@@ -3,28 +3,16 @@ package discord
 import (
 	"fmt"
 	"net/http"
-	"sync"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/gin-gonic/gin"
 	"github.com/j178/github_stargazer/backend/config"
+	"github.com/j178/github_stargazer/backend/notify"
 	"github.com/j178/github_stargazer/backend/routes/configure"
 )
 
-var once sync.Once
-var bot *discordgo.Session
-
 func Bot() *discordgo.Session {
-	once.Do(
-		func() {
-			var err error
-			bot, err = discordgo.New("Bot " + config.DiscordBotToken)
-			if err != nil {
-				panic(err)
-			}
-		},
-	)
-	return bot
+	return notify.DefaultDiscordBot()
 }
 
 func OnInteraction(c *gin.Context) {

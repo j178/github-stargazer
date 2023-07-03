@@ -2,6 +2,7 @@ package config
 
 import (
 	"crypto/ed25519"
+	"encoding/hex"
 	"log"
 	"os"
 	"strconv"
@@ -61,7 +62,12 @@ func loadEnv() {
 	TelegramBotToken = env("TELEGRAM_BOT_TOKEN")
 	TelegramBotUsername = envOrDefault("TELEGRAM_BOT_USERNAME", defaultTelegramBotUsername)
 	DiscordAppID = env("DISCORD_APP_ID")
-	DiscordPublicKey = ed25519.PublicKey(env("DISCORD_PUBLIC_KEY"))
+
+	DiscordPublicKey, err = hex.DecodeString(env("DISCORD_PUBLIC_KEY"))
+	if err != nil {
+		log.Fatalf("decode DISCORD_PUBLIC_KEY: %v", err)
+	}
+
 	DiscordBotToken = env("DISCORD_BOT_TOKEN")
 }
 
