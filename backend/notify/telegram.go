@@ -11,23 +11,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-var defaultTgBotOnce sync.Once
-var defaultTgBot *tgbotapi.BotAPI
-
 // init bot will make a `getMe` request, so we cache it
 
-func DefaultTelegramBot() *tgbotapi.BotAPI {
-	defaultTgBotOnce.Do(
-		func() {
-			var err error
-			defaultTgBot, err = tgbotapi.NewBotAPI(config.TelegramBotToken)
-			if err != nil {
-				log.Fatal("init telegram bot: %w", err)
-			}
-		},
-	)
-	return defaultTgBot
-}
+var DefaultTelegramBot = sync.OnceValue(
+	func() *tgbotapi.BotAPI {
+		defaultTgBot, err := tgbotapi.NewBotAPI(config.TelegramBotToken)
+		if err != nil {
+			log.Fatal("init telegram bot: %w", err)
+		}
+		return defaultTgBot
+	},
+)
 
 type telegramService struct {
 	client *tgbotapi.BotAPI

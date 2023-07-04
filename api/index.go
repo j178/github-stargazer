@@ -62,19 +62,11 @@ func initRouter() *gin.Engine {
 	return r
 }
 
-var (
-	handler http.Handler
-	once    sync.Once
+var Handler = sync.OnceValue(
+	func() http.Handler {
+		return initRouter().Handler()
+	},
 )
-
-func Handler() http.Handler {
-	once.Do(
-		func() {
-			handler = initRouter().Handler()
-		},
-	)
-	return handler
-}
 
 func Index(w http.ResponseWriter, r *http.Request) {
 	config.Load()

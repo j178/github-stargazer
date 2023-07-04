@@ -4,5 +4,10 @@
       "source": "/api/:path*",
       "destination": "/api/index.go"
     }
-  ]
+  ],
+  "build": {
+    "env": {
+      "GO_BUILD_FLAGS": "-tags sonic"
+    }
+  }
 }

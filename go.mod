@@ -1,6 +1,6 @@
 module github.com/j178/github_stargazer
 
-go 1.20
+go 1.21
 
 require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.5.0

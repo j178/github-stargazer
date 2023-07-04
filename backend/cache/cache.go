@@ -114,7 +114,7 @@ func (c *redisCache) Incr(ctx context.Context, key string, value *int64, expires
 	}
 }
 
-func getRedis() (rueidis.Client, error) {
+func initRedis() (rueidis.Client, error) {
 	u, err := url.Parse(config.KvURL)
 	if err != nil {
 		log.Fatalf("parse kv url failed: %s", err)
@@ -148,36 +148,24 @@ func (k Key) String() string {
 	return fmt.Sprintf("%s:%s", RedisKeyPrefix, strings.Join(k, ":"))
 }
 
-var defaultCache CacheStore
-var cacheOnce sync.Once
+var Default = sync.OnceValue(
+	func() CacheStore {
+		return &redisCache{
+			redis:             Redis(),
+			defaultExpiration: DefaultExpiration,
+		}
+	},
+)
 
-func Default() CacheStore {
-	cacheOnce.Do(
-		func() {
-			defaultCache = &redisCache{
-				redis:             Redis(),
-				defaultExpiration: DefaultExpiration,
-			}
-		},
-	)
-	return defaultCache
-}
-
-var redis rueidis.Client
-var redisOnce sync.Once
-
-func Redis() rueidis.Client {
-	redisOnce.Do(
-		func() {
-			r, err := getRedis()
-			if err != nil {
-				log.Fatalf("create redis client failed: %s", err)
-			}
-			redis = r
-		},
-	)
-	return redis
-}
+var Redis = sync.OnceValue(
+	func() rueidis.Client {
+		r, err := initRedis()
+		if err != nil {
+			log.Fatalf("create redis client: %s", err)
+		}
+		return r
+	},
+)
 
 func Get[T any](ctx context.Context, key Key) (T, error) {
 	var z T

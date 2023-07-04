@@ -52,7 +52,7 @@ func (s *webhookService) Configure(settings map[string]string) error {
 	return nil
 }
 
-// parseHeaders parses a string of headers into an http.Header.
+// parseHeaders parses a string of headers into a http.Header.
 func parseHeaders(headers string, h http.Header) {
 	if headers == "" {
 		return

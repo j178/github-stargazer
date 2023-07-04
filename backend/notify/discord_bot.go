@@ -13,21 +13,15 @@ import (
 	"github.com/j178/github_stargazer/backend/utils"
 )
 
-var defaultDiscordBotOnce sync.Once
-var defaultDiscordBot *discordgo.Session
-
-func DefaultDiscordBot() *discordgo.Session {
-	defaultDiscordBotOnce.Do(
-		func() {
-			var err error
-			defaultDiscordBot, err = discordgo.New("Bot " + config.DiscordBotToken)
-			if err != nil {
-				log.Fatal("init discord bot: %w", err)
-			}
-		},
-	)
-	return defaultDiscordBot
-}
+var DefaultDiscordBot = sync.OnceValue(
+	func() *discordgo.Session {
+		defaultDiscordBot, err := discordgo.New("Bot " + config.DiscordBotToken)
+		if err != nil {
+			log.Fatal("init discord bot: %w", err)
+		}
+		return defaultDiscordBot
+	},
+)
 
 type discordBotService struct {
 	bot       *discordgo.Session
