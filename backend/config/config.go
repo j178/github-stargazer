@@ -71,8 +71,4 @@ func loadEnv() {
 	DiscordBotToken = env("DISCORD_BOT_TOKEN")
 }
 
-var once sync.Once
-
-func Load() {
-	once.Do(loadEnv)
-}
+var Load = sync.OnceFunc(loadEnv)
