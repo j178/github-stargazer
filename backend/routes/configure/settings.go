@@ -174,28 +174,28 @@ func InstalledRepos(c *gin.Context) {
 		routes.Abort(c, http.StatusBadRequest, nil, "invalid installationID")
 		return
 	}
+	page := c.DefaultQuery("page", "1")
+	pageInt, err := strconv.Atoi(page)
+	if err != nil {
+		routes.Abort(c, http.StatusBadRequest, nil, "invalid page")
+		return
+	}
 
 	token, err := cache.GetInstallationToken(c, installationID)
 	if err != nil {
 		routes.Abort(c, http.StatusInternalServerError, err, "get token")
 	}
 
-	var repoNames []string
 	client := github.NewTokenClient(c, token)
-	opts := &github.ListOptions{PerPage: 100}
-	for {
-		repos, resp, err := client.Apps.ListRepos(c, opts)
-		if err != nil {
-			routes.Abort(c, http.StatusInternalServerError, err, "list repos")
-			return
-		}
-		for _, repo := range repos.Repositories {
-			repoNames = append(repoNames, repo.GetFullName())
-		}
-		if resp.NextPage == 0 {
-			break
-		}
-		opts.Page = resp.NextPage
+	opts := &github.ListOptions{PerPage: 30, Page: pageInt}
+	repos, _, err := client.Apps.ListRepos(c, opts)
+	if err != nil {
+		routes.Abort(c, http.StatusInternalServerError, err, "list repos")
+		return
+	}
+	repoNames := make([]string, 0, len(repos.Repositories))
+	for _, repo := range repos.Repositories {
+		repoNames = append(repoNames, repo.GetFullName())
 	}
 
 	c.JSON(http.StatusOK, repoNames)
