@@ -64,7 +64,7 @@ func GetNotifier(settings []map[string]string) (*Notify, error) {
 		case "webhook":
 			service = &webhookService{}
 		default:
-			return nil, fmt.Errorf("unknown service: %s", service)
+			return nil, fmt.Errorf("unknown service: %s", serviceName)
 		}
 
 		err := service.Configure(setting)

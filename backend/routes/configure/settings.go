@@ -168,7 +168,7 @@ func Installations(c *gin.Context) {
 }
 
 func InstalledRepos(c *gin.Context) {
-	installationIDStr := c.Param("installation_id")
+	installationIDStr := c.Param("installationID")
 	installationID, err := strconv.ParseInt(installationIDStr, 10, 64)
 	if err != nil {
 		routes.Abort(c, http.StatusBadRequest, nil, "invalid installationID")
