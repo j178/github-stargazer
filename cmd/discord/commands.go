@@ -29,4 +29,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	err = bot.Open()
+	if err != nil {
+		panic(err)
+	}
+	err = bot.UpdateWatchStatus(0, "Your GitHub Stars")
+	if err != nil {
+		panic(err)
+	}
 }
