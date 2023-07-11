@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -42,19 +43,34 @@ func OnUpdate(c *gin.Context) {
 
 	log.Printf("update: %+v", update)
 
-	if update.Message.Command() != "start" {
+	var message *tgbotapi.Message
+	if update.Message != nil {
+		message = update.Message
+	} else if update.EditedMessage != nil {
+		message = update.EditedMessage
+	} else if update.ChannelPost != nil {
+		message = update.ChannelPost
+	} else if update.EditedChannelPost != nil {
+		message = update.EditedChannelPost
+	}
+
+	if message == nil || !strings.HasPrefix(message.Text, "/start") {
 		c.JSON(http.StatusOK, gin.H{"status": "not /start command"})
 		return
 	}
 
-	chatID := update.Message.Chat.ID
-	tgUsername := update.Message.From.UserName
-	replyTo := update.Message.MessageID
-	commandArgs := update.Message.CommandArguments()
+	chatID := message.Chat.ID
+	tgUsername := message.From.UserName
+	replyTo := message.MessageID
+	commands := strings.SplitN(strings.TrimSpace(message.Text), " ", 2)
+	startArgs := ""
+	if len(commands) > 1 {
+		startArgs = commands[1]
+	}
 
-	if commandArgs == "" {
+	if startArgs == "" {
 		msg := "Send `/start <connect token>` to connect your GitHub account"
-		if update.Message.Chat.IsGroup() || update.Message.Chat.IsSuperGroup() {
+		if message.Chat.IsGroup() || message.Chat.IsSuperGroup() {
 			msg = fmt.Sprintf(
 				"Send `/start@%s <connect token>` to connect your GitHub account",
 				config.TelegramBotUsername,
@@ -76,11 +92,11 @@ func OnUpdate(c *gin.Context) {
 		"telegram_username": tgUsername,
 	}
 
-	err = configure.SetConnectResult(c, commandArgs, "telegram", connect)
+	err = configure.SetConnectResult(c, startArgs, "telegram", connect)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"error": "invalid connect token"})
 
-		reply := tgbotapi.NewMessage(chatID, fmt.Sprintf("Invalid connect token: %q", commandArgs))
+		reply := tgbotapi.NewMessage(chatID, fmt.Sprintf("Invalid connect token: %q", startArgs))
 		reply.ReplyToMessageID = replyTo
 
 		_, err = Bot().Send(reply)
