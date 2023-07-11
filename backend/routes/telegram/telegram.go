@@ -60,8 +60,11 @@ func OnUpdate(c *gin.Context) {
 	}
 
 	chatID := message.Chat.ID
-	tgUsername := message.From.UserName
 	replyTo := message.MessageID
+	tgUsername := ""
+	if message.From != nil {
+		tgUsername = message.From.UserName
+	}
 	commands := strings.SplitN(strings.TrimSpace(message.Text), " ", 2)
 	startArgs := ""
 	if len(commands) > 1 {
