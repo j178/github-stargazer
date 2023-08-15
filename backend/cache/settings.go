@@ -11,6 +11,7 @@ type Setting struct {
 	NotifySettings []map[string]string `json:"notify_settings"`
 	AllowRepos     []string            `json:"allow_repos"`
 	MuteRepos      []string            `json:"mute_repos"`
+	MuteLostStars  bool                `json:"mute_lost_stars"`
 }
 
 func (s *Setting) IsAllowRepo(fullName string) bool {

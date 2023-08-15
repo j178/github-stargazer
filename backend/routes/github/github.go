@@ -7,12 +7,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
-	"github.com/j178/github_stargazer/backend/routes"
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/j178/github_stargazer/backend/cache"
 	"github.com/j178/github_stargazer/backend/config"
 	"github.com/j178/github_stargazer/backend/notify"
+	"github.com/j178/github_stargazer/backend/routes"
 	"github.com/j178/github_stargazer/backend/utils"
 )
 
@@ -73,6 +73,9 @@ func OnEvent(c *gin.Context) {
 		wg := pool.New().WithContext(c).WithMaxGoroutines(10)
 		for _, setting := range settings {
 			setting := setting
+			if evt.GetAction() == "deleted" && setting.MuteLostStars {
+				continue
+			}
 			if !setting.IsAllowRepo(evt.Repo.GetFullName()) {
 				continue
 			}
