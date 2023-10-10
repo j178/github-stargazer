@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/joho/godotenv"
@@ -13,5 +14,5 @@ func main() {
 	_ = godotenv.Load(".env", ".env.local")
 	config.Load()
 
-	_ = http.ListenAndServe(":8080", api.Handler())
+	log.Fatal(http.ListenAndServe(":8080", api.Handler()))
 }
