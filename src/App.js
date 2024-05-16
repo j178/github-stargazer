@@ -26,9 +26,10 @@ const App = () => {
   useEffect(() => {
     // Fetch settings when selected account changes
     if (selectedAccount) {
+      const account = installations.find(installation => installation.account === selectedAccount);
       async function fetchSettings() {
         try {
-          const response = await axios.get(`/api/settings/${selectedAccount.account}`);
+          const response = await axios.get(`/api/settings/${account.account}`);
           setSettings(response.data);
         } catch (error) {
           console.error('Failed to fetch settings', error);
@@ -37,7 +38,7 @@ const App = () => {
 
       async function fetchRepos() {
         try {
-          const response = await axios.get(`/api/repos/${selectedAccount.id}`);
+          const response = await axios.get(`/api/repos/${account.id}`);
           setRepos(response.data);
         } catch (error) {
           console.error('Failed to fetch repos', error);
@@ -75,7 +76,8 @@ const App = () => {
 
   const handleSaveSettings = async () => {
     try {
-      await axios.post(`/api/settings/${selectedAccount}`, settings);
+      const account = installations.find(installation => installation.account === selectedAccount);
+      await axios.post(`/api/settings/${account.account}`, settings);
       alert('Settings saved successfully');
     } catch (error) {
       console.error('Failed to save settings', error);
@@ -94,7 +96,7 @@ const App = () => {
             <select id="account-select" onChange={handleAccountChange} value={selectedAccount || ''}>
               <option value="" disabled>Select an account</option>
               {installations.map((installation) => (
-                  <option key={installation.id} value={installation}>
+                  <option key={installation.id} value={installation.account}>
                     {installation.account} ({installation.account_type})
                   </option>
               ))}
