@@ -42,6 +42,16 @@ const App = () => {
     setSelectedAccount(event.target.value);
   };
 
+  const handleTestSettings = async () => {
+    try {
+      await axios.post('/api/settings/test', settings);
+      alert('Test successful');
+    } catch (error) {
+      console.error('Failed to test settings', error);
+      alert('Test failed');
+    }
+  };
+
   const handleSaveSettings = async () => {
     try {
       await axios.post(`/api/settings/${selectedAccount}`, settings);
@@ -95,6 +105,7 @@ const App = () => {
                         onChange={(e) => setSettings({...settings, mute_lost_stars: e.target.checked})}
                     />
                 </div>
+                <button onClick={handleTestSettings}>Test Settings</button>
                 <button onClick={handleSaveSettings}>Save Settings</button>
               </section>
           )}

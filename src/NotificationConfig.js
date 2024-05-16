@@ -4,7 +4,7 @@ import axios from 'axios';
 const NotificationConfig = ({settings, setSettings}) => {
     const [service, setService] = useState('');
     const [serviceDetails, setServiceDetails] = useState({});
-    const [telegramToken, setTelegramToken] = useState(null);
+    const [connectionToken, setConnectionToken] = useState(null);
 
     const handleAddService = () => {
         const newService = {service: service, ...serviceDetails};
@@ -13,24 +13,24 @@ const NotificationConfig = ({settings, setSettings}) => {
         setServiceDetails({});
     };
 
-    const handleConnectTelegram = async () => {
+    const handleConnect = async () => {
         try {
-            const response = await axios.post('/api/connect/telegram');
-            setTelegramToken(response.data);
+            const response = await axios.post(`/api/connect/${service}`);
+            setConnectionToken(response.data);
         } catch (error) {
             console.error('Failed to connect Telegram', error);
         }
     };
 
-    const handleTestSettings = async () => {
+    const handleConnectResult = async () => {
         try {
-            await axios.post('/api/settings/test', settings);
-            alert('Test successful');
+            const response = await axios.get(`/api/connect/${service}/${connectionToken.token}`);
+            console.log(response.data)
+            setServiceDetails({...serviceDetails, ...response.data})
         } catch (error) {
-            console.error('Failed to test settings', error);
-            alert('Test failed');
+            console.error('Failed to get connect result', error);
         }
-    };
+    }
 
     return (
         <div>
@@ -45,19 +45,20 @@ const NotificationConfig = ({settings, setSettings}) => {
                 ))}
             </select>
 
-            {/* TODO: 增加测试通知按钮 */}
             {/* TODO: 增加配置后调用 check 检查配置 */}
             {service && (
                 <div>
                     {service === 'telegram' && (
-                        <button onClick={handleConnectTelegram}>Connect to a Telegram Chat</button>
+                        <button onClick={handleConnect}>Connect to a Telegram Chat</button>
                     )}
-                    {telegramToken && (
+                    {connectionToken && (
                         <div>
-                            <p><a href={telegramToken.bot_url} target="_blank" rel="noopener noreferrer">Private
+                            <p><a href={connectionToken.bot_url} target="_blank" rel="noopener noreferrer">Private
                                 Chat</a></p>
-                            <p><a href={telegramToken.bot_group_url} target="_blank" rel="noopener noreferrer">Group
+                            <p><a href={connectionToken.bot_group_url} target="_blank" rel="noopener noreferrer">Group
                                 Chat</a></p>
+                            <button onClick={handleConnectResult}>获取连接结果</button>
+                            <p>Connected with Chat ID: {serviceDetails.chat_id}</p>
                         </div>
                     )}
                     {service === 'discord_webhook' && (
@@ -109,7 +110,6 @@ const NotificationConfig = ({settings, setSettings}) => {
                     ))}
                 </ul>
             </div>
-            <button onClick={handleTestSettings}>Test Settings</button>
         </div>
     );
 };
