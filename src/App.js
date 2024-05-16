@@ -63,8 +63,8 @@ const App = () => {
             <select id="account-select" onChange={handleAccountChange}>
               <option value="" disabled selected>Select an account</option>
               {installations.map((installation) => (
-                  <option key={installation.id} value={installation.id}>
-                    {installation.name}
+                  <option key={installation.id} value={installation.account}>
+                    {installation.account} ({installation.account_type})
                   </option>
               ))}
             </select>
