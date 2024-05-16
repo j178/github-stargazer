@@ -6,6 +6,24 @@
     margin-top: 20px;
 }
 
+.serviceDetail {
+    display: flex;
+    align-items: center;
+}
+
+.serviceIcon {
+    margin-right: 10px;
+    font-size: 1.5em;
+}
+
+.serviceDetailText {
+    flex-grow: 1;
+    padding: 10px;
+    background: #f0f0f0;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
 select, input {
     width: 100%;
     padding: 10px;

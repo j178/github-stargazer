@@ -1,10 +1,11 @@
 import styles from './App.module.css';
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import axios from "axios";
 import NotificationConfig from "./NotificationConfig";
 
 const App = () => {
   const [installations, setInstallations] = useState([]);
+  const [repos, setRepos] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [settings, setSettings] = useState(null);
 
@@ -27,20 +28,40 @@ const App = () => {
     if (selectedAccount) {
       async function fetchSettings() {
         try {
-          const response = await axios.get(`/api/settings/${selectedAccount}`);
+          const response = await axios.get(`/api/settings/${selectedAccount.account}`);
           setSettings(response.data);
         } catch (error) {
           console.error('Failed to fetch settings', error);
         }
       }
 
+      async function fetchRepos() {
+        try {
+          const response = await axios.get(`/api/repos/${selectedAccount.id}`);
+          setRepos(response.data);
+        } catch (error) {
+          console.error('Failed to fetch repos', error);
+        }
+      }
+
       fetchSettings();
+      fetchRepos();
     }
   }, [selectedAccount]);
 
   const handleAccountChange = (event) => {
     setSelectedAccount(event.target.value);
   };
+
+  const handleRepoChange = (type, values) => {
+    setSettings({ ...settings, [type]: values });
+  };
+
+  const availableRepos = useMemo(() => repos.filter(repo => {
+    const allowRepos = settings.allow_repos || [];
+    const muteRepos = settings.mute_repos || [];
+    return !(allowRepos.includes(repo) || muteRepos.includes(repo));
+  }), [repos, settings]);
 
   const handleTestSettings = async () => {
     try {
@@ -73,7 +94,7 @@ const App = () => {
             <select id="account-select" onChange={handleAccountChange} value={selectedAccount || ''}>
               <option value="" disabled>Select an account</option>
               {installations.map((installation) => (
-                  <option key={installation.id} value={installation.account}>
+                  <option key={installation.id} value={installation}>
                     {installation.account} ({installation.account_type})
                   </option>
               ))}
@@ -83,27 +104,38 @@ const App = () => {
               <section>
                 <NotificationConfig settings={settings} setSettings={setSettings}/>
                 <div className={styles.configSection}>
-                  {/* TODO: 获取 repo 列表，手动选择增加或删除 */}
                   <label>Allow Repos:</label>
-                  <textarea
-                      value={JSON.stringify(settings.allow_repos, null, 2)}
-                      onChange={(e) => setSettings({...settings, allow_repos: JSON.parse(e.target.value)})}
-                  />
+                  <select
+                      multiple
+                      className={styles.multipleSelect}
+                      value={settings.allow_repos}
+                      onChange={(e) => handleRepoChange('allow_repos', Array.from(e.target.selectedOptions, option => option.value))}
+                  >
+                    {availableRepos.map(repo => (
+                        <option key={repo} value={repo}>{repo}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className={styles.configSection}>
                   <label>Mute Repos:</label>
-                  <textarea
-                      value={JSON.stringify(settings.mute_repos, null, 2)}
-                      onChange={(e) => setSettings({...settings, mute_repos: JSON.parse(e.target.value)})}
-                  />
+                  <select
+                      multiple
+                      className={styles.multipleSelect}
+                      value={settings.mute_repos}
+                      onChange={(e) => handleRepoChange('mute_repos', Array.from(e.target.selectedOptions, option => option.value))}
+                  >
+                    {availableRepos.map(repo => (
+                        <option key={repo} value={repo}>{repo}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className={styles.configSection}>
                   <label>Mute Star Lost:</label>
-                    <input
-                        type="checkbox"
-                        checked={settings.mute_lost_stars}
-                        onChange={(e) => setSettings({...settings, mute_lost_stars: e.target.checked})}
-                    />
+                  <input
+                      type="checkbox"
+                      checked={settings.mute_lost_stars}
+                      onChange={(e) => setSettings({...settings, mute_lost_stars: e.target.checked})}
+                  />
                 </div>
                 <div className={styles.buttonGroup}>
                   <button onClick={handleTestSettings}>Test Settings</button>

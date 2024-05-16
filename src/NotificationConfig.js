@@ -1,6 +1,15 @@
 import React, {useState} from 'react';
 import axios from 'axios';
 import styles from './NotificationConfig.module.css';
+import {FaTelegram, FaDiscord, FaBell, FaPlug} from "react-icons/fa";
+
+const serviceIcons = {
+    telegram: <FaTelegram />,
+    discord_webhook: <FaDiscord />,
+    discord_bot: <FaDiscord />,
+    bark: <FaBell />,
+    webhook: <FaPlug />
+};
 
 const NotificationConfig = ({settings, setSettings}) => {
     const [service, setService] = useState('');
@@ -159,12 +168,18 @@ const NotificationConfig = ({settings, setSettings}) => {
             )}
 
             <div className={styles.currentSettings}>
-                {/* TODO: 支持移除某项配置，将 Add a new service 按钮放在这个列表最下发 */}
+                {/* TODO: 将 Add a new service 按钮放在这个列表最下发 */}
                 <h3>Current Notification Settings</h3>
                 <ul>
                     {settings.notify_settings.map((ns, index) => (
                         <div key={index} className={styles.settingItem}>
-                            <li>{JSON.stringify(ns)}</li>
+                            <li className={styles.serviceDetail}>
+                                <span className={styles.serviceIcon}>{serviceIcons[ns.service]}</span>
+                            </li>
+                            <div className={styles.serviceDetailText}>
+                                <strong>{ns.service.toUpperCase()}</strong>
+                                <pre>{JSON.stringify(ns, null, 2)}</pre>
+                            </div>
                             <button onClick={() => handleRemoveService(index)} className={styles.removeButton}>Remove</button>
                         </div>
                     ))}
