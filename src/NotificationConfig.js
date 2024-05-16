@@ -39,7 +39,7 @@ const NotificationConfig = ({settings, setSettings}) => {
                 setService(e.target.value)
                 setServiceDetails({})
             }}>
-                <option value="" disabled selected>Select a service</option>
+                <option value="" disabled>Select a service</option>
                 {['bark', 'telegram', 'discord_webhook', 'discord_bot', 'webhook'].map((s) => (
                     <option key={s} value={s}>{s}</option>
                 ))}

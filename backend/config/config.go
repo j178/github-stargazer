@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 	"sync"
+
+	"github.com/joho/godotenv"
 )
 
 func envOrDefault(key, defaultValue string) string {
@@ -45,6 +47,8 @@ var (
 )
 
 func loadEnv() {
+	_ = godotenv.Load(".env", ".env.local")
+
 	appIdStr := env("GITHUB_APP_ID")
 	var err error
 	AppID, err = strconv.ParseInt(appIdStr, 10, 64)
