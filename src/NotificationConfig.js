@@ -5,6 +5,7 @@ const NotificationConfig = ({settings, setSettings}) => {
     const [service, setService] = useState('');
     const [serviceDetails, setServiceDetails] = useState({});
     const [connectionToken, setConnectionToken] = useState(null);
+    const [showMore, setShowMore] = useState(false);
 
     const handleAddService = () => {
         const newService = {service: service, ...serviceDetails};
@@ -12,6 +13,11 @@ const NotificationConfig = ({settings, setSettings}) => {
         setService('');
         setServiceDetails({});
     };
+
+    const handleRemoveService = (index) => {
+        const newSettings = {...settings, notify_settings: settings.notify_settings.filter((_, i) => i !== index)};
+        setSettings(newSettings);
+    }
 
     const handleConnect = async () => {
         try {
@@ -25,23 +31,26 @@ const NotificationConfig = ({settings, setSettings}) => {
     const handleConnectResult = async () => {
         try {
             const response = await axios.get(`/api/connect/${service}/${connectionToken.token}`);
-            console.log(response.data)
             setServiceDetails({...serviceDetails, ...response.data})
         } catch (error) {
             console.error('Failed to get connect result', error);
         }
     }
 
+    const selectService = (e) => {
+        setService(e.target.value);
+        setServiceDetails({});
+        setConnectionToken(null);
+        setShowMore(false);
+    }
+
     return (
         <div>
             <label htmlFor="service-select">Add Notification Service:</label>
-            <select id="service-select" value={service} onChange={(e) => {
-                setService(e.target.value)
-                setServiceDetails({})
-            }}>
+            <select id="service-select" value={service} onChange={selectService}>
                 <option value="" disabled>Select a service</option>
                 {['bark', 'telegram', 'discord_webhook', 'discord_bot', 'webhook'].map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                    <option key={s} value={s}>{s.toUpperCase()}</option>
                 ))}
             </select>
 
@@ -49,16 +58,27 @@ const NotificationConfig = ({settings, setSettings}) => {
             {service && (
                 <div>
                     {service === 'telegram' && (
-                        <button onClick={handleConnect}>Connect to a Telegram Chat</button>
-                    )}
-                    {connectionToken && (
                         <div>
-                            <p><a href={connectionToken.bot_url} target="_blank" rel="noopener noreferrer">Private
-                                Chat</a></p>
-                            <p><a href={connectionToken.bot_group_url} target="_blank" rel="noopener noreferrer">Group
-                                Chat</a></p>
-                            <button onClick={handleConnectResult}>获取连接结果</button>
-                            <p>Connected with Chat ID: {serviceDetails.chat_id}</p>
+                            <button onClick={handleConnect}>Connect to a Telegram Chat</button>
+                            {connectionToken && (
+                                <div>
+                                    <p><a href={connectionToken.bot_url} target="_blank" rel="noopener noreferrer">Private
+                                        Chat</a></p>
+                                    <p><a href={connectionToken.bot_group_url} target="_blank" rel="noopener noreferrer">Group
+                                        Chat</a></p>
+                                    <button onClick={handleConnectResult}>获取连接结果</button>
+                                    <p>Connected with Chat ID: {serviceDetails.chat_id}</p>
+                                </div>
+                            )}
+                            { showMore? (
+                                <div>
+                                    <label>Bot Token:</label>
+                                    <input type="text" value={serviceDetails.token || ''}
+                                           onChange={(e) => e.target.value && setServiceDetails({...serviceDetails, token: e.target.value})}/>
+                                </div>
+                            ): (
+                                <button onClick={() => setShowMore(true)}>Show More</button>
+                            )}
                         </div>
                     )}
                     {service === 'discord_webhook' && (
@@ -75,7 +95,21 @@ const NotificationConfig = ({settings, setSettings}) => {
                                        ...serviceDetails,
                                        webhook_token: e.target.value
                                    })}/>
-                            {/* TODO: 增加可选配置：username, avatar_url, color */}
+                            {
+                                showMore? (
+                                    <div>
+                                        <label>Username:</label>
+                                        <input type="text" value={serviceDetails.username || ''}
+                                               onChange={(e) => e.target.value && setServiceDetails({...serviceDetails, username: e.target.value})}/>
+                                        <label>Avatar URL:</label>
+                                        <input type="text" value={serviceDetails.avatar_url || ''}
+                                               onChange={(e) => e.target.value && setServiceDetails({...serviceDetails, avatar_url: e.target.value})}/>
+                                        <label>Color:</label>
+                                        <input type="number" value={serviceDetails.color || ''}
+                                               onChange={(e) => e.target.value && setServiceDetails({...serviceDetails, color: e.target.value})}/>
+                                    </div>
+                                ):(<button onClick={() => setShowMore(true)}>Show More</button>)
+                            }
                         </div>
                     )}
                     {service === 'discord_bot' && (
@@ -88,6 +122,9 @@ const NotificationConfig = ({settings, setSettings}) => {
                             <label>Bark Key:</label>
                             <input type="text" value={serviceDetails.key || ''}
                                    onChange={(e) => setServiceDetails({...serviceDetails, key: e.target.value})}/>
+                            <label>Bark Server:</label>
+                            <input type="text" value={serviceDetails.server || 'https://api.day.app/'}
+                                   onChange={(e) => setServiceDetails({...serviceDetails, server: e.target.value})}/>
                         </div>
                     )}
                     {service === 'webhook' && (
@@ -95,6 +132,25 @@ const NotificationConfig = ({settings, setSettings}) => {
                             <label>Webhook URL:</label>
                             <input type="text" value={serviceDetails.url || ''}
                                    onChange={(e) => setServiceDetails({...serviceDetails, url: e.target.value})}/>
+                            <label>Method:</label>
+                            <select value={serviceDetails.method || 'GET'}
+                                    onChange={(e) => setServiceDetails({...serviceDetails, method: e.target.value})}>
+                                <option value="GET">GET</option>
+                                <option value="POST">POST</option>
+                                <option value="PUT">PUT</option>
+                            </select>
+                            {
+                                showMore? (
+                                    <div>
+                                        <label>Headers:</label>
+                                        <textarea value={serviceDetails.headers || ''}
+                                                  onChange={(e) => setServiceDetails({...serviceDetails, headers: e.target.value})}/>
+                                        <label>Body Template:</label>
+                                        <textarea value={serviceDetails.body || ''}
+                                                  onChange={(e) => setServiceDetails({...serviceDetails, body: e.target.value})}/>
+                                    </div>
+                                ):(<button onClick={() => setShowMore(true)}>Show More</button>)
+                            }
                         </div>
                     )}
                     <button onClick={handleAddService}>Add Service</button>
@@ -106,7 +162,10 @@ const NotificationConfig = ({settings, setSettings}) => {
                 <h3>Current Notification Settings</h3>
                 <ul>
                     {settings.notify_settings.map((ns, index) => (
-                        <li key={index}>{JSON.stringify(ns)}</li>
+                        <div key={index}>
+                            <li>{JSON.stringify(ns)}</li>
+                            <button onClick={() => handleRemoveService(index)}>Remove</button>
+                        </div>
                     ))}
                 </ul>
             </div>
