@@ -63,15 +63,15 @@ const App = () => {
   };
 
   return (
-      <div>
+      <div className={styles.container}>
         <header>
           <h1 className={styles.title}>Star++ Configuration</h1>
         </header>
         <main>
           <section>
             <label htmlFor="account-select">Select Account:</label>
-            <select id="account-select" onChange={handleAccountChange}>
-              <option value="" disabled selected>Select an account</option>
+            <select id="account-select" onChange={handleAccountChange} value={selectedAccount || ''}>
+              <option value="" disabled>Select an account</option>
               {installations.map((installation) => (
                   <option key={installation.id} value={installation.account}>
                     {installation.account} ({installation.account_type})
@@ -82,7 +82,7 @@ const App = () => {
           {selectedAccount && settings && (
               <section>
                 <NotificationConfig settings={settings} setSettings={setSettings}/>
-                <div>
+                <div className={styles.configSection}>
                   {/* TODO: 获取 repo 列表，手动选择增加或删除 */}
                   <label>Allow Repos:</label>
                   <textarea
@@ -90,14 +90,14 @@ const App = () => {
                       onChange={(e) => setSettings({...settings, allow_repos: JSON.parse(e.target.value)})}
                   />
                 </div>
-                <div>
+                <div className={styles.configSection}>
                   <label>Mute Repos:</label>
                   <textarea
                       value={JSON.stringify(settings.mute_repos, null, 2)}
                       onChange={(e) => setSettings({...settings, mute_repos: JSON.parse(e.target.value)})}
                   />
                 </div>
-                <div>
+                <div className={styles.configSection}>
                   <label>Mute Star Lost:</label>
                     <input
                         type="checkbox"
@@ -105,8 +105,10 @@ const App = () => {
                         onChange={(e) => setSettings({...settings, mute_lost_stars: e.target.checked})}
                     />
                 </div>
-                <button onClick={handleTestSettings}>Test Settings</button>
-                <button onClick={handleSaveSettings}>Save Settings</button>
+                <div className={styles.buttonGroup}>
+                  <button onClick={handleTestSettings}>Test Settings</button>
+                  <button onClick={handleSaveSettings}>Save Settings</button>
+                </div>
               </section>
           )}
         </main>

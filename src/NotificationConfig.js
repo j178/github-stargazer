@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import axios from 'axios';
+import styles from './NotificationConfig.module.css';
 
 const NotificationConfig = ({settings, setSettings}) => {
     const [service, setService] = useState('');
@@ -45,7 +46,7 @@ const NotificationConfig = ({settings, setSettings}) => {
     }
 
     return (
-        <div>
+        <div className={styles.notificationConfig}>
             <label htmlFor="service-select">Add Notification Service:</label>
             <select id="service-select" value={service} onChange={selectService}>
                 <option value="" disabled>Select a service</option>
@@ -56,7 +57,7 @@ const NotificationConfig = ({settings, setSettings}) => {
 
             {/* TODO: 增加配置后调用 check 检查配置 */}
             {service && (
-                <div>
+                <div className={styles.serviceConfig}>
                     {service === 'telegram' && (
                         <div>
                             <button onClick={handleConnect}>Connect to a Telegram Chat</button>
@@ -157,14 +158,14 @@ const NotificationConfig = ({settings, setSettings}) => {
                 </div>
             )}
 
-            <div>
+            <div className={styles.currentSettings}>
                 {/* TODO: 支持移除某项配置，将 Add a new service 按钮放在这个列表最下发 */}
                 <h3>Current Notification Settings</h3>
                 <ul>
                     {settings.notify_settings.map((ns, index) => (
-                        <div key={index}>
+                        <div key={index} className={styles.settingItem}>
                             <li>{JSON.stringify(ns)}</li>
-                            <button onClick={() => handleRemoveService(index)}>Remove</button>
+                            <button onClick={() => handleRemoveService(index)} className={styles.removeButton}>Remove</button>
                         </div>
                     ))}
                 </ul>
