@@ -73,6 +73,7 @@ const App = () => {
               <section>
                 <NotificationConfig settings={settings} setSettings={setSettings}/>
                 <div>
+                  {/* TODO: 获取 repo 列表，手动选择增加或删除 */}
                   <label>Allow Repos:</label>
                   <textarea
                       value={JSON.stringify(settings.allow_repos, null, 2)}
@@ -85,6 +86,14 @@ const App = () => {
                       value={JSON.stringify(settings.mute_repos, null, 2)}
                       onChange={(e) => setSettings({...settings, mute_repos: JSON.parse(e.target.value)})}
                   />
+                </div>
+                <div>
+                  <label>Mute Star Lost:</label>
+                    <input
+                        type="checkbox"
+                        checked={settings.mute_lost_stars}
+                        onChange={(e) => setSettings({...settings, mute_lost_stars: e.target.checked})}
+                    />
                 </div>
                 <button onClick={handleSaveSettings}>Save Settings</button>
               </section>
