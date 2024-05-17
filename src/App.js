@@ -18,9 +18,6 @@ const App = () => {
 
     const toggleListMode = () => {
         setListMode(listMode === 'allow' ? 'mute' : 'allow');
-        listMode === 'allow' ?
-            setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
-            : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
     };
 
     useEffect(() => {
@@ -79,9 +76,6 @@ const App = () => {
         const repo = event.target.value;
         if (!selectedRepos.includes(repo)) {
             setSelectedRepos([...selectedRepos, repo]);
-            listMode === 'allow' ?
-                setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
-                : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
         }
     };
 
@@ -106,6 +100,9 @@ const App = () => {
     };
 
     const handleTestSettings = async () => {
+        listMode === 'allow' ?
+            setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
+            : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
         try {
             await axios.post('/api/settings/test', settings);
             toast.success('Test successful');
@@ -116,6 +113,9 @@ const App = () => {
     };
 
     const handleSaveSettings = async () => {
+        listMode === 'allow' ?
+            setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
+            : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
         try {
             await axios.post(`/api/settings/${selectedAccount}`, settings);
             toast.success('Settings saved successfully');
