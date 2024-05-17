@@ -205,11 +205,13 @@ const App = () => {
                             ))}
                         </div>
                         <div className={styles.configSection}>
-                            <label data-tooltip-id="mute-star-lost"
-                                   data-tooltip-content="Don't send notifications when lost stars">Mute Star
-                                Lost:</label>
+                            <label htmlFor="mute-star-lost"
+                                data-tooltip-id="mute-star-lost"
+                                   data-tooltip-content="Don't send notifications when lost stars">Mute Star Lost:
+                            </label>
                             <input
                                 type="checkbox"
+                                id="mute-star-lost"
                                 checked={settings.mute_lost_stars}
                                 onChange={(e) => setSettings({...settings, mute_lost_stars: e.target.checked})}
                             />
