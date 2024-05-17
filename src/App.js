@@ -198,33 +198,49 @@ const App = () => {
                             hasMore={hasMore}
                         />
 
-                        <h3>{listMode === 'allow' ? 'Allow notifications from these repos only' : 'Mute notifications from these repos'}</h3>
-                        <button onClick={toggleListMode}>Change to {listMode === 'allow' ? 'Mute' : 'Allow'}</button>
-                        <div className={styles.configSection}>
+                        <div className={styles.listModeContainer}>
+                            <h3>{listMode === 'allow' ? 'Allow notifications from these repos only' : 'Mute notifications from these repos'}</h3>
+                            <button className={styles.toggleButton} onClick={toggleListMode}>
+                                Change to {listMode === 'allow' ? 'Mute' : 'Allow'}
+                            </button>
+                        </div>
+
+                        <div className={styles.selectedReposContainer}>
                             {selectedRepos.map(repo => (
-                                <div key={repo}>
+                                <div key={repo} className={styles.repoItem}>
                                     {repo}
-                                    <button onClick={() => handleUnselectRepo(repo)}>Remove</button>
+                                    <button className={styles.removeButton}
+                                            onClick={() => handleUnselectRepo(repo)}>Remove
+                                    </button>
                                 </div>
                             ))}
                         </div>
-                        <div className={styles.configSection}>
-                            <label htmlFor="mute-star-lost"
-                                   data-tooltip-id="tooltip"
-                                   data-tooltip-content="Don't send notifications when lost stars">Mute Star Lost:
-                            </label>
-                            <input type="checkbox"
-                                   id="mute-star-lost"
-                                   checked={settings.mute_lost_stars}
-                                   onChange={(e) => setSettings({...settings, mute_lost_stars: e.target.checked})}
-                            />
+
+                        <div className={styles.settingsContainer}>
+                            <div className={styles.settingItem}>
+                                <label htmlFor="mute-star-lost"
+                                       data-tooltip-id="tooltip"
+                                       data-tooltip-content="Don't send notifications when lost stars">
+                                    Mute Star Lost:
+                                </label>
+                                <input type="checkbox"
+                                       id="mute-star-lost"
+                                       checked={settings.mute_lost_stars}
+                                       onChange={(e) => setSettings({...settings, mute_lost_stars: e.target.checked})}
+                                />
+                            </div>
                         </div>
+
                         <div className={styles.buttonGroup}>
-                            <button data-tooltip-id="tooltip"
+                            <button className={styles.testButton}
+                                    data-tooltip-id="tooltip"
                                     data-tooltip-content="Send a test notification to verify settings"
-                                    onClick={handleTestSettings}>Test Settings
+                                    onClick={handleTestSettings}>
+                                Test Settings
                             </button>
-                            <button onClick={handleSaveSettings}>Save Settings</button>
+                            <button className={styles.saveButton} onClick={handleSaveSettings}>
+                                Save Settings
+                            </button>
                         </div>
                     </section>
                 )}

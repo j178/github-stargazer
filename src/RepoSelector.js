@@ -72,7 +72,7 @@ const RepoSelector = ({repos, onSelect, loadMoreRepos, hasMore}) => {
                         }
                     })}
                 </select>
-                {isLoading && <div className={styles.loading}>Loading...</div>}
+                {isLoading && <div className={styles.spinner}>Loading...</div>}
             </div>
         </div>
     );
