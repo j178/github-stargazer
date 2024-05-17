@@ -1,27 +1,41 @@
 .repoSelector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     width: 100%;
-}
-
-.searchInput {
-    width: 100%;
-    padding: 10px;
-    font-size: 1em;
-    margin-bottom: 10px;
 }
 
 .selectContainer {
-    width: 100%;
     position: relative;
+    width: 100%;
 }
 
 .repoSelect {
     width: 100%;
-    padding: 10px;
-    font-size: 1em;
+    height: 200px;
+    overflow-y: auto;
+    box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
-    overflow-y: auto;
-    height: 200px; /* Adjust height as needed */
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.searchOption {
+    padding: 0;
+    margin: 0;
+    border: none;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: none;
+    outline: none;
+    font-size: 1em;
 }
 
 .loading {

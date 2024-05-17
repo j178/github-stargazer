@@ -47,6 +47,14 @@ const RepoSelector = ({repos, onSelect, loadMoreRepos}) => {
                         className={styles.repoSelect}
                         onChange={onSelect}
                 >
+                    <option className={styles.searchOption}>
+                        <input type="text"
+                               placeholder="Search Repositories"
+                               value={searchTerm}
+                               onChange={handleSearchChange}
+                               className={styles.searchInput}
+                        />
+                    </option>
                     {displayedRepos.map((repo, index) => {
                         if (displayedRepos.length === index + 1) {
                             return (
