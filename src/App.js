@@ -33,7 +33,6 @@ const App = () => {
             } catch (error) {
                 if (error.response.status === 401) {
                     setIsLoggedIn(false);
-                    toast.error('Please log in through GitHub to continue.');
                 }
                 console.error('Failed to fetch installations', error);
             }
@@ -147,23 +146,9 @@ const App = () => {
                 <main>
                     <section>
                         <p>Please log in through GitHub to continue.</p>
-                        <button onClick={async () => {
-                            try {
-                                const response = await axios.get('/api/authorize', {
-                                    maxRedirects: 0,
-                                    validateStatus: function (status) {
-                                        return status >= 200 && status < 400; // 允许 3xx 响应通过
-                                    }
-                                });
-                                window.location.href = response.headers.location;
-                            } catch (error) {
-                                console.error('Failed to login with GitHub', error);
-                                toast.error('Failed to login with GitHub');
-                            }
-                        }}
-                                className={styles.loginButton}>
+                        <a href={'/api/authorize'} className={styles.loginButton}>
                             Log in with GitHub
-                        </button>
+                        </a>
                     </section>
                 </main>
                 {footer}
