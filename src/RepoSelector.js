@@ -14,10 +14,6 @@ const RepoSelector = ({ repos, onSelect, maxVisible, loadMoreRepos }) => {
         setDisplayedRepos(filteredRepos.slice(0, maxVisible));
     };
 
-    const handleLoadMore = async () => {
-        await loadMoreRepos();
-    };
-
     return (
         <div>
             <input
@@ -36,7 +32,7 @@ const RepoSelector = ({ repos, onSelect, maxVisible, loadMoreRepos }) => {
                     <option key={repo} value={repo}>{repo}</option>
                 ))}
             </select>
-            <button onClick={handleLoadMore} style={{ width: "100%", padding: "10px", marginTop: "10px" }}>
+            <button onClick={loadMoreRepos} style={{ width: "100%", padding: "10px", marginTop: "10px" }}>
                 Load More Repositories
             </button>
         </div>

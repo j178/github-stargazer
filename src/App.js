@@ -11,7 +11,7 @@ const App = () => {
     const [settings, setSettings] = useState(null);
     const [listMode, setListMode] = useState('allow');
     const [selectedRepos, setSelectedRepos] = useState([]);
-    const [page, setPage] = useState(1);
+    const [curPage, setPage] = useState(1);
 
     const toggleListMode = () => {
         setListMode(listMode === 'allow' ? 'mute' : 'allow');
@@ -34,16 +34,6 @@ const App = () => {
         fetchInstallations();
     }, []);
 
-    async function fetchRepos(page = 1) {
-        const account = installations.find(installation => installation.account === selectedAccount);
-        try {
-            const response = await axios.get(`/api/repos/${account.id}?page=${page}`);
-            setRepos([...new Set(repos.concat(response.data))]);
-        } catch (error) {
-            console.error('Failed to fetch repos', error);
-        }
-    }
-
     useEffect(() => {
         // Fetch settings when selected account changes
         if (selectedAccount) {
@@ -56,27 +46,49 @@ const App = () => {
                 }
             }
 
+            async function fetchRepos() {
+                const account = installations.find(installation => installation.account === selectedAccount);
+                try {
+                    const response = await axios.get(`/api/repos/${account.id}`);
+                    setRepos(response.data)
+                } catch (error) {
+                    console.error('Failed to fetch repos', error);
+                }
+            }
+
             fetchSettings();
             setRepos([]);
             fetchRepos();
             setPage(1);
         }
-    }, [selectedAccount]);
+    }, [selectedAccount, installations]);
 
     const handleAccountChange = (event) => {
         setSelectedAccount(event.target.value);
         setSelectedRepos([]);
     };
 
-    const selectRepo = (event) => {
+    const handleSelectRepo = (event) => {
         const repo = event.target.value;
         if (!selectedRepos.includes(repo)) {
             setSelectedRepos([...selectedRepos, repo]);
         }
     };
 
-    const unselectRepo = (repo) => {
+    const handleUnselectRepo = (repo) => {
         setSelectedRepos(selectedRepos.filter(r => r !== repo));
+    };
+
+    const loadMoreRepos = async () => {
+        const newPage = curPage + 1;
+        const account = installations.find(installation => installation.account === selectedAccount);
+        try {
+            const response = await axios.get(`/api/repos/${account.id}?page=${newPage}`);
+            setRepos([...repos, ...response.data])
+            setPage(newPage);
+        } catch (error) {
+            console.error('Failed to fetch repos', error);
+        }
     };
 
     const handleTestSettings = async () => {
@@ -97,14 +109,6 @@ const App = () => {
             console.error('Failed to save settings', error);
             alert('Failed to save settings');
         }
-    };
-
-    const loadMoreRepos = async () => {
-        setPage(prevPage => {
-            const newPage = prevPage + 1;
-            fetchRepos(newPage);
-            return newPage;
-        });
     };
 
     return (
@@ -129,7 +133,7 @@ const App = () => {
                         <NotificationConfig settings={settings} setSettings={setSettings}/>
                         <RepoSelector
                             repos={repos.filter(repo => !selectedRepos.includes(repo))}
-                            onSelect={selectRepo}
+                            onSelect={handleSelectRepo}
                             maxVisible={10}
                             loadMoreRepos={loadMoreRepos}
                         />
@@ -139,7 +143,7 @@ const App = () => {
                             {selectedRepos.map(repo => (
                                 <div key={repo}>
                                     {repo}
-                                    <button onClick={() => unselectRepo(repo)}>Remove</button>
+                                    <button onClick={() => handleUnselectRepo(repo)}>Remove</button>
                                 </div>
                             ))}
                         </div>
