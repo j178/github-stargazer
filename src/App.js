@@ -8,6 +8,45 @@ import {Tooltip} from 'react-tooltip';
 import 'react-toastify/dist/ReactToastify.css';
 import 'react-tooltip/dist/react-tooltip.css'
 
+const AccountSelect = ({ installations, selectedAccount, handleAccountChange, updateAccountState }) => {
+    const [, setPopup] = useState(null);
+
+    const handleAddAccount = () => {
+        const newPopup = window.open("https://github.com/apps/stars-notifier/installations/new", "popup", "width=600,height=600");
+        setPopup(newPopup);
+
+        const checkPopup = setInterval(() => {
+            if (newPopup.closed) {
+                clearInterval(checkPopup);
+                setPopup(null);
+                // Call a function to update the account state after the user installs the app
+                updateAccountState();
+            }
+        }, 1000);
+    };
+
+    const handleChange = (event) => {
+        const value = event.target.value;
+        if (value === "add-account") {
+            handleAddAccount();
+        } else {
+            handleAccountChange(event);
+        }
+    };
+
+    return (
+        <select id="account-select" onChange={handleChange} value={selectedAccount || ''}>
+            <option value="" disabled>Select an account</option>
+            {installations.map((installation) => (
+                <option key={installation.id} value={installation.account}>
+                    {installation.account} ({installation.account_type})
+                </option>
+            ))}
+            <option value="add-account">Add GitHub Account</option>
+        </select>
+    );
+};
+
 const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(true);
     const [installations, setInstallations] = useState([]);
@@ -178,15 +217,20 @@ const App = () => {
             <main>
                 <section>
                     <label htmlFor="account-select">Select Account:</label>
-                    <select id="account-select" onChange={handleAccountChange} value={selectedAccount || ''}>
-                        <option value="" disabled>Select an account</option>
-                        {installations.map((installation) => (
-                            <option key={installation.id} value={installation.account}>
-                                {installation.account} ({installation.account_type})
-                            </option>
-                        ))}
-                        <option onClick={() => toast.warning("Not implemented yet.")}>Add GitHub Account</option>
-                    </select>
+                    <AccountSelect
+                        handleAccountChange={handleAccountChange}
+                        selectedAccount={selectedAccount}
+                        installations={installations}
+                        updateAccountState={() => {
+                            try {
+                                axios.get('/api/installations').then(response => {
+                                    setInstallations(response.data);
+                                });
+                            } catch (error) {
+                                console.error('Failed to fetch installations', error);
+                            }
+                        }}
+                    />
                 </section>
                 {selectedAccount && settings && (
                     <section>
