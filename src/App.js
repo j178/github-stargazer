@@ -4,7 +4,9 @@ import axios from "axios";
 import NotificationConfig from "./NotificationConfig";
 import RepoSelector from "./RepoSelector";
 import {toast, ToastContainer} from 'react-toastify';
+import {Tooltip} from 'react-tooltip';
 import 'react-toastify/dist/ReactToastify.css';
+import 'react-tooltip/dist/react-tooltip.css'
 
 const App = () => {
     const [installations, setInstallations] = useState([]);
@@ -203,7 +205,9 @@ const App = () => {
                             ))}
                         </div>
                         <div className={styles.configSection}>
-                            <label>Mute Star Lost:</label>
+                            <label data-tooltip-id="mute-star-lost"
+                                   data-tooltip-content="Don't send notifications when lost stars">Mute Star
+                                Lost:</label>
                             <input
                                 type="checkbox"
                                 checked={settings.mute_lost_stars}
@@ -219,6 +223,7 @@ const App = () => {
             </main>
             {footer}
             <ToastContainer closeOnClick/>
+            <Tooltip id="mute-star-lost"/>
         </div>
     );
 };
