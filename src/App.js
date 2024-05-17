@@ -95,6 +95,10 @@ const App = () => {
         const account = installations.find(installation => installation.account === selectedAccount);
         try {
             const response = await axios.get(`/api/repos/${account.id}?page=${newPage}`);
+            if (response.data.length === 0) {
+                toast.info('No more repositories to load');
+                return;
+            }
             setRepos([...repos, ...response.data])
             setPage(newPage);
         } catch (error) {
@@ -145,14 +149,19 @@ const App = () => {
                         <p>Please log in through GitHub to continue.</p>
                         <button onClick={async () => {
                             try {
-                                const response = await axios.get('/api/authorize', {maxRedirects: 0});
-                                window.location.href = response.headers['location'];
+                                const response = await axios.get('/api/authorize', {
+                                    maxRedirects: 0,
+                                    validateStatus: function (status) {
+                                        return status >= 200 && status < 400; // 允许 3xx 响应通过
+                                    }
+                                });
+                                window.location.href = response.headers.location;
                             } catch (error) {
                                 console.error('Failed to login with GitHub', error);
                                 toast.error('Failed to login with GitHub');
                             }
                         }}
-                           className={styles.loginButton}>
+                                className={styles.loginButton}>
                             Log in with GitHub
                         </button>
                     </section>
@@ -176,6 +185,7 @@ const App = () => {
                                 {installation.account} ({installation.account_type})
                             </option>
                         ))}
+                        <option onClick={() => toast.warning("Not implemented yet.")}>Add GitHub Account</option>
                     </select>
                 </section>
                 {selectedAccount && settings && (
