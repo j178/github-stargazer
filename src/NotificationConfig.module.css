@@ -60,18 +60,41 @@ button:hover {
     margin-top: 20px;
 }
 
-.settingItem {
+.settingsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.settingCard {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: calc(33.333% - 20px); /* Adjust the width as needed */
+}
+
+.cardHeader {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.cardContent {
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.cardActions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
 }
 
 .removeButton {
-    padding: 5px 10px;
-    font-size: 0.9em;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
     color: red;
 }
 

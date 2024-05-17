@@ -99,3 +99,18 @@ a {
 a:hover {
   text-decoration: underline;
 }
+
+.loginButton {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 1em;
+  border-radius: 4px;
+  background-color: #0070f3;
+  color: white;
+  text-decoration: none;
+  margin-top: 20px;
+}
+
+.loginButton:hover {
+  background-color: #005bb5;
+}

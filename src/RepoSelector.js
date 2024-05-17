@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from "react";
+import styles from './RepoSelector.module.css';
 
 const RepoSelector = ({ repos, onSelect, maxVisible, loadMoreRepos }) => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -15,26 +16,29 @@ const RepoSelector = ({ repos, onSelect, maxVisible, loadMoreRepos }) => {
     };
 
     return (
-        <div>
+        <div className={styles.repoSelector}>
             <input
                 type="text"
                 placeholder="Search Repositories"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                style={{ width: "100%", padding: "10px", fontSize: "1em", marginBottom: "10px" }}
+                className={styles.searchInput}
             />
-            <select
-                size={10}
-                style={{ width: "100%", padding: "10px", fontSize: "1em", border: "1px solid #ccc", borderRadius: "4px" }}
-                onChange={onSelect}
-            >
-                {displayedRepos.map(repo => (
-                    <option key={repo} value={repo}>{repo}</option>
-                ))}
-            </select>
-            <button onClick={loadMoreRepos} style={{ width: "100%", padding: "10px", marginTop: "10px" }}>
-                Load More Repositories
-            </button>
+            <div className={styles.selectContainer}>
+                <select
+                    size={10}
+                    className={styles.repoSelect}
+                    onChange={onSelect}
+                >
+                    {displayedRepos.map(repo => (
+                        <option key={repo} value={repo}>{repo}</option>
+                    ))}
+                </select>
+                <button onClick={loadMoreRepos} className={styles.loadMoreButton}>
+                    Load More Repositories
+                </button>
+            </div>
+
         </div>
     );
 };

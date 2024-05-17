@@ -3,6 +3,8 @@ import React, {useEffect, useState} from "react";
 import axios from "axios";
 import NotificationConfig from "./NotificationConfig";
 import RepoSelector from "./RepoSelector";
+import {toast, ToastContainer} from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const App = () => {
     const [installations, setInstallations] = useState([]);
@@ -12,6 +14,7 @@ const App = () => {
     const [listMode, setListMode] = useState('allow');
     const [selectedRepos, setSelectedRepos] = useState([]);
     const [curPage, setPage] = useState(1);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     const toggleListMode = () => {
         setListMode(listMode === 'allow' ? 'mute' : 'allow');
@@ -25,8 +28,13 @@ const App = () => {
         async function fetchInstallations() {
             try {
                 const response = await axios.get('/api/installations');
+                setIsLoggedIn(true);
                 setInstallations(response.data);
             } catch (error) {
+                if (error.response.status === 401) {
+                    setIsLoggedIn(false);
+                    toast.error('Please log in through GitHub to continue.');
+                }
                 console.error('Failed to fetch installations', error);
             }
         }
@@ -97,28 +105,74 @@ const App = () => {
     const handleTestSettings = async () => {
         try {
             await axios.post('/api/settings/test', settings);
-            alert('Test successful');
+            toast.success('Test successful');
         } catch (error) {
             console.error('Failed to test settings', error);
-            alert('Test failed');
+            toast.error('Test failed');
         }
     };
 
     const handleSaveSettings = async () => {
         try {
             await axios.post(`/api/settings/${selectedAccount}`, settings);
-            alert('Settings saved successfully');
+            toast.success('Settings saved successfully');
         } catch (error) {
             console.error('Failed to save settings', error);
-            alert('Failed to save settings');
+            toast.error('Failed to save settings');
         }
     };
 
+    const header = (<header>
+        <h1 className={styles.title}>Star++ Configuration</h1>
+    </header>);
+    const footer = (<footer>
+        <a
+            href="https://github.com/apps/stars-notifier"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            Powered by{' '}
+            <img src="/avatar.png" alt="Star++" className={styles.logo}/>
+        </a>
+    </footer>);
+
+    const [loginUrl, setLoginUrl] = useState('');
+    useEffect(() => {
+            async function loginWithGitHub() {
+                try {
+                    const response = await axios.get('/api/authorize');
+                    setLoginUrl(response.headers["location"]);
+                } catch (error) {
+                    console.error('Failed to login with GitHub', error);
+                    toast.error('Failed to login with GitHub');
+                }
+            }
+            loginWithGitHub();
+        }
+    );
+
+    if (!isLoggedIn) {
+        return (
+            <div className={styles.container}>
+                {header}
+                <main>
+                    <section>
+                        <p>Please log in through GitHub to continue.</p>
+                        <a href={loginUrl}
+                           className={styles.loginButton}>
+                            Log in with GitHub
+                        </a>
+                    </section>
+                </main>
+                {footer}
+                <ToastContainer/>
+            </div>
+        );
+    }
+
     return (
         <div className={styles.container}>
-            <header>
-                <h1 className={styles.title}>Star++ Configuration</h1>
-            </header>
+            {header}
             <main>
                 <section>
                     <label htmlFor="account-select">Select Account:</label>
@@ -165,16 +219,8 @@ const App = () => {
                     </section>
                 )}
             </main>
-            <footer>
-                <a
-                    href="https://github.com/apps/stars-notifier"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Powered by{' '}
-                    <img src="/avatar.png" alt="Star++" className={styles.logo}/>
-                </a>
-            </footer>
+            {footer}
+            <ToastContainer closeOnClick/>
         </div>
     );
 };

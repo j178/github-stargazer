@@ -29,6 +29,11 @@ const NotificationConfig = ({settings, setSettings}) => {
         setSettings(newSettings);
     }
 
+    const handleEditService = (index, updatedService) => {
+        const newSettings = { ...settings, notify_settings: settings.notify_settings.map((s, i) => i === index ? updatedService : s) };
+        setSettings(newSettings);
+    }
+
     const handleConnect = async () => {
         try {
             const response = await axios.post(`/api/connect/${service}`);
@@ -159,22 +164,26 @@ const NotificationConfig = ({settings, setSettings}) => {
             )}
 
             <div className={styles.currentSettings}>
-                {/* TODO: 将 Add a new service 按钮放在这个列表最下发 */}
                 <h3>Current Notification Settings</h3>
-                <ul>
+                <div className={styles.settingsList}>
                     {settings.notify_settings.map((ns, index) => (
-                        <div key={index} className={styles.settingItem}>
-                            <li className={styles.serviceDetail}>
+                        <div key={index} className={styles.settingCard}>
+                            <div className={styles.cardHeader}>
                                 <span className={styles.serviceIcon}>{serviceIcons[ns.service]}</span>
-                            </li>
-                            <div className={styles.serviceDetailText}>
                                 <strong>{ns.service.toUpperCase()}</strong>
+                            </div>
+                            <div className={styles.cardContent}>
                                 <pre>{JSON.stringify(ns, null, 2)}</pre>
                             </div>
-                            <button onClick={() => handleRemoveService(index)} className={styles.removeButton}>Remove</button>
+                            <div className={styles.cardActions}>
+                                <button onClick={() => handleEditService(index, ns)}>Edit</button>
+                                <button onClick={() => handleRemoveService(index)}
+                                        className={styles.removeButton}>Remove
+                                </button>
+                            </div>
                         </div>
                     ))}
-                </ul>
+                </div>
             </div>
         </div>
     );
