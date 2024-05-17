@@ -26,10 +26,9 @@ const App = () => {
   useEffect(() => {
     // Fetch settings when selected account changes
     if (selectedAccount) {
-      const account = installations.find(installation => installation.account === selectedAccount);
       async function fetchSettings() {
         try {
-          const response = await axios.get(`/api/settings/${account.account}`);
+          const response = await axios.get(`/api/settings/${selectedAccount}`);
           setSettings(response.data);
         } catch (error) {
           console.error('Failed to fetch settings', error);
@@ -37,6 +36,7 @@ const App = () => {
       }
 
       async function fetchRepos() {
+        const account = installations.find(installation => installation.account === selectedAccount);
         try {
           const response = await axios.get(`/api/repos/${account.id}`);
           setRepos(response.data);
@@ -76,8 +76,7 @@ const App = () => {
 
   const handleSaveSettings = async () => {
     try {
-      const account = installations.find(installation => installation.account === selectedAccount);
-      await axios.post(`/api/settings/${account.account}`, settings);
+      await axios.post(`/api/settings/${selectedAccount}`, settings);
       alert('Settings saved successfully');
     } catch (error) {
       console.error('Failed to save settings', error);

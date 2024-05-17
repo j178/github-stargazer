@@ -80,15 +80,6 @@ const NotificationConfig = ({settings, setSettings}) => {
                                     <p>Connected with Chat ID: {serviceDetails.chat_id}</p>
                                 </div>
                             )}
-                            { showMore? (
-                                <div>
-                                    <label>Bot Token:</label>
-                                    <input type="text" value={serviceDetails.token || ''}
-                                           onChange={(e) => e.target.value && setServiceDetails({...serviceDetails, token: e.target.value})}/>
-                                </div>
-                            ): (
-                                <button onClick={() => setShowMore(true)}>Show More</button>
-                            )}
                         </div>
                     )}
                     {service === 'discord_webhook' && (

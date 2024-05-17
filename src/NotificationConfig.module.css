@@ -24,7 +24,7 @@
     overflow-x: auto;
 }
 
-select, input {
+.notificationConfig select, .notificationConfig input {
     width: 100%;
     padding: 10px;
     margin-top: 10px;
