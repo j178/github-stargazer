@@ -9,6 +9,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import 'react-tooltip/dist/react-tooltip.css'
 
 const App = () => {
+    const [isLoggedIn, setIsLoggedIn] = useState(true);
     const [installations, setInstallations] = useState([]);
     const [repos, setRepos] = useState([]);
     const [selectedAccount, setSelectedAccount] = useState(null);
@@ -16,7 +17,7 @@ const App = () => {
     const [listMode, setListMode] = useState('mute');
     const [selectedRepos, setSelectedRepos] = useState([]);
     const [curPage, setPage] = useState(1);
-    const [isLoggedIn, setIsLoggedIn] = useState(true);
+    const [hasMore, setHasMore] = useState(true);
 
     const toggleListMode = () => {
         const mode = listMode === 'allow' ? 'mute' : 'allow';
@@ -76,6 +77,7 @@ const App = () => {
     const handleAccountChange = (event) => {
         setSelectedAccount(event.target.value);
         setSelectedRepos([]);
+        setHasMore(true);
     };
 
     const handleSelectRepo = (event) => {
@@ -103,11 +105,12 @@ const App = () => {
         try {
             const response = await axios.get(`/api/repos/${account.id}?page=${newPage}`);
             if (response.data.length === 0) {
-                return false;
+                setHasMore(false);
+                return;
             }
             setRepos([...repos, ...response.data])
             setPage(newPage);
-            return true;
+            setHasMore(true);
         } catch (error) {
             console.error('Failed to fetch repos', error);
         }
@@ -192,6 +195,7 @@ const App = () => {
                             repos={repos.filter(repo => !selectedRepos.includes(repo))}
                             onSelect={handleSelectRepo}
                             loadMoreRepos={loadMoreRepos}
+                            hasMore={hasMore}
                         />
 
                         <h3>{listMode === 'allow' ? 'Allow notifications from these repos only' : 'Mute notifications from these repos'}</h3>

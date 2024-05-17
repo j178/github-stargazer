@@ -1,11 +1,10 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import styles from './RepoSelector.module.css';
 
-const RepoSelector = ({repos, onSelect, loadMoreRepos}) => {
+const RepoSelector = ({repos, onSelect, loadMoreRepos, hasMore}) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [displayedRepos, setDisplayedRepos] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
     const observer = useRef();
 
     useEffect(() => {
@@ -21,7 +20,7 @@ const RepoSelector = ({repos, onSelect, loadMoreRepos}) => {
     const loadMore = useCallback(async () => {
         if (!hasMore || isLoading) return;
         setIsLoading(true);
-        setHasMore(await loadMoreRepos());
+        await loadMoreRepos();
         setIsLoading(false);
     }, [loadMoreRepos, isLoading, hasMore]);
 
