@@ -206,18 +206,20 @@ const App = () => {
                         </div>
                         <div className={styles.configSection}>
                             <label htmlFor="mute-star-lost"
-                                data-tooltip-id="mute-star-lost"
+                                   data-tooltip-id="tooltip"
                                    data-tooltip-content="Don't send notifications when lost stars">Mute Star Lost:
                             </label>
-                            <input
-                                type="checkbox"
-                                id="mute-star-lost"
-                                checked={settings.mute_lost_stars}
-                                onChange={(e) => setSettings({...settings, mute_lost_stars: e.target.checked})}
+                            <input type="checkbox"
+                                   id="mute-star-lost"
+                                   checked={settings.mute_lost_stars}
+                                   onChange={(e) => setSettings({...settings, mute_lost_stars: e.target.checked})}
                             />
                         </div>
                         <div className={styles.buttonGroup}>
-                            <button onClick={handleTestSettings}>Test Settings</button>
+                            <button data-tooltip-id="tooltip"
+                                    data-tooltip-content="Send a test notification to verify settings"
+                                    onClick={handleTestSettings}>Test Settings
+                            </button>
                             <button onClick={handleSaveSettings}>Save Settings</button>
                         </div>
                     </section>
@@ -225,7 +227,7 @@ const App = () => {
             </main>
             {footer}
             <ToastContainer closeOnClick/>
-            <Tooltip id="mute-star-lost"/>
+            <Tooltip id="tooltip"/>
         </div>
     );
 };
