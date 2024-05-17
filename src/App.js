@@ -14,10 +14,14 @@ const App = () => {
     const [listMode, setListMode] = useState('mute');
     const [selectedRepos, setSelectedRepos] = useState([]);
     const [curPage, setPage] = useState(1);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(true);
 
     const toggleListMode = () => {
-        setListMode(listMode === 'allow' ? 'mute' : 'allow');
+        const mode = listMode === 'allow' ? 'mute' : 'allow';
+        setListMode(mode);
+        mode === 'allow' ?
+            setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
+            : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
     };
 
     useEffect(() => {
@@ -75,14 +79,20 @@ const App = () => {
     const handleSelectRepo = (event) => {
         const repo = event.target.value;
         if (!selectedRepos.includes(repo)) {
-            setSelectedRepos([...selectedRepos, repo]);
-            console.log("selected repos after select: ", selectedRepos)
+            const repos = [...selectedRepos, repo];
+            setSelectedRepos(repos);
+            listMode === 'allow' ?
+                setSettings({...settings, allow_repos: repos, mute_repos: []})
+                : setSettings({...settings, mute_repos: repos, allow_repos: []});
         }
     };
 
     const handleUnselectRepo = (repo) => {
-        setSelectedRepos(selectedRepos.filter(r => r !== repo));
-        console.log("selected repos after unselect: ", selectedRepos)
+        const repos = selectedRepos.filter(r => r !== repo);
+        setSelectedRepos(repos);
+        listMode === 'allow' ?
+            setSettings({...settings, allow_repos: repos, mute_repos: []})
+            : setSettings({...settings, mute_repos: repos, allow_repos: []});
     };
 
     const loadMoreRepos = async () => {
@@ -102,11 +112,6 @@ const App = () => {
     };
 
     const handleTestSettings = async () => {
-        console.log("selected repos: ", selectedRepos)
-        listMode === 'allow' ?
-            setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
-            : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
-        console.log("settings: ", settings)
         try {
             await axios.post('/api/settings/test', settings);
             toast.success('Test successful');
@@ -117,11 +122,6 @@ const App = () => {
     };
 
     const handleSaveSettings = async () => {
-        console.log("selected repos: ", selectedRepos)
-        listMode === 'allow' ?
-            setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
-            : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
-        console.log("settings: ", settings)
         try {
             await axios.post(`/api/settings/${selectedAccount}`, settings);
             toast.success('Settings saved successfully');
@@ -131,19 +131,23 @@ const App = () => {
         }
     };
 
-    const header = (<header>
-        <h1 className={styles.title}>Star++ Configuration</h1>
-    </header>);
-    const footer = (<footer>
-        <a
-            href="https://github.com/apps/stars-notifier"
-            target="_blank"
-            rel="noopener noreferrer"
-        >
-            Powered by{' '}
-            <img src="/avatar.png" alt="Star++" className={styles.logo}/>
-        </a>
-    </footer>);
+    const header = (
+        <header>
+            <h1 className={styles.title}>Star++ Configuration</h1>
+        </header>
+    );
+    const footer = (
+        <footer>
+            <a
+                href="https://github.com/apps/stars-notifier"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                Powered by{' '}
+                <img src="/avatar.png" alt="Star++" className={styles.logo}/>
+            </a>
+        </footer>
+    );
 
     if (!isLoggedIn) {
         return (
