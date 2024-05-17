@@ -192,7 +192,8 @@ const App = () => {
                             loadMoreRepos={loadMoreRepos}
                         />
 
-                        <button onClick={toggleListMode}>{listMode === 'allow' ? 'Mute List' : 'Allow List'}</button>
+                        <h3>{listMode === 'allow' ? 'Allow' : 'Mute'} notifications from these repos</h3>
+                        <button onClick={toggleListMode}>Change to {listMode === 'allow' ? 'mute' : 'allow'}</button>
                         <div className={styles.configSection}>
                             {selectedRepos.map(repo => (
                                 <div key={repo}>
