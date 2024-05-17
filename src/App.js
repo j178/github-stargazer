@@ -103,10 +103,11 @@ const App = () => {
         try {
             const response = await axios.get(`/api/repos/${account.id}?page=${newPage}`);
             if (response.data.length === 0) {
-                return;
+                return false;
             }
             setRepos([...repos, ...response.data])
             setPage(newPage);
+            return true;
         } catch (error) {
             console.error('Failed to fetch repos', error);
         }

@@ -5,6 +5,7 @@ const RepoSelector = ({repos, onSelect, loadMoreRepos}) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [displayedRepos, setDisplayedRepos] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
     const observer = useRef();
 
     useEffect(() => {
@@ -18,10 +19,11 @@ const RepoSelector = ({repos, onSelect, loadMoreRepos}) => {
     };
 
     const loadMore = useCallback(async () => {
+        if (!hasMore || isLoading) return;
         setIsLoading(true);
-        await loadMoreRepos();
+        setHasMore(await loadMoreRepos());
         setIsLoading(false);
-    }, [loadMoreRepos]);
+    }, [loadMoreRepos, isLoading, hasMore]);
 
     const lastRepoElementRef = useCallback(node => {
         if (isLoading) return;
