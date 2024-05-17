@@ -136,21 +136,6 @@ const App = () => {
         </a>
     </footer>);
 
-    const [loginUrl, setLoginUrl] = useState('');
-    useEffect(() => {
-            async function loginWithGitHub() {
-                try {
-                    const response = await axios.get('/api/authorize', {maxRedirects: 0});
-                    setLoginUrl(response.headers["location"]);
-                } catch (error) {
-                    console.error('Failed to login with GitHub', error);
-                    toast.error('Failed to login with GitHub');
-                }
-            }
-            loginWithGitHub();
-        }
-    );
-
     if (!isLoggedIn) {
         return (
             <div className={styles.container}>
@@ -158,10 +143,18 @@ const App = () => {
                 <main>
                     <section>
                         <p>Please log in through GitHub to continue.</p>
-                        <a href={loginUrl}
+                        <button onClick={async () => {
+                            try {
+                                const response = await axios.get('/api/authorize', {maxRedirects: 0});
+                                window.location.href = response.headers['location'];
+                            } catch (error) {
+                                console.error('Failed to login with GitHub', error);
+                                toast.error('Failed to login with GitHub');
+                            }
+                        }}
                            className={styles.loginButton}>
                             Log in with GitHub
-                        </a>
+                        </button>
                     </section>
                 </main>
                 {footer}
@@ -191,7 +184,6 @@ const App = () => {
                         <RepoSelector
                             repos={repos.filter(repo => !selectedRepos.includes(repo))}
                             onSelect={handleSelectRepo}
-                            maxVisible={10}
                             loadMoreRepos={loadMoreRepos}
                         />
 
