@@ -2,6 +2,7 @@ import styles from './App.module.css';
 import React, {useEffect, useState} from "react";
 import axios from "axios";
 import NotificationConfig from "./NotificationConfig";
+import RepoSelector from "./RepoSelector";
 
 const App = () => {
     const [installations, setInstallations] = useState([]);
@@ -10,6 +11,7 @@ const App = () => {
     const [settings, setSettings] = useState(null);
     const [listMode, setListMode] = useState('allow');
     const [selectedRepos, setSelectedRepos] = useState([]);
+    const [page, setPage] = useState(1);
 
     const toggleListMode = () => {
         setListMode(listMode === 'allow' ? 'mute' : 'allow');
@@ -32,6 +34,16 @@ const App = () => {
         fetchInstallations();
     }, []);
 
+    async function fetchRepos(page = 1) {
+        const account = installations.find(installation => installation.account === selectedAccount);
+        try {
+            const response = await axios.get(`/api/repos/${account.id}?page=${page}`);
+            setRepos([...new Set(repos.concat(response.data))]);
+        } catch (error) {
+            console.error('Failed to fetch repos', error);
+        }
+    }
+
     useEffect(() => {
         // Fetch settings when selected account changes
         if (selectedAccount) {
@@ -44,32 +56,28 @@ const App = () => {
                 }
             }
 
-            async function fetchRepos() {
-                const account = installations.find(installation => installation.account === selectedAccount);
-                try {
-                    const response = await axios.get(`/api/repos/${account.id}`);
-                    setRepos(response.data);
-                } catch (error) {
-                    console.error('Failed to fetch repos', error);
-                }
-            }
-
             fetchSettings();
+            setRepos([]);
             fetchRepos();
+            setPage(1);
         }
     }, [selectedAccount]);
 
     const handleAccountChange = (event) => {
         setSelectedAccount(event.target.value);
+        setSelectedRepos([]);
     };
 
     const selectRepo = (event) => {
-        setSelectedRepos([...selectedRepos, event.target.value]);
-    }
+        const repo = event.target.value;
+        if (!selectedRepos.includes(repo)) {
+            setSelectedRepos([...selectedRepos, repo]);
+        }
+    };
 
-    const unselectRepo = (event) => {
-        setSelectedRepos(selectedRepos.filter(r => r !== event.target.value));
-    }
+    const unselectRepo = (repo) => {
+        setSelectedRepos(selectedRepos.filter(r => r !== repo));
+    };
 
     const handleTestSettings = async () => {
         try {
@@ -89,6 +97,14 @@ const App = () => {
             console.error('Failed to save settings', error);
             alert('Failed to save settings');
         }
+    };
+
+    const loadMoreRepos = async () => {
+        setPage(prevPage => {
+            const newPage = prevPage + 1;
+            fetchRepos(newPage);
+            return newPage;
+        });
     };
 
     return (
@@ -111,19 +127,19 @@ const App = () => {
                 {selectedAccount && settings && (
                     <section>
                         <NotificationConfig settings={settings} setSettings={setSettings}/>
-                        {/* TODO: 加载更多、支持搜索 */}
-                        <select onClick={selectRepo}>
-                            {repos.filter(repo => !selectedRepos.find(r => r === repo)).map(repo => (
-                                <option key={repo} value={repo}>{repo}</option>
-                            ))}
-                        </select>
+                        <RepoSelector
+                            repos={repos.filter(repo => !selectedRepos.includes(repo))}
+                            onSelect={selectRepo}
+                            maxVisible={10}
+                            loadMoreRepos={loadMoreRepos}
+                        />
 
                         <button onClick={toggleListMode}>{listMode === 'allow' ? 'Mute List' : 'Allow List'}</button>
                         <div className={styles.configSection}>
                             {selectedRepos.map(repo => (
                                 <div key={repo}>
                                     {repo}
-                                    <button onClick={unselectRepo}>Remove</button>
+                                    <button onClick={() => unselectRepo(repo)}>Remove</button>
                                 </div>
                             ))}
                         </div>
