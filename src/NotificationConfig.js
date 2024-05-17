@@ -61,7 +61,7 @@ const NotificationConfig = ({settings, setSettings}) => {
 
     return (
         <div className={styles.notificationConfig}>
-            <h3><label htmlFor="service-select">Add Notification Service:</label></h3>
+            <h3><label htmlFor="service-select">Add Notification Service</label></h3>
             <select id="service-select" value={service} onChange={selectService}>
                 <option value="" disabled>Select a service</option>
                 {['bark', 'telegram', 'discord_webhook', 'discord_bot', 'webhook'].map((s) => (

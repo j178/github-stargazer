@@ -11,7 +11,7 @@ const App = () => {
     const [repos, setRepos] = useState([]);
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [settings, setSettings] = useState(null);
-    const [listMode, setListMode] = useState('allow');
+    const [listMode, setListMode] = useState('mute');
     const [selectedRepos, setSelectedRepos] = useState([]);
     const [curPage, setPage] = useState(1);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -76,11 +76,13 @@ const App = () => {
         const repo = event.target.value;
         if (!selectedRepos.includes(repo)) {
             setSelectedRepos([...selectedRepos, repo]);
+            console.log("selected repos after select: ", selectedRepos)
         }
     };
 
     const handleUnselectRepo = (repo) => {
         setSelectedRepos(selectedRepos.filter(r => r !== repo));
+        console.log("selected repos after unselect: ", selectedRepos)
     };
 
     const loadMoreRepos = async () => {
@@ -100,9 +102,11 @@ const App = () => {
     };
 
     const handleTestSettings = async () => {
+        console.log("selected repos: ", selectedRepos)
         listMode === 'allow' ?
             setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
             : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
+        console.log("settings: ", settings)
         try {
             await axios.post('/api/settings/test', settings);
             toast.success('Test successful');
@@ -113,9 +117,11 @@ const App = () => {
     };
 
     const handleSaveSettings = async () => {
+        console.log("selected repos: ", selectedRepos)
         listMode === 'allow' ?
             setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
             : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
+        console.log("settings: ", settings)
         try {
             await axios.post(`/api/settings/${selectedAccount}`, settings);
             toast.success('Settings saved successfully');
