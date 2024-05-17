@@ -103,7 +103,6 @@ const App = () => {
         try {
             const response = await axios.get(`/api/repos/${account.id}?page=${newPage}`);
             if (response.data.length === 0) {
-                toast.info('No more repositories to load');
                 return;
             }
             setRepos([...repos, ...response.data])

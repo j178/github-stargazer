@@ -1,9 +1,11 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import styles from './RepoSelector.module.css';
 
-const RepoSelector = ({ repos, onSelect, loadMoreRepos }) => {
+const RepoSelector = ({repos, onSelect, loadMoreRepos}) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [displayedRepos, setDisplayedRepos] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const observer = useRef();
 
     useEffect(() => {
         setDisplayedRepos(repos);
@@ -15,30 +17,54 @@ const RepoSelector = ({ repos, onSelect, loadMoreRepos }) => {
         setDisplayedRepos(filteredRepos);
     };
 
+    const loadMore = useCallback(async () => {
+        setIsLoading(true);
+        await loadMoreRepos();
+        setIsLoading(false);
+    }, [loadMoreRepos]);
+
+    const lastRepoElementRef = useCallback(node => {
+        if (isLoading) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) {
+                loadMore();
+            }
+        });
+        if (node) observer.current.observe(node);
+    }, [isLoading, loadMore]);
+
     return (
         <div className={styles.repoSelector}>
-            <input
-                type="text"
-                placeholder="Search Repositories"
-                value={searchTerm}
-                onChange={handleSearchChange}
-                className={styles.searchInput}
+            <input type="text"
+                   placeholder="Search Repositories"
+                   value={searchTerm}
+                   onChange={handleSearchChange}
+                   className={styles.searchInput}
             />
             <div className={styles.selectContainer}>
-                <select
-                    size={10}
-                    className={styles.repoSelect}
-                    onChange={onSelect}
+                <select size={10}
+                        className={styles.repoSelect}
+                        onChange={onSelect}
                 >
-                    {displayedRepos.map(repo => (
-                        <option key={repo} value={repo}>{repo}</option>
-                    ))}
+                    {displayedRepos.map((repo, index) => {
+                        if (displayedRepos.length === index + 1) {
+                            return (
+                                <option ref={lastRepoElementRef} key={repo} value={repo}>
+                                    {repo}
+                                </option>
+                            );
+                        } else {
+                            return (
+                                <option key={repo} value={repo}>
+                                    {repo}
+                                </option>
+                            );
+                        }
+                    })}
                 </select>
-                <button onClick={loadMoreRepos} className={styles.loadMoreButton}>
-                    Load More Repositories
-                </button>
+                {isLoading && <div className={styles.loading}>Loading...</div>}
             </div>
-
         </div>
     );
 };
