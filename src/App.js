@@ -140,7 +140,7 @@ const App = () => {
     useEffect(() => {
             async function loginWithGitHub() {
                 try {
-                    const response = await axios.get('/api/authorize');
+                    const response = await axios.get('/api/authorize', {maxRedirects: 0});
                     setLoginUrl(response.headers["location"]);
                 } catch (error) {
                     console.error('Failed to login with GitHub', error);
