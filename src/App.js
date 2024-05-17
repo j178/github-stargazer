@@ -72,6 +72,9 @@ const App = () => {
         const repo = event.target.value;
         if (!selectedRepos.includes(repo)) {
             setSelectedRepos([...selectedRepos, repo]);
+            listMode === 'allow' ?
+                setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
+                : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
         }
     };
 
