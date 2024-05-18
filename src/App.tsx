@@ -14,13 +14,13 @@ enum ListMode {
     Mute = 'mute'
 }
 
-const AccountSelect = ({ installations, selectedAccount, handleAccountChange, updateAccountState }: {
+const AccountSelect = ({installations, selectedAccount, handleAccountChange, updateAccountState}: {
     installations: Installation[],
-    selectedAccount: string,
+    selectedAccount: Installation | null,
     handleAccountChange: (event: React.ChangeEvent<HTMLSelectElement>) => void,
     updateAccountState: () => void
 }) => {
-    const [, setPopup] = useState<Window|null>(null);
+    const [, setPopup] = useState<Window | null>(null);
 
     const handleAddAccount = () => {
         const newPopup = window.open("https://github.com/apps/stars-notifier/installations/new", "popup", "width=600,height=600")!;
@@ -46,7 +46,7 @@ const AccountSelect = ({ installations, selectedAccount, handleAccountChange, up
     };
 
     return (
-        <select id="account-select" onChange={handleChange} value={selectedAccount || ''}>
+        <select id="account-select" onChange={handleChange} value={selectedAccount?.account}>
             <option value="" disabled>Select an account</option>
             {installations.map((installation) => (
                 <option key={installation.id} value={installation.account}>
@@ -58,13 +58,34 @@ const AccountSelect = ({ installations, selectedAccount, handleAccountChange, up
     );
 };
 
+const Header = () => {
+    return (
+        <header>
+            <h1 className={styles.title}>Star++ Configuration</h1>
+        </header>
+    );
+}
+
+const Footer = () => {
+    return (
+        <footer>
+            <a href="https://github.com/apps/stars-notifier"
+               target="_blank"
+               rel="noopener noreferrer"
+            >
+                Powered by{' '}
+                <img src="/avatar.png" alt="Star++" className={styles.logo}/>
+            </a>
+        </footer>
+    );
+}
 
 const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(true);
     const [installations, setInstallations] = useState<Installation[]>([]);
     const [repos, setRepos] = useState<RepoInfo[]>([]);
-    const [selectedAccount, setSelectedAccount] = useState<string|null>(null);
-    const [settings, setSettings] = useState<Settings|null>(null);
+    const [selectedAccount, setSelectedAccount] = useState<Installation | null>(null);
+    const [settings, setSettings] = useState<Settings | null>(null);
     const [listMode, setListMode] = useState(ListMode.Mute);
     const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
     const [curPage, setPage] = useState(1);
@@ -101,7 +122,7 @@ const App = () => {
         if (selectedAccount) {
             async function fetchSettings() {
                 try {
-                    const response = await axios.get(`/api/settings/${selectedAccount}`);
+                    const response = await axios.get(`/api/settings/${selectedAccount?.account}`);
                     setSettings(response.data);
                 } catch (error) {
                     console.error('Failed to fetch settings', error);
@@ -109,9 +130,8 @@ const App = () => {
             }
 
             async function fetchRepos() {
-                const account = installations.find(installation => installation.account === selectedAccount);
                 try {
-                    const response = await axios.get(`/api/repos/${account?.id}`);
+                    const response = await axios.get(`/api/repos/${selectedAccount?.id}`);
                     setRepos(response.data)
                 } catch (error) {
                     console.error('Failed to fetch repos', error);
@@ -122,13 +142,13 @@ const App = () => {
             setRepos([]);
             fetchRepos();
             setPage(1);
+            setHasMore(true);
+            setSelectedRepos([]);
         }
     }, [selectedAccount, installations]);
 
     const handleAccountChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedAccount(event.target.value);
-        setSelectedRepos([]);
-        setHasMore(true);
+        setSelectedAccount(installations.find(installation => installation.account === event.target.value) || null);
     };
 
     const handleSelectRepo = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -136,7 +156,7 @@ const App = () => {
         if (!selectedRepos.includes(repo)) {
             const repos = [...selectedRepos, repo];
             setSelectedRepos(repos);
-            listMode === 'allow' ?
+            listMode === ListMode.Allow ?
                 setSettings({...settings!, allow_repos: repos, mute_repos: []})
                 : setSettings({...settings!, mute_repos: repos, allow_repos: []});
         }
@@ -145,16 +165,15 @@ const App = () => {
     const handleUnselectRepo = (repo: string) => {
         const repos = selectedRepos.filter(r => r !== repo);
         setSelectedRepos(repos);
-        listMode === 'allow' ?
+        listMode === ListMode.Allow ?
             setSettings({...settings!, allow_repos: repos, mute_repos: []})
             : setSettings({...settings!, mute_repos: repos, allow_repos: []});
     };
 
     const loadMoreRepos = async () => {
         const newPage = curPage + 1;
-        const account = installations.find(installation => installation.account === selectedAccount);
         try {
-            const response = await axios.get(`/api/repos/${account?.id}?page=${newPage}`);
+            const response = await axios.get(`/api/repos/${selectedAccount?.id}?page=${newPage}`);
             if (response.data.length === 0) {
                 setHasMore(false);
                 return;
@@ -187,37 +206,20 @@ const App = () => {
         }
     };
 
-    const header = (
-        <header>
-            <h1 className={styles.title}>Star++ Configuration</h1>
-        </header>
-    );
-    const footer = (
-        <footer>
-            <a
-                href="https://github.com/apps/stars-notifier"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Powered by{' '}
-                <img src="/avatar.png" alt="Star++" className={styles.logo}/>
-            </a>
-        </footer>
-    );
 
     if (!isLoggedIn) {
         return (
             <div className={styles.container}>
-                {header}
+                <Header/>
                 <main>
                     <section>
                         <p>Please log in through GitHub to continue.</p>
-                        <a href={'/api/authorize'} className={styles.loginButton}>
+                        <a href='/api/authorize' className={styles.loginButton}>
                             Log in with GitHub
                         </a>
                     </section>
                 </main>
-                {footer}
+                <Footer/>
                 <ToastContainer/>
             </div>
         );
@@ -225,7 +227,7 @@ const App = () => {
 
     return (
         <div className={styles.container}>
-            {header}
+            <Header/>
             <main>
                 <section>
                     <label htmlFor="account-select">Select Account:</label>
@@ -301,7 +303,7 @@ const App = () => {
                     </section>
                 )}
             </main>
-            {footer}
+            <Footer/>
             <ToastContainer closeOnClick/>
             <Tooltip id="tooltip"/>
         </div>
