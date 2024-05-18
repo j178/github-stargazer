@@ -9,8 +9,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/go-github/v53/github"
-	"github.com/j178/github_stargazer/backend/routes"
 	"github.com/samber/lo"
+
+	"github.com/j178/github_stargazer/backend/routes"
 
 	"github.com/j178/github_stargazer/backend/notify"
 
@@ -193,12 +194,17 @@ func InstalledRepos(c *gin.Context) {
 		routes.Abort(c, http.StatusInternalServerError, err, "list repos")
 		return
 	}
-	repoNames := make([]string, 0, len(repos.Repositories))
-	for _, repo := range repos.Repositories {
-		repoNames = append(repoNames, repo.GetFullName())
+	returnRepos := make([]map[string]any, len(repos.Repositories))
+	for i, item := range repos.Repositories {
+		returnRepos[i] = map[string]any{
+			"id":          item.GetID(),
+			"name":        item.GetFullName(),
+			"description": item.GetDescription(),
+			"fork":        item.GetFork(),
+		}
 	}
 
-	c.JSON(http.StatusOK, repoNames)
+	c.JSON(http.StatusOK, returnRepos)
 }
 
 func CheckSettings(c *gin.Context) {

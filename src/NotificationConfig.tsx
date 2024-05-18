@@ -1,36 +1,65 @@
 import React, {useState} from 'react';
 import axios from 'axios';
 import styles from './NotificationConfig.module.css';
-import {FaTelegram, FaDiscord, FaBell, FaPlug} from "react-icons/fa";
+import {FaBell, FaDiscord, FaPlug, FaTelegram} from "react-icons/fa";
+import {NotifySetting, Settings} from "./models";
 
-const serviceIcons = {
-    telegram: <FaTelegram />,
-    discord_webhook: <FaDiscord />,
-    discord_bot: <FaDiscord />,
-    bark: <FaBell />,
-    webhook: <FaPlug />
+const serviceIcons: { [key: string]: React.ReactElement } = {
+    telegram: <FaTelegram/>,
+    discord_webhook: <FaDiscord/>,
+    discord_bot: <FaDiscord/>,
+    bark: <FaBell/>,
+    webhook: <FaPlug/>
 };
 
-const NotificationConfig = ({settings, setSettings}) => {
+interface ServiceDetail {
+    service: string,
+    chat_id: string | null,
+    webhook_id: string | null,
+    webhook_token: string | null,
+    username: string | null,
+    avatar_url: string | null,
+    color: number | null,
+    key: string | null,
+    server: string | null,
+    url: string | null,
+    method: string | null,
+    headers: string | null,
+    body: string | null,
+}
+
+interface ConnectionToken {
+    token: string;
+    bot_url: string;
+    bot_group_url: string;
+}
+
+const NotificationConfig = ({settings, setSettings}: {
+    settings: Settings,
+    setSettings: (settings: Settings) => void
+}) => {
     const [service, setService] = useState('');
-    const [serviceDetails, setServiceDetails] = useState({});
-    const [connectionToken, setConnectionToken] = useState(null);
+    const [serviceDetails, setServiceDetails] = useState<ServiceDetail | null>(null);
+    const [connectionToken, setConnectionToken] = useState<ConnectionToken | null>(null);
     const [showMore, setShowMore] = useState(false);
 
     const handleAddService = () => {
-        const newService = {service: service, ...serviceDetails};
+        const newService = {service, ...serviceDetails};
         setSettings({...settings, notify_settings: [...settings.notify_settings, newService]});
         setService('');
-        setServiceDetails({});
+        setServiceDetails(null);
     };
 
-    const handleRemoveService = (index) => {
+    const handleRemoveService = (index: number) => {
         const newSettings = {...settings, notify_settings: settings.notify_settings.filter((_, i) => i !== index)};
         setSettings(newSettings);
     }
 
-    const handleEditService = (index, updatedService) => {
-        const newSettings = { ...settings, notify_settings: settings.notify_settings.map((s, i) => i === index ? updatedService : s) };
+    const handleEditService = (index: number, updatedService: NotifySetting) => {
+        const newSettings = {
+            ...settings,
+            notify_settings: settings.notify_settings.map((s, i) => i === index ? updatedService : s)
+        };
         setSettings(newSettings);
     }
 
@@ -45,16 +74,16 @@ const NotificationConfig = ({settings, setSettings}) => {
 
     const handleConnectResult = async () => {
         try {
-            const response = await axios.get(`/api/connect/${service}/${connectionToken.token}`);
+            const response = await axios.get(`/api/connect/${service}/${connectionToken?.token}`);
             setServiceDetails({...serviceDetails, ...response.data})
         } catch (error) {
             console.error('Failed to get connect result', error);
         }
     }
 
-    const selectService = (e) => {
+    const selectService = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setService(e.target.value);
-        setServiceDetails({});
+        setServiceDetails(null);
         setConnectionToken(null);
         setShowMore(false);
     }
@@ -79,10 +108,11 @@ const NotificationConfig = ({settings, setSettings}) => {
                                 <div>
                                     <p><a href={connectionToken.bot_url} target="_blank" rel="noopener noreferrer">Private
                                         Chat</a></p>
-                                    <p><a href={connectionToken.bot_group_url} target="_blank" rel="noopener noreferrer">Group
+                                    <p><a href={connectionToken.bot_group_url} target="_blank"
+                                          rel="noopener noreferrer">Group
                                         Chat</a></p>
                                     <button onClick={handleConnectResult}>获取连接结果</button>
-                                    <p>Connected with Chat ID: {serviceDetails.chat_id}</p>
+                                    <p>Connected with Chat ID: {serviceDetails?.chat_id}</p>
                                 </div>
                             )}
                         </div>
@@ -90,31 +120,40 @@ const NotificationConfig = ({settings, setSettings}) => {
                     {service === 'discord_webhook' && (
                         <div>
                             <label>Webhook ID:</label>
-                            <input type="text" value={serviceDetails.webhook_id || ''}
+                            <input type="text" value={serviceDetails?.webhook_id || ''}
                                    onChange={(e) => setServiceDetails({
-                                       ...serviceDetails,
+                                       ...serviceDetails!,
                                        webhook_id: e.target.value
                                    })}/>
                             <label>Webhook Token:</label>
-                            <input type="text" value={serviceDetails.webhook_token || ''}
+                            <input type="text" value={serviceDetails?.webhook_token || ''}
                                    onChange={(e) => setServiceDetails({
-                                       ...serviceDetails,
+                                       ...serviceDetails!,
                                        webhook_token: e.target.value
                                    })}/>
                             {
-                                showMore? (
+                                showMore ? (
                                     <div>
                                         <label>Username:</label>
-                                        <input type="text" value={serviceDetails.username || ''}
-                                               onChange={(e) => e.target.value && setServiceDetails({...serviceDetails, username: e.target.value})}/>
+                                        <input type="text" value={serviceDetails?.username || ''}
+                                               onChange={(e) => e.target.value && setServiceDetails({
+                                                   ...serviceDetails!,
+                                                   username: e.target.value
+                                               })}/>
                                         <label>Avatar URL:</label>
-                                        <input type="text" value={serviceDetails.avatar_url || ''}
-                                               onChange={(e) => e.target.value && setServiceDetails({...serviceDetails, avatar_url: e.target.value})}/>
+                                        <input type="text" value={serviceDetails?.avatar_url || ''}
+                                               onChange={(e) => e.target.value && setServiceDetails({
+                                                   ...serviceDetails!,
+                                                   avatar_url: e.target.value
+                                               })}/>
                                         <label>Color:</label>
-                                        <input type="number" value={serviceDetails.color || ''}
-                                               onChange={(e) => e.target.value && setServiceDetails({...serviceDetails, color: e.target.value})}/>
+                                        <input type="number" value={serviceDetails?.color || ''}
+                                               onChange={(e) => e.target.value && setServiceDetails({
+                                                   ...serviceDetails!,
+                                                   color: parseInt(e.target.value)
+                                               })}/>
                                     </div>
-                                ):(<button onClick={() => setShowMore(true)}>Show More</button>)
+                                ) : (<button onClick={() => setShowMore(true)}>Show More</button>)
                             }
                         </div>
                     )}
@@ -126,36 +165,42 @@ const NotificationConfig = ({settings, setSettings}) => {
                     {service === 'bark' && (
                         <div>
                             <label>Bark Key:</label>
-                            <input type="text" value={serviceDetails.key || ''}
-                                   onChange={(e) => setServiceDetails({...serviceDetails, key: e.target.value})}/>
+                            <input type="text" value={serviceDetails?.key || ''}
+                                   onChange={(e) => setServiceDetails({...serviceDetails!, key: e.target.value})}/>
                             <label>Bark Server:</label>
-                            <input type="text" value={serviceDetails.server || 'https://api.day.app/'}
-                                   onChange={(e) => setServiceDetails({...serviceDetails, server: e.target.value})}/>
+                            <input type="text" value={serviceDetails?.server || 'https://api.day.app/'}
+                                   onChange={(e) => setServiceDetails({...serviceDetails!, server: e.target.value})}/>
                         </div>
                     )}
                     {service === 'webhook' && (
                         <div>
                             <label>Webhook URL:</label>
-                            <input type="text" value={serviceDetails.url || ''}
-                                   onChange={(e) => setServiceDetails({...serviceDetails, url: e.target.value})}/>
+                            <input type="text" value={serviceDetails?.url || ''}
+                                   onChange={(e) => setServiceDetails({...serviceDetails!, url: e.target.value})}/>
                             <label>Method:</label>
-                            <select value={serviceDetails.method || 'GET'}
-                                    onChange={(e) => setServiceDetails({...serviceDetails, method: e.target.value})}>
+                            <select value={serviceDetails?.method || 'GET'}
+                                    onChange={(e) => setServiceDetails({...serviceDetails!, method: e.target.value})}>
                                 <option value="GET">GET</option>
                                 <option value="POST">POST</option>
                                 <option value="PUT">PUT</option>
                             </select>
                             {
-                                showMore? (
+                                showMore ? (
                                     <div>
                                         <label>Headers:</label>
-                                        <textarea value={serviceDetails.headers || ''}
-                                                  onChange={(e) => setServiceDetails({...serviceDetails, headers: e.target.value})}/>
+                                        <textarea value={serviceDetails?.headers || ''}
+                                                  onChange={(e) => setServiceDetails({
+                                                      ...serviceDetails!,
+                                                      headers: e.target.value
+                                                  })}/>
                                         <label>Body Template:</label>
-                                        <textarea value={serviceDetails.body || ''}
-                                                  onChange={(e) => setServiceDetails({...serviceDetails, body: e.target.value})}/>
+                                        <textarea value={serviceDetails?.body || ''}
+                                                  onChange={(e) => setServiceDetails({
+                                                      ...serviceDetails!,
+                                                      body: e.target.value
+                                                  })}/>
                                     </div>
-                                ):(<button onClick={() => setShowMore(true)}>Show More</button>)
+                                ) : (<button onClick={() => setShowMore(true)}>Show More</button>)
                             }
                         </div>
                     )}

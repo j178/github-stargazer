@@ -7,12 +7,23 @@ import {toast, ToastContainer} from 'react-toastify';
 import {Tooltip} from 'react-tooltip';
 import 'react-toastify/dist/ReactToastify.css';
 import 'react-tooltip/dist/react-tooltip.css'
+import {Installation, RepoInfo, Settings} from "./models";
 
-const AccountSelect = ({ installations, selectedAccount, handleAccountChange, updateAccountState }) => {
-    const [, setPopup] = useState(null);
+enum ListMode {
+    Allow = 'allow',
+    Mute = 'mute'
+}
+
+const AccountSelect = ({ installations, selectedAccount, handleAccountChange, updateAccountState }: {
+    installations: Installation[],
+    selectedAccount: string,
+    handleAccountChange: (event: React.ChangeEvent<HTMLSelectElement>) => void,
+    updateAccountState: () => void
+}) => {
+    const [, setPopup] = useState<Window|null>(null);
 
     const handleAddAccount = () => {
-        const newPopup = window.open("https://github.com/apps/stars-notifier/installations/new", "popup", "width=600,height=600");
+        const newPopup = window.open("https://github.com/apps/stars-notifier/installations/new", "popup", "width=600,height=600")!;
         setPopup(newPopup);
 
         const checkPopup = setInterval(() => {
@@ -25,7 +36,7 @@ const AccountSelect = ({ installations, selectedAccount, handleAccountChange, up
         }, 1000);
     };
 
-    const handleChange = (event) => {
+    const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const value = event.target.value;
         if (value === "add-account") {
             handleAddAccount();
@@ -47,23 +58,24 @@ const AccountSelect = ({ installations, selectedAccount, handleAccountChange, up
     );
 };
 
+
 const App = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(true);
-    const [installations, setInstallations] = useState([]);
-    const [repos, setRepos] = useState([]);
-    const [selectedAccount, setSelectedAccount] = useState(null);
-    const [settings, setSettings] = useState(null);
-    const [listMode, setListMode] = useState('mute');
-    const [selectedRepos, setSelectedRepos] = useState([]);
+    const [installations, setInstallations] = useState<Installation[]>([]);
+    const [repos, setRepos] = useState<RepoInfo[]>([]);
+    const [selectedAccount, setSelectedAccount] = useState<string|null>(null);
+    const [settings, setSettings] = useState<Settings|null>(null);
+    const [listMode, setListMode] = useState(ListMode.Mute);
+    const [selectedRepos, setSelectedRepos] = useState<string[]>([]);
     const [curPage, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
 
     const toggleListMode = () => {
-        const mode = listMode === 'allow' ? 'mute' : 'allow';
+        const mode = listMode === ListMode.Allow ? ListMode.Mute : ListMode.Allow;
         setListMode(mode);
-        mode === 'allow' ?
-            setSettings({...settings, allow_repos: selectedRepos, mute_repos: []})
-            : setSettings({...settings, mute_repos: selectedRepos, allow_repos: []});
+        mode === ListMode.Allow ?
+            setSettings({...settings!, allow_repos: selectedRepos, mute_repos: []})
+            : setSettings({...settings!, mute_repos: selectedRepos, allow_repos: []});
     };
 
     useEffect(() => {
@@ -73,7 +85,7 @@ const App = () => {
                 const response = await axios.get('/api/installations');
                 setIsLoggedIn(true);
                 setInstallations(response.data);
-            } catch (error) {
+            } catch (error: any) {
                 if (error.response.status === 401) {
                     setIsLoggedIn(false);
                 }
@@ -99,7 +111,7 @@ const App = () => {
             async function fetchRepos() {
                 const account = installations.find(installation => installation.account === selectedAccount);
                 try {
-                    const response = await axios.get(`/api/repos/${account.id}`);
+                    const response = await axios.get(`/api/repos/${account?.id}`);
                     setRepos(response.data)
                 } catch (error) {
                     console.error('Failed to fetch repos', error);
@@ -113,36 +125,36 @@ const App = () => {
         }
     }, [selectedAccount, installations]);
 
-    const handleAccountChange = (event) => {
+    const handleAccountChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedAccount(event.target.value);
         setSelectedRepos([]);
         setHasMore(true);
     };
 
-    const handleSelectRepo = (event) => {
+    const handleSelectRepo = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const repo = event.target.value;
         if (!selectedRepos.includes(repo)) {
             const repos = [...selectedRepos, repo];
             setSelectedRepos(repos);
             listMode === 'allow' ?
-                setSettings({...settings, allow_repos: repos, mute_repos: []})
-                : setSettings({...settings, mute_repos: repos, allow_repos: []});
+                setSettings({...settings!, allow_repos: repos, mute_repos: []})
+                : setSettings({...settings!, mute_repos: repos, allow_repos: []});
         }
     };
 
-    const handleUnselectRepo = (repo) => {
+    const handleUnselectRepo = (repo: string) => {
         const repos = selectedRepos.filter(r => r !== repo);
         setSelectedRepos(repos);
         listMode === 'allow' ?
-            setSettings({...settings, allow_repos: repos, mute_repos: []})
-            : setSettings({...settings, mute_repos: repos, allow_repos: []});
+            setSettings({...settings!, allow_repos: repos, mute_repos: []})
+            : setSettings({...settings!, mute_repos: repos, allow_repos: []});
     };
 
     const loadMoreRepos = async () => {
         const newPage = curPage + 1;
         const account = installations.find(installation => installation.account === selectedAccount);
         try {
-            const response = await axios.get(`/api/repos/${account.id}?page=${newPage}`);
+            const response = await axios.get(`/api/repos/${account?.id}?page=${newPage}`);
             if (response.data.length === 0) {
                 setHasMore(false);
                 return;
@@ -219,7 +231,7 @@ const App = () => {
                     <label htmlFor="account-select">Select Account:</label>
                     <AccountSelect
                         handleAccountChange={handleAccountChange}
-                        selectedAccount={selectedAccount}
+                        selectedAccount={selectedAccount!}
                         installations={installations}
                         updateAccountState={() => {
                             try {
@@ -236,7 +248,7 @@ const App = () => {
                     <section>
                         <NotificationConfig settings={settings} setSettings={setSettings}/>
                         <RepoSelector
-                            repos={repos.filter(repo => !selectedRepos.includes(repo))}
+                            repos={repos.filter(repo => !selectedRepos.includes(repo.name))}
                             onSelect={handleSelectRepo}
                             loadMoreRepos={loadMoreRepos}
                             hasMore={hasMore}

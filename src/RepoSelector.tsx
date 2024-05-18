@@ -1,19 +1,25 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import styles from './RepoSelector.module.css';
+import {RepoInfo} from "./models";
 
-const RepoSelector = ({repos, onSelect, loadMoreRepos, hasMore}) => {
+const RepoSelector = ({repos, onSelect, loadMoreRepos, hasMore} : {
+    repos: RepoInfo[],
+    onSelect: (event: React.ChangeEvent<HTMLSelectElement>) => void,
+    loadMoreRepos: () => Promise<void>,
+    hasMore: boolean,
+}) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [displayedRepos, setDisplayedRepos] = useState([]);
+    const [displayedRepos, setDisplayedRepos] = useState<RepoInfo[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const observer = useRef();
+    const observer = useRef<IntersectionObserver>();
 
     useEffect(() => {
         setDisplayedRepos(repos);
     }, [repos]);
 
-    const handleSearchChange = (e) => {
-        setSearchTerm(e.target.value);
-        const filteredRepos = repos.filter(repo => repo.toLowerCase().includes(e.target.value.toLowerCase()));
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(event.target.value);
+        const filteredRepos = repos.filter(repo => repo.name.toLowerCase().includes(event.target.value.toLowerCase()));
         setDisplayedRepos(filteredRepos);
     };
 
@@ -24,7 +30,7 @@ const RepoSelector = ({repos, onSelect, loadMoreRepos, hasMore}) => {
         setIsLoading(false);
     }, [loadMoreRepos, isLoading, hasMore]);
 
-    const lastRepoElementRef = useCallback(node => {
+    const lastRepoElementRef = useCallback( (node: HTMLOptionElement | null) => {
         if (isLoading) return;
         if (observer.current) observer.current.disconnect();
         observer.current = new IntersectionObserver(entries => {
@@ -59,14 +65,14 @@ const RepoSelector = ({repos, onSelect, loadMoreRepos, hasMore}) => {
                     {displayedRepos.map((repo, index) => {
                         if (displayedRepos.length === index + 1) {
                             return (
-                                <option ref={lastRepoElementRef} key={repo} value={repo}>
-                                    {repo}
+                                <option ref={lastRepoElementRef} key={repo.name} value={repo.name}>
+                                    {repo.name}
                                 </option>
                             );
                         } else {
                             return (
-                                <option key={repo} value={repo}>
-                                    {repo}
+                                <option key={repo.name} value={repo.name}>
+                                    {repo.name}
                                 </option>
                             );
                         }
