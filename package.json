@@ -26,15 +26,17 @@
   },
   "prettier": {
     "tabWidth": 2,
+    "trailingComma": "es5",
+    "semi": false,
+    "singleQuote": true,
+    "jsxSingleQuote": true,
     "printWidth": 120,
     "plugins": [
       "@trivago/prettier-plugin-sort-imports"
     ],
     "importOrder": [
-      "^@core/(.*)$",
-      "^@server/(.*)$",
-      "^@ui/(.*)$",
-      "^[./]"
+      "^[./].*(?<!\\.(c|le|sc)ss)$",
+      "\\.(c|le|sc)ss$"
     ],
     "importOrderSeparation": true,
     "importOrderSortSpecifiers": true
