@@ -14,7 +14,6 @@ const serviceIcons: { [key: string]: React.ReactElement } = {
 };
 
 interface ServiceDetail {
-  service: string;
   chat_id: string | null;
   webhook_id: string | null;
   webhook_token: string | null;
@@ -39,18 +38,18 @@ const NotificationConfig: React.FC<{
   settings: Settings;
   setSettings: (settings: Settings) => void;
 }> = ({ settings, setSettings }) => {
-  const [service, setService] = useState("");
+  const [service, setService] = useState<string | null>(null);
   const [serviceDetails, setServiceDetails] = useState<ServiceDetail | null>(null);
   const [connectionToken, setConnectionToken] = useState<ConnectionToken | null>(null);
   const [showMore, setShowMore] = useState(false);
 
   const handleAddService = () => {
-    const newService = { service, ...serviceDetails };
+    const newService = { service: service!, ...serviceDetails };
     setSettings({
       ...settings,
       notify_settings: [...settings.notify_settings, newService],
     });
-    setService("");
+    setService(null);
     setServiceDetails(null);
   };
 
@@ -90,21 +89,36 @@ const NotificationConfig: React.FC<{
 
   const selectService = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setService(e.target.value);
-    setServiceDetails(null);
+    setServiceDetails({
+      chat_id: null,
+      webhook_id: null,
+      webhook_token: null,
+      username: null,
+      avatar_url: null,
+      color: null,
+      key: null,
+      server: null,
+      url: null,
+      method: null,
+      headers: null,
+      body: null,
+    });
     setConnectionToken(null);
     setShowMore(false);
   };
+
+  const supportedServices = ["bark", "telegram", "discord_webhook", "discord_bot", "webhook"];
 
   return (
     <div className={styles.notificationConfig}>
       <h3>
         <label htmlFor="service-select">Add Notification Service</label>
       </h3>
-      <select id="service-select" value={service} onChange={selectService}>
+      <select id="service-select" value={service ?? ""} onChange={selectService}>
         <option value="" disabled>
           Select a service
         </option>
-        {["bark", "telegram", "discord_webhook", "discord_bot", "webhook"].map((s) => (
+        {supportedServices.map((s) => (
           <option key={s} value={s}>
             {s.toUpperCase()}
           </option>
@@ -166,7 +180,6 @@ const NotificationConfig: React.FC<{
                     type="text"
                     value={serviceDetails?.username || ""}
                     onChange={(e) =>
-                      e.target.value &&
                       setServiceDetails({
                         ...serviceDetails!,
                         username: e.target.value,
@@ -178,7 +191,6 @@ const NotificationConfig: React.FC<{
                     type="text"
                     value={serviceDetails?.avatar_url || ""}
                     onChange={(e) =>
-                      e.target.value &&
                       setServiceDetails({
                         ...serviceDetails!,
                         avatar_url: e.target.value,
@@ -190,7 +202,6 @@ const NotificationConfig: React.FC<{
                     type="number"
                     value={serviceDetails?.color || ""}
                     onChange={(e) =>
-                      e.target.value &&
                       setServiceDetails({
                         ...serviceDetails!,
                         color: parseInt(e.target.value),
