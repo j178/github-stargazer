@@ -6,9 +6,13 @@ export interface Installation {
 
 export interface RepoInfo {
   id: number
+  owner: string
   name: string
+  full_name: string
+  private: boolean
   description: string
   fork: boolean
+  html_url: string
 }
 
 export interface NotifySetting {

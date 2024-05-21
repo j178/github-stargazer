@@ -198,9 +198,13 @@ func InstalledRepos(c *gin.Context) {
 	for i, item := range repos.Repositories {
 		returnRepos[i] = map[string]any{
 			"id":          item.GetID(),
-			"name":        item.GetFullName(),
+			"owner":       item.GetOwner().GetLogin(),
+			"name":        item.GetName(),
+			"full_name":   item.GetFullName(),
+			"private":     item.GetPrivate(),
 			"description": item.GetDescription(),
 			"fork":        item.GetFork(),
+			"html_url":    item.GetHTMLURL(),
 		}
 	}
 

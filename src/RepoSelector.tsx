@@ -7,7 +7,7 @@ import styles from './RepoSelector.module.css'
 
 const RepoSelector: React.FC<{
   repos: RepoInfo[]
-  onSelect: (event: React.ChangeEvent<HTMLSelectElement>) => void
+  onSelect: (event: React.MouseEvent<HTML>) => void
   loadMoreRepos: () => Promise<void>
   hasMore: boolean
 }> = ({ repos, onSelect, loadMoreRepos, hasMore }) => {
@@ -34,7 +34,7 @@ const RepoSelector: React.FC<{
   }, [loadMoreRepos, isLoading, hasMore])
 
   const lastRepoElementRef = useCallback(
-    (node: HTMLOptionElement | null) => {
+    (node: HTMLLIElement | null) => {
       if (isLoading) return
       if (observer.current) observer.current.disconnect()
       observer.current = new IntersectionObserver((entries) => {
@@ -48,7 +48,7 @@ const RepoSelector: React.FC<{
   )
 
   return (
-    <div className={styles.repoSelector}>
+    <div className={styles.dropdown}>
       <input
         type='text'
         placeholder='Search Repositories'
@@ -56,35 +56,32 @@ const RepoSelector: React.FC<{
         onChange={handleSearchChange}
         className={styles.searchInput}
       />
-      <div className={styles.selectContainer}>
-        <select size={10} className={styles.repoSelect} onChange={onSelect}>
-          <option className={styles.searchOption}>
-            <input
-              type='text'
-              placeholder='Search Repositories'
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className={styles.searchInput}
-            />
-          </option>
-          {displayedRepos.map((repo, index) => {
-            if (displayedRepos.length === index + 1) {
-              return (
-                <option ref={lastRepoElementRef} key={repo.name} value={repo.name}>
-                  {repo.name}
-                </option>
-              )
-            } else {
-              return (
-                <option key={repo.name} value={repo.name}>
-                  {repo.fork ? <GoRepoForked /> : <GoRepo />} {repo.name}
-                </option>
-              )
-            }
-          })}
-        </select>
-        {isLoading && <div className={styles.spinner}></div>}
-      </div>
+      <ul className={styles.dropdownList}>
+        {displayedRepos.map((repo, index) => {
+          if (displayedRepos.length === index + 1) {
+            return (
+              <li
+                ref={lastRepoElementRef}
+                key={repo.name}
+                value={repo.name}
+                className={styles.dropdownOption}
+                onClick={onSelect}
+              >
+                {repo.name}
+              </li>
+            )
+          } else {
+            return (
+              <li key={repo.name} value={repo.name} className={styles.dropdownOption} onClick={onSelect}>
+                {repo.fork ? <GoRepoForked /> : <GoRepo />}
+                {repo.owner}/<strong>{repo.name}</strong>
+              </li>
+            )
+          }
+        })}
+      </ul>
+
+      {isLoading && <div className={styles.spinner}></div>}
     </div>
   )
 }

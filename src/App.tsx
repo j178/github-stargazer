@@ -1,5 +1,7 @@
-import axios from 'axios'
+import axios, { AxiosResponse } from 'axios'
 import React, { useEffect, useState } from 'react'
+import { FaTimes } from 'react-icons/fa'
+import { GoArrowDown, GoRepo, GoRepoForked } from 'react-icons/go'
 import { ToastContainer, toast } from 'react-toastify'
 import { Tooltip } from 'react-tooltip'
 
@@ -65,6 +67,7 @@ const AccountSelect: React.FC<{
     </select>
   )
 }
+
 const Header: React.FC = () => {
   return (
     <header>
@@ -90,25 +93,9 @@ const App: React.FC = () => {
   const [selectedAccount, setSelectedAccount] = useState<Installation | null>(null)
   const [settings, setSettings] = useState<Settings | null>(null)
   const [listMode, setListMode] = useState(ListMode.Mute)
-  const [selectedRepos, setSelectedRepos] = useState<string[]>([])
+  const [selectedRepos, setSelectedRepos] = useState<RepoInfo[]>([])
   const [curPage, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
-
-  const toggleListMode = () => {
-    const mode = listMode === ListMode.Allow ? ListMode.Mute : ListMode.Allow
-    setListMode(mode)
-    mode === ListMode.Allow
-      ? setSettings({
-          ...settings!,
-          allow_repos: selectedRepos,
-          mute_repos: [],
-        })
-      : setSettings({
-          ...settings!,
-          mute_repos: selectedRepos,
-          allow_repos: [],
-        })
-  }
 
   useEffect(() => {
     // Fetch installations on mount
@@ -142,7 +129,7 @@ const App: React.FC = () => {
 
       async function fetchRepos() {
         try {
-          const response = await axios.get(`/api/repos/${selectedAccount?.id}`)
+          const response: AxiosResponse<RepoInfo[]> = await axios.get(`/api/repos/${selectedAccount?.id}`)
           setRepos(response.data)
         } catch (error) {
           console.error('Failed to fetch repos', error)
@@ -162,31 +149,17 @@ const App: React.FC = () => {
     setSelectedAccount(installations.find((installation) => installation.account === event.target.value) || null)
   }
 
-  const handleSelectRepo = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSelectRepo = (event: React.ChangeEvent<HTMLUListElement>) => {
     const repo = event.target.value
     if (!selectedRepos.includes(repo)) {
       const repos = [...selectedRepos, repo]
       setSelectedRepos(repos)
-      listMode === ListMode.Allow
-        ? setSettings({
-            ...settings!,
-            allow_repos: repos,
-            mute_repos: [],
-          })
-        : setSettings({
-            ...settings!,
-            mute_repos: repos,
-            allow_repos: [],
-          })
     }
   }
 
-  const handleUnselectRepo = (repo: string) => {
+  const handleUnselectRepo = (repo: RepoInfo) => {
     const repos = selectedRepos.filter((r) => r !== repo)
     setSelectedRepos(repos)
-    listMode === ListMode.Allow
-      ? setSettings({ ...settings!, allow_repos: repos, mute_repos: [] })
-      : setSettings({ ...settings!, mute_repos: repos, allow_repos: [] })
   }
 
   const loadMoreRepos = async () => {
@@ -206,6 +179,11 @@ const App: React.FC = () => {
   }
 
   const handleTestSettings = async () => {
+    const repoNames = selectedRepos.map((r) => r.full_name)
+    listMode === ListMode.Allow
+      ? setSettings({ ...settings!, allow_repos: repoNames, mute_repos: [] })
+      : setSettings({ ...settings!, mute_repos: repoNames, allow_repos: [] })
+
     try {
       await axios.post('/api/settings/test', settings)
       toast.success('Test successful')
@@ -216,6 +194,11 @@ const App: React.FC = () => {
   }
 
   const handleSaveSettings = async () => {
+    const repoNames = selectedRepos.map((r) => r.full_name)
+    listMode === ListMode.Allow
+      ? setSettings({ ...settings!, allow_repos: repoNames, mute_repos: [] })
+      : setSettings({ ...settings!, mute_repos: repoNames, allow_repos: [] })
+
     try {
       await axios.post(`/api/settings/${selectedAccount}`, settings)
       toast.success('Settings saved successfully')
@@ -268,29 +251,36 @@ const App: React.FC = () => {
           <section>
             <NotificationConfig settings={settings} setSettings={setSettings} />
             <RepoSelector
-              repos={repos.filter((repo) => !selectedRepos.includes(repo.name))}
+              repos={repos.filter((repo) => !selectedRepos.includes(repo))}
               onSelect={handleSelectRepo}
               loadMoreRepos={loadMoreRepos}
               hasMore={hasMore}
             />
 
+            {/* TODO: can only select one mode at a time*/}
             <div className={styles.listModeContainer}>
-              <h3>
-                {listMode === 'allow'
-                  ? 'Allow notifications from these repos only'
-                  : 'Mute notifications from these repos'}
-              </h3>
-              <button className={styles.toggleButton} onClick={toggleListMode}>
-                Change to {listMode === 'allow' ? 'Mute' : 'Allow'}
+              <button className={styles.toggleButton} onClick={() => setListMode(ListMode.Allow)}>
+                Allow notifications from these repos only
+              </button>
+              <button className={styles.toggleButton} onClick={() => setListMode(ListMode.Mute)}>
+                Allow notifications from these repos only
               </button>
             </div>
 
+            {/* TODO: a button to display a RepoSelector popup for user to select repo */}
+            {/* after select, the popup dismiss */}
+            <button className={styles.selectRepoButton}>
+              <GoArrowDown /> Select Repositories
+            </button>
+
             <div className={styles.selectedReposContainer}>
+              <p>Selected {selectedRepos.length} repositories</p>
               {selectedRepos.map((repo) => (
-                <div key={repo} className={styles.repoItem}>
-                  {repo}
+                <div key={repo.id} className={styles.repoItem}>
+                  {repo.fork ? <GoRepoForked /> : <GoRepo />}
+                  {repo.owner}/<strong>{repo.name}</strong>
                   <button className={styles.removeButton} onClick={() => handleUnselectRepo(repo)}>
-                    Remove
+                    <FaTimes />
                   </button>
                 </div>
               ))}
