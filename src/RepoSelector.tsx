@@ -1,87 +1,90 @@
-import React, {useCallback, useEffect, useRef, useState} from "react";
-import styles from './RepoSelector.module.css';
-import {RepoInfo} from "./models";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
-const RepoSelector = ({repos, onSelect, loadMoreRepos, hasMore} : {
-    repos: RepoInfo[],
-    onSelect: (event: React.ChangeEvent<HTMLSelectElement>) => void,
-    loadMoreRepos: () => Promise<void>,
-    hasMore: boolean,
-}) => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [displayedRepos, setDisplayedRepos] = useState<RepoInfo[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const observer = useRef<IntersectionObserver>();
+import styles from "./RepoSelector.module.css";
+import { RepoInfo } from "./models";
 
-    useEffect(() => {
-        setDisplayedRepos(repos);
-    }, [repos]);
+const RepoSelector: React.FC<{
+  repos: RepoInfo[];
+  onSelect: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  loadMoreRepos: () => Promise<void>;
+  hasMore: boolean;
+}> = ({ repos, onSelect, loadMoreRepos, hasMore }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [displayedRepos, setDisplayedRepos] = useState<RepoInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const observer = useRef<IntersectionObserver>();
 
-    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(event.target.value);
-        const filteredRepos = repos.filter(repo => repo.name.toLowerCase().includes(event.target.value.toLowerCase()));
-        setDisplayedRepos(filteredRepos);
-    };
+  useEffect(() => {
+    setDisplayedRepos(repos);
+  }, [repos]);
 
-    const loadMore = useCallback(async () => {
-        if (!hasMore || isLoading) return;
-        setIsLoading(true);
-        await loadMoreRepos();
-        setIsLoading(false);
-    }, [loadMoreRepos, isLoading, hasMore]);
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    const filteredRepos = repos.filter((repo) => repo.name.toLowerCase().includes(event.target.value.toLowerCase()));
+    setDisplayedRepos(filteredRepos);
+  };
 
-    const lastRepoElementRef = useCallback( (node: HTMLOptionElement | null) => {
-        if (isLoading) return;
-        if (observer.current) observer.current.disconnect();
-        observer.current = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting) {
-                loadMore();
-            }
-        });
-        if (node) observer.current.observe(node);
-    }, [isLoading, loadMore]);
+  const loadMore = useCallback(async () => {
+    if (!hasMore || isLoading) return;
+    setIsLoading(true);
+    await loadMoreRepos();
+    setIsLoading(false);
+  }, [loadMoreRepos, isLoading, hasMore]);
 
-    return (
-        <div className={styles.repoSelector}>
-            <input type="text"
-                   placeholder="Search Repositories"
-                   value={searchTerm}
-                   onChange={handleSearchChange}
-                   className={styles.searchInput}
+  const lastRepoElementRef = useCallback(
+    (node: HTMLOptionElement | null) => {
+      if (isLoading) return;
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [isLoading, loadMore],
+  );
+
+  return (
+    <div className={styles.repoSelector}>
+      <input
+        type="text"
+        placeholder="Search Repositories"
+        value={searchTerm}
+        onChange={handleSearchChange}
+        className={styles.searchInput}
+      />
+      <div className={styles.selectContainer}>
+        <select size={10} className={styles.repoSelect} onChange={onSelect}>
+          <option className={styles.searchOption}>
+            <input
+              type="text"
+              placeholder="Search Repositories"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className={styles.searchInput}
             />
-            <div className={styles.selectContainer}>
-                <select size={10}
-                        className={styles.repoSelect}
-                        onChange={onSelect}
-                >
-                    <option className={styles.searchOption}>
-                        <input type="text"
-                               placeholder="Search Repositories"
-                               value={searchTerm}
-                               onChange={handleSearchChange}
-                               className={styles.searchInput}
-                        />
-                    </option>
-                    {displayedRepos.map((repo, index) => {
-                        if (displayedRepos.length === index + 1) {
-                            return (
-                                <option ref={lastRepoElementRef} key={repo.name} value={repo.name}>
-                                    {repo.name}
-                                </option>
-                            );
-                        } else {
-                            return (
-                                <option key={repo.name} value={repo.name}>
-                                    {repo.name}
-                                </option>
-                            );
-                        }
-                    })}
-                </select>
-                {isLoading && <div className={styles.spinner}></div>}
-            </div>
-        </div>
-    );
+          </option>
+          {displayedRepos.map((repo, index) => {
+            if (displayedRepos.length === index + 1) {
+              return (
+                <option ref={lastRepoElementRef} key={repo.name} value={repo.name}>
+                  {repo.name}
+                </option>
+              );
+            } else {
+              return (
+                <option key={repo.name} value={repo.name}>
+                  {repo.name}
+                </option>
+              );
+            }
+          })}
+        </select>
+        {isLoading && <div className={styles.spinner}></div>}
+      </div>
+    </div>
+  );
 };
 
 export default RepoSelector;

@@ -191,7 +191,8 @@ a:hover {
   cursor: pointer;
 }
 
-.testButton, .saveButton {
+.testButton,
+.saveButton {
   background-color: #28a745;
   color: white;
   border: none;
@@ -201,7 +202,8 @@ a:hover {
   transition: background-color 0.3s ease;
 }
 
-.testButton:hover, .saveButton:hover {
+.testButton:hover,
+.saveButton:hover {
   background-color: #218838;
 }
 
@@ -216,7 +218,8 @@ a:hover {
     align-items: stretch;
   }
 
-  .testButton, .saveButton {
+  .testButton,
+  .saveButton {
     width: 100%;
     margin-bottom: 10px;
   }

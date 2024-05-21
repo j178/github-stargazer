@@ -24,6 +24,21 @@
       "react-app/jest"
     ]
   },
+  "prettier": {
+    "tabWidth": 2,
+    "printWidth": 120,
+    "plugins": [
+      "@trivago/prettier-plugin-sort-imports"
+    ],
+    "importOrder": [
+      "^@core/(.*)$",
+      "^@server/(.*)$",
+      "^@ui/(.*)$",
+      "^[./]"
+    ],
+    "importOrderSeparation": true,
+    "importOrderSortSpecifiers": true
+  },
   "browserslist": {
     "production": [
       ">0.2%",
@@ -38,6 +53,8 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "prettier": "3.2.5",
     "typescript-plugin-css-modules": "^5.1.0"
   }
 }
