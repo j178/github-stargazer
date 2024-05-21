@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { GoRepo, GoRepoForked } from 'react-icons/go'
 
 import { RepoInfo } from './models'
 
@@ -76,7 +77,7 @@ const RepoSelector: React.FC<{
             } else {
               return (
                 <option key={repo.name} value={repo.name}>
-                  {repo.name}
+                  {repo.fork ? <GoRepoForked /> : <GoRepo />} {repo.name}
                 </option>
               )
             }
