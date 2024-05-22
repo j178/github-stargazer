@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -64,7 +65,7 @@ func GetInstallationToken(ctx context.Context, installationID int64) (string, er
 	token, err := Get[InstallationToken](ctx, Key{string(InstallationTokenType), installationIDStr})
 	valid := true
 	// 不存在，也可以凭空创建
-	if err == ErrCacheMiss {
+	if errors.Is(err, ErrCacheMiss) {
 		valid = false
 	} else if err != nil {
 		return "", err

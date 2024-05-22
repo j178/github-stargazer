@@ -4,14 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/j178/github_stargazer/backend/cache"
 	"github.com/j178/github_stargazer/backend/config"
 	"github.com/j178/github_stargazer/backend/routes"
 	"github.com/j178/github_stargazer/backend/utils"
-	"github.com/samber/lo"
 )
 
 const ConnectTokenExpire = 10 * time.Minute
@@ -21,7 +22,7 @@ var ConnectTokenPlatforms = []string{"telegram", "discord", "slack"}
 func GenerateConnectToken(c *gin.Context) {
 	login := c.GetString("login")
 	platform := c.Param("platform")
-	if !lo.Contains(ConnectTokenPlatforms, platform) {
+	if !slices.Contains(ConnectTokenPlatforms, platform) {
 		routes.Abort(c, http.StatusBadRequest, nil, "invalid platform")
 		return
 	}

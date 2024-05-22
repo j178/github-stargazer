@@ -13,10 +13,7 @@ import styles from './App.module.css'
 import 'react-toastify/dist/ReactToastify.css'
 import 'react-tooltip/dist/react-tooltip.css'
 
-enum ListMode {
-  Allow = 'allow',
-  Mute = 'mute',
-}
+type ListMode = "allow" | "mute";
 
 const AccountSelect: React.FC<{
   installations: Installation[]
@@ -92,7 +89,7 @@ const App: React.FC = () => {
   const [repos, setRepos] = useState<RepoInfo[]>([])
   const [selectedAccount, setSelectedAccount] = useState<Installation | null>(null)
   const [settings, setSettings] = useState<Settings | null>(null)
-  const [listMode, setListMode] = useState(ListMode.Mute)
+  const [listMode, setListMode] = useState<ListMode>("mute")
   const [selectedRepos, setSelectedRepos] = useState<RepoInfo[]>([])
   const [curPage, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
@@ -180,7 +177,7 @@ const App: React.FC = () => {
 
   const handleTestSettings = async () => {
     const repoNames = selectedRepos.map((r) => r.full_name)
-    listMode === ListMode.Allow
+    listMode === "allow"
       ? setSettings({ ...settings!, allow_repos: repoNames, mute_repos: [] })
       : setSettings({ ...settings!, mute_repos: repoNames, allow_repos: [] })
 
@@ -195,7 +192,7 @@ const App: React.FC = () => {
 
   const handleSaveSettings = async () => {
     const repoNames = selectedRepos.map((r) => r.full_name)
-    listMode === ListMode.Allow
+    listMode === "allow"
       ? setSettings({ ...settings!, allow_repos: repoNames, mute_repos: [] })
       : setSettings({ ...settings!, mute_repos: repoNames, allow_repos: [] })
 

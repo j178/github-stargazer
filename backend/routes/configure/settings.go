@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
@@ -131,7 +132,7 @@ func checkAccountAssociation(c *gin.Context, account, login string) bool {
 		routes.Abort(c, http.StatusInternalServerError, err, "get installations")
 		return false
 	}
-	if !lo.Contains(installations, account) {
+	if !slices.Contains(installations, account) {
 		routes.Abort(
 			c,
 			http.StatusForbidden,
@@ -143,6 +144,12 @@ func checkAccountAssociation(c *gin.Context, account, login string) bool {
 	return true
 }
 
+type accountInfo struct {
+	ID          int64  `json:"id"`
+	Account     string `json:"account"`
+	AccountType string `json:"account_type"`
+}
+
 func Installations(c *gin.Context) {
 	login := c.GetString("login")
 
@@ -152,13 +159,13 @@ func Installations(c *gin.Context) {
 		return
 	}
 
-	result := make([]map[string]any, len(installations))
+	result := make([]accountInfo, len(installations))
 	accounts := make([]string, len(installations))
 	for i, item := range installations {
-		result[i] = map[string]any{
-			"id":           item.GetID(),
-			"account":      item.Account.GetLogin(),
-			"account_type": item.Account.GetType(),
+		result[i] = accountInfo{
+			ID:          item.GetID(),
+			Account:     item.Account.GetLogin(),
+			AccountType: item.Account.GetType(),
 		}
 		accounts[i] = item.Account.GetLogin()
 	}
@@ -166,6 +173,17 @@ func Installations(c *gin.Context) {
 	_ = cache.Set(c, cache.Key{"installations", login}, accounts, 24*time.Hour)
 
 	c.JSON(http.StatusOK, result)
+}
+
+type repoInfo struct {
+	ID          int64  `json:"id"`
+	Owner       string `json:"owner"`
+	Name        string `json:"name"`
+	FullName    string `json:"full_name"`
+	Private     bool   `json:"private"`
+	Description string `json:"description"`
+	Fork        bool   `json:"fork"`
+	HtmlURL     string `json:"html_url"`
 }
 
 func InstalledRepos(c *gin.Context) {
@@ -185,6 +203,7 @@ func InstalledRepos(c *gin.Context) {
 	token, err := cache.GetInstallationToken(c, installationID)
 	if err != nil {
 		routes.Abort(c, http.StatusInternalServerError, err, "get token")
+		return
 	}
 
 	client := github.NewTokenClient(c, token)
@@ -194,17 +213,17 @@ func InstalledRepos(c *gin.Context) {
 		routes.Abort(c, http.StatusInternalServerError, err, "list repos")
 		return
 	}
-	returnRepos := make([]map[string]any, len(repos.Repositories))
+	returnRepos := make([]repoInfo, len(repos.Repositories))
 	for i, item := range repos.Repositories {
-		returnRepos[i] = map[string]any{
-			"id":          item.GetID(),
-			"owner":       item.GetOwner().GetLogin(),
-			"name":        item.GetName(),
-			"full_name":   item.GetFullName(),
-			"private":     item.GetPrivate(),
-			"description": item.GetDescription(),
-			"fork":        item.GetFork(),
-			"html_url":    item.GetHTMLURL(),
+		returnRepos[i] = repoInfo{
+			ID:          item.GetID(),
+			Owner:       item.GetOwner().GetLogin(),
+			Name:        item.GetName(),
+			FullName:    item.GetFullName(),
+			Private:     item.GetPrivate(),
+			Description: item.GetDescription(),
+			Fork:        item.GetFork(),
+			HtmlURL:     item.GetHTMLURL(),
 		}
 	}
 
