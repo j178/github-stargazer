@@ -11,6 +11,7 @@ import {
   FiSend,
   FiShield,
   FiTrash2,
+  FiX,
 } from 'react-icons/fi'
 import { ToastContainer, toast } from 'react-toastify'
 import styles from './App.module.css'
@@ -401,12 +402,20 @@ const App: FC = () => {
       eyebrow: 'Recommended default',
       title: 'Mute exceptions',
       description: 'Most repositories can notify. Add only the ones you want to silence.',
+      listedLabel: 'Listed repositories',
+      listedValue: 'Muted',
+      defaultLabel: 'Everything else',
+      defaultValue: 'Notify',
     },
     {
       mode: ListMode.Allow,
       eyebrow: 'Tighter control',
       title: 'Allow only',
       description: 'Nothing notifies until it is explicitly added to the list.',
+      listedLabel: 'Listed repositories',
+      listedValue: 'Notify',
+      defaultLabel: 'Everything else',
+      defaultValue: 'Blocked',
     },
   ]
   const scopeMeta =
@@ -572,36 +581,35 @@ const App: FC = () => {
                                 <span className={styles.scopeModeEyebrow}>{scopeMode.eyebrow}</span>
                                 <strong className={styles.scopeModeTitle}>{scopeMode.title}</strong>
                                 <span className={styles.scopeModeText}>{scopeMode.description}</span>
+                                <div className={styles.scopeModeMeta}>
+                                  <div className={styles.scopeModeStat}>
+                                    <span className={styles.scopeModeStatLabel}>{scopeMode.listedLabel}</span>
+                                    <strong
+                                      className={
+                                        scopeMode.mode === ListMode.Allow
+                                          ? `${styles.scopeModeStatValue} ${styles.scopeModeStatValuePositive}`
+                                          : `${styles.scopeModeStatValue} ${styles.scopeModeStatValueMuted}`
+                                      }
+                                    >
+                                      {scopeMode.listedValue}
+                                    </strong>
+                                  </div>
+                                  <div className={styles.scopeModeStat}>
+                                    <span className={styles.scopeModeStatLabel}>{scopeMode.defaultLabel}</span>
+                                    <strong
+                                      className={
+                                        scopeMode.mode === ListMode.Allow
+                                          ? `${styles.scopeModeStatValue} ${styles.scopeModeStatValueBlocked}`
+                                          : `${styles.scopeModeStatValue} ${styles.scopeModeStatValuePositive}`
+                                      }
+                                    >
+                                      {scopeMode.defaultValue}
+                                    </strong>
+                                  </div>
+                                </div>
                               </button>
                             )
                           })}
-                        </div>
-
-                        <div className={styles.scopeOverview}>
-                          <div className={styles.scopeOutcomeCard}>
-                            <span className={styles.scopeOutcomeLabel}>Repositories in the list</span>
-                            <strong
-                              className={
-                                listMode === ListMode.Allow
-                                  ? `${styles.scopeOutcomeValue} ${styles.scopeOutcomeValuePositive}`
-                                  : `${styles.scopeOutcomeValue} ${styles.scopeOutcomeValueMuted}`
-                              }
-                            >
-                              {scopeMeta.listedValue}
-                            </strong>
-                          </div>
-                          <div className={styles.scopeOutcomeCard}>
-                            <span className={styles.scopeOutcomeLabel}>Everything else</span>
-                            <strong
-                              className={
-                                listMode === ListMode.Allow
-                                  ? `${styles.scopeOutcomeValue} ${styles.scopeOutcomeValueBlocked}`
-                                  : `${styles.scopeOutcomeValue} ${styles.scopeOutcomeValuePositive}`
-                              }
-                            >
-                              {scopeMeta.unlistedValue}
-                            </strong>
-                          </div>
                         </div>
 
                         <div className={styles.scopeWorkspace}>
@@ -658,9 +666,10 @@ const App: FC = () => {
                                       aria-label={`Remove ${repo}`}
                                       className={styles.scopeRuleRemove}
                                       onClick={() => handleUnselectRepo(repo)}
+                                      title={`Remove ${repo}`}
                                       type='button'
                                     >
-                                      Remove
+                                      <FiX />
                                     </button>
                                   </article>
                                 ))}

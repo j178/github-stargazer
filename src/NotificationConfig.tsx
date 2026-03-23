@@ -775,34 +775,7 @@ const NotificationConfig: FC<{
             </div>
           </div>
         </div>
-      ) : (
-        <div className={styles.emptyGuide}>
-          <div className={styles.emptyGuideHeader}>
-            <span className={styles.emptyGuideBadge}>Start here</span>
-            <div aria-hidden='true' className={styles.emptyGuideIcons}>
-              {notificationServices.map((service) => (
-                <span className={styles.emptyGuideIcon} key={service}>
-                  {serviceIcons[service]}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className={styles.emptyGuideSteps}>
-            <div className={`${styles.emptyGuideStep} ${styles.emptyGuideStepActive}`}>
-              <span className={styles.emptyGuideStepNumber}>1</span>
-              <span className={styles.emptyGuideStepLabel}>Pick channel</span>
-            </div>
-            <div className={styles.emptyGuideStep}>
-              <span className={styles.emptyGuideStepNumber}>2</span>
-              <span className={styles.emptyGuideStepLabel}>Fill details</span>
-            </div>
-            <div className={styles.emptyGuideStep}>
-              <span className={styles.emptyGuideStepNumber}>3</span>
-              <span className={styles.emptyGuideStepLabel}>Add channel</span>
-            </div>
-          </div>
-        </div>
-      )}
+      ) : null}
 
       <div className={styles.currentSettings}>
         <div className={styles.sectionHeader}>

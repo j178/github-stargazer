@@ -490,24 +490,48 @@
 }
 
 .scopeRuleRemove {
-  min-height: 30px;
-  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.8);
-  color: var(--text-strong);
-  font-size: 0.84rem;
-  font-weight: 600;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text-muted);
+  font-size: 0.9rem;
   cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
   transition:
+    opacity 160ms ease,
     transform 160ms ease,
     border-color 160ms ease,
-    background-color 160ms ease;
+    background-color 160ms ease,
+    color 160ms ease;
+  transform: translateX(4px);
+}
+
+.scopeRuleRow:hover .scopeRuleRemove,
+.scopeRuleRow:focus-within .scopeRuleRemove {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
 }
 
 .scopeRuleRemove:hover {
-  transform: translateY(-1px);
-  border-color: rgba(15, 23, 42, 0.14);
+  border-color: rgba(244, 63, 94, 0.22);
+  background: rgba(244, 63, 94, 0.12);
+  color: #be123c;
+}
+
+.scopeRuleRemove:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+  outline: 2px solid rgba(59, 130, 246, 0.36);
+  outline-offset: 2px;
 }
 
 .preferenceCard {
@@ -689,8 +713,14 @@
   .secondaryButton,
   .dangerButton,
   .ghostButton,
-  .primaryLink,
-  .scopeRuleRemove {
+  .primaryLink {
     width: 100%;
+  }
+
+  .scopeRuleRemove {
+    align-self: flex-end;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
   }
 }
