@@ -113,16 +113,6 @@ const RepoSelector: FC<{
           })
         )}
       </div>
-
-      <div className={styles.footer}>
-        {hasMore ? (
-          <button className={styles.loadMoreButton} disabled={isLoading} onClick={() => void loadMore()} type='button'>
-            {isLoading ? 'Loading…' : 'Load more repositories'}
-          </button>
-        ) : (
-          <span className={styles.endOfList}>All available repositories are loaded.</span>
-        )}
-      </div>
     </div>
   )
 }

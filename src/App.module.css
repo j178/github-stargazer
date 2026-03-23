@@ -289,130 +289,225 @@
   transform: none;
 }
 
-.selectedReposSection {
-  margin-top: 20px;
-}
-
+.scopeModeGrid,
+.scopeOverview,
+.scopeWorkspace,
 .scopeSectionHeader,
-.selectedReposHeader {
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-
-.scopeSectionHeader {
-  display: flex;
-  flex-wrap: wrap;
+.scopeRuleIdentity {
+  display: grid;
   gap: 12px;
 }
 
-.scopeBox {
-  padding: 14px;
-  border-radius: 18px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.66);
+.scopeModeGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 16px;
 }
 
-.selectedReposList {
+.scopeModeCard {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  padding: 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.scopeModeCard:hover,
+.scopeModeCardActive {
+  transform: translateY(-1px);
+  border-color: rgba(15, 118, 110, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(240, 253, 250, 0.88));
+  box-shadow: 0 18px 32px rgba(15, 23, 42, 0.08);
+}
+
+.scopeModeEyebrow,
+.scopeSectionEyebrow {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.scopeModeTitle {
+  color: var(--text-strong);
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.scopeModeText,
+.scopeSectionText,
+.scopeEmptyText {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.scopeOverview {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 16px;
+}
+
+.scopeOutcomeCard {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.scopeOutcomeLabel {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.scopeOutcomeValue {
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+
+.scopeOutcomeValuePositive {
+  color: #0f766e;
+}
+
+.scopeOutcomeValueMuted {
+  color: #be123c;
+}
+
+.scopeOutcomeValueBlocked {
+  color: #475569;
+}
+
+.scopeWorkspace {
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  margin-bottom: 20px;
+}
+
+.scopeBox {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.82)), rgba(255, 255, 255, 0.76);
+}
+
+.scopeSectionHeader {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  margin-bottom: 8px;
+}
+
+.scopeBrowserPanel,
+.scopeRulesPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.scopeListBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.scopeListBadgeAllow {
+  background: rgba(15, 118, 110, 0.12);
+  color: #0f766e;
+}
+
+.scopeListBadgeMute {
+  background: rgba(244, 63, 94, 0.12);
+  color: #be123c;
+}
+
+.scopeEmptyState {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px dashed rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.scopeEmptyTitle {
+  color: var(--text-strong);
+  font-size: 0.98rem;
+}
+
+.scopeRuleList {
+  display: grid;
   gap: 8px;
 }
 
-.scopeHint {
+.scopeRuleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.scopeRuleIdentity {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.scopeRuleIndex {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  margin: 0 0 14px;
-  padding: 10px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.scopeHintAllow {
-  border-color: rgba(15, 118, 110, 0.18);
-  background: rgba(240, 253, 250, 0.92);
-}
-
-.scopeHintMute {
-  border-color: rgba(244, 63, 94, 0.16);
-  background: rgba(255, 241, 242, 0.9);
-}
-
-.scopeHintText {
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.06);
   color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.4;
+  font-size: 0.76rem;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
-.selectedRepoCard {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 10px 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-}
-
-.selectedRepoCardAllow {
-  border-color: rgba(15, 118, 110, 0.18);
-  background: rgba(240, 253, 250, 0.9);
-}
-
-.selectedRepoCardMute {
-  border-color: rgba(244, 63, 94, 0.16);
-  background: rgba(255, 241, 242, 0.88);
-}
-
-.selectedRepoInfo {
-  min-width: 0;
-}
-
-.selectedRepoName {
+.scopeRuleName {
   color: var(--text-strong);
   font-size: 0.92rem;
   word-break: break-word;
 }
 
-.selectedRepoMeta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.selectedRepoState {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-.selectedRepoStateAllow {
-  background: rgba(15, 118, 110, 0.12);
-  color: #0f766e;
-}
-
-.selectedRepoStateMute {
-  background: rgba(244, 63, 94, 0.12);
-  color: #be123c;
-}
-
-.repoChipButton {
-  min-height: 28px;
-  padding: 0 10px;
+.scopeRuleRemove {
+  min-height: 30px;
+  padding: 0 12px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.8);
   color: var(--text-strong);
   font-size: 0.84rem;
+  font-weight: 600;
   cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.scopeRuleRemove:hover {
+  transform: translateY(-1px);
+  border-color: rgba(15, 23, 42, 0.14);
 }
 
 .preferenceCard {
@@ -534,6 +629,10 @@
     grid-template-columns: 1fr;
   }
 
+  .scopeWorkspace {
+    grid-template-columns: 1fr;
+  }
+
   .actionsPanel {
     grid-column: auto;
   }
@@ -559,9 +658,14 @@
   .loginPanel,
   .preferenceCard,
   .panelHeader,
-  .selectedRepoCard {
+  .scopeRuleRow {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .scopeModeGrid,
+  .scopeOverview {
+    grid-template-columns: 1fr;
   }
 
   .modeSwitch {
@@ -577,15 +681,16 @@
     flex-direction: column;
   }
 
-  .selectedRepoMeta {
-    align-items: flex-start;
+  .scopeSectionHeader {
+    grid-template-columns: 1fr;
   }
 
   .primaryButton,
   .secondaryButton,
   .dangerButton,
   .ghostButton,
-  .primaryLink {
+  .primaryLink,
+  .scopeRuleRemove {
     width: 100%;
   }
 }

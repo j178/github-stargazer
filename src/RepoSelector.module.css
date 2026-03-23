@@ -31,7 +31,7 @@
 .repoList {
   display: grid;
   gap: 6px;
-  max-height: 360px;
+  max-height: 228px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -63,8 +63,7 @@
 
 .repoCardTop,
 .repoIdentity,
-.repoAction,
-.footer {
+.repoAction {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -114,8 +113,7 @@
 }
 
 .repoDescription,
-.emptyState,
-.endOfList {
+.emptyState {
   margin: 0;
   color: var(--text-muted);
   line-height: 1.5;
@@ -136,47 +134,9 @@
   background: rgba(255, 255, 255, 0.6);
 }
 
-.footer {
-  justify-content: space-between;
-}
-
-.loadMoreButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 14px;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  background: rgba(255, 255, 255, 0.94);
-  color: var(--text-strong);
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    transform 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
-}
-
-.loadMoreButton:hover {
-  transform: translateY(-1px);
-  border-color: rgba(15, 118, 110, 0.2);
-}
-
-.loadMoreButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.66;
-  transform: none;
-}
-
 @media (max-width: 640px) {
-  .repoCardTop,
-  .footer {
+  .repoCardTop {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .loadMoreButton {
-    width: 100%;
   }
 }
