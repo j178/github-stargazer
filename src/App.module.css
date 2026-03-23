@@ -4,7 +4,7 @@
 }
 
 .shell {
-  max-width: 1240px;
+  max-width: 1460px;
   margin: 0 auto;
 }
 
@@ -200,7 +200,8 @@
 
 .workspaceGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr) minmax(260px, 0.62fr);
+  align-items: start;
   gap: 24px;
 }
 
@@ -292,10 +293,24 @@
   margin-top: 20px;
 }
 
+.scopeSectionHeader,
 .selectedReposHeader {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 10px;
+}
+
+.scopeSectionHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.scopeBox {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.66);
 }
 
 .selectedReposList {
@@ -308,7 +323,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  margin: 10px 0 14px;
+  margin: 0 0 14px;
   padding: 10px 12px;
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.08);
@@ -422,6 +437,30 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+  align-self: start;
+  position: sticky;
+  top: 24px;
+}
+
+.actionsPanel .actionButtons {
+  flex-direction: column;
+}
+
+.actionsPanel .primaryButton,
+.actionsPanel .secondaryButton,
+.actionsPanel .dangerButton {
+  width: 100%;
+}
+
+.actionsPanel .summaryRow {
+  display: grid;
+  gap: 10px;
+}
+
+.actionsPanel .summaryPill {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 42px;
 }
 
 .summaryRow {
@@ -478,10 +517,25 @@
   text-decoration: underline;
 }
 
+@media (max-width: 1360px) {
+  .workspaceGrid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  }
+
+  .actionsPanel {
+    position: static;
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 1080px) {
   .hero,
   .workspaceGrid {
     grid-template-columns: 1fr;
+  }
+
+  .actionsPanel {
+    grid-column: auto;
   }
 }
 

@@ -108,11 +108,6 @@ const RepoSelector: FC<{
                   </span>
                 </div>
                 {repo.description?.trim() ? <p className={styles.repoDescription}>{repo.description}</p> : null}
-                {repo.fork ? (
-                  <div className={styles.repoMeta}>
-                    <span className={styles.repoBadge}>Fork</span>
-                  </div>
-                ) : null}
               </button>
             )
           })

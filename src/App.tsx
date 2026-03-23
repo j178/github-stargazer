@@ -503,150 +503,161 @@ const App: FC = () => {
                   </div>
                 </section>
               ) : (
-                <>
-                  <div className={styles.workspaceGrid}>
-                    <section className={styles.panel}>
-                      <NotificationConfig settings={settings} setSettings={setSettings} />
-                    </section>
+                <div className={styles.workspaceGrid}>
+                  <section className={styles.panel}>
+                    <NotificationConfig settings={settings} setSettings={setSettings} />
+                  </section>
 
-                    <section className={styles.panel}>
-                      <div className={styles.panelHeader}>
-                        <div>
-                          <p className={styles.sectionEyebrow}>Repository scope</p>
-                          <h2 className={styles.sectionTitle}>Choose which repositories can notify</h2>
-                          <p className={styles.sectionText}>
-                            Use a mute list to silence specific repositories, or switch to an allow list for a tighter
-                            setup.
-                          </p>
-                        </div>
-                        <div className={styles.modeSwitch} role='tablist' aria-label='Repository list mode'>
-                          <button
-                            aria-pressed={listMode === ListMode.Mute}
-                            className={listMode === ListMode.Mute ? styles.modeButtonActive : styles.modeButton}
-                            onClick={() => setListMode(ListMode.Mute)}
-                            type='button'
-                          >
-                            Mute list
-                          </button>
-                          <button
-                            aria-pressed={listMode === ListMode.Allow}
-                            className={listMode === ListMode.Allow ? styles.modeButtonActive : styles.modeButton}
-                            onClick={() => setListMode(ListMode.Allow)}
-                            type='button'
-                          >
-                            Allow list
-                          </button>
-                        </div>
+                  <section className={styles.panel}>
+                    <div className={styles.panelHeader}>
+                      <div>
+                        <p className={styles.sectionEyebrow}>Repository scope</p>
+                        <h2 className={styles.sectionTitle}>Choose which repositories can notify</h2>
+                        <p className={styles.sectionText}>Switch mode, then add repositories below.</p>
                       </div>
+                      <div className={styles.modeSwitch} role='tablist' aria-label='Repository list mode'>
+                        <button
+                          aria-pressed={listMode === ListMode.Mute}
+                          className={listMode === ListMode.Mute ? styles.modeButtonActive : styles.modeButton}
+                          onClick={() => setListMode(ListMode.Mute)}
+                          type='button'
+                        >
+                          Mute list
+                        </button>
+                        <button
+                          aria-pressed={listMode === ListMode.Allow}
+                          className={listMode === ListMode.Allow ? styles.modeButtonActive : styles.modeButton}
+                          onClick={() => setListMode(ListMode.Allow)}
+                          type='button'
+                        >
+                          Allow list
+                        </button>
+                      </div>
+                    </div>
 
-                      {isLoadingAccountData ? (
-                        <div className={styles.loadingState}>Loading repositories and existing rules…</div>
-                      ) : (
-                        <>
-                          <div
+                    {isLoadingAccountData ? (
+                      <div className={styles.loadingState}>Loading repositories and existing rules…</div>
+                    ) : (
+                      <>
+                        <div
+                          className={
+                            listMode === ListMode.Allow
+                              ? `${styles.scopeHint} ${styles.scopeHintAllow}`
+                              : `${styles.scopeHint} ${styles.scopeHintMute}`
+                          }
+                        >
+                          <span
                             className={
                               listMode === ListMode.Allow
-                                ? `${styles.scopeHint} ${styles.scopeHintAllow}`
-                                : `${styles.scopeHint} ${styles.scopeHintMute}`
+                                ? `${styles.selectedRepoState} ${styles.selectedRepoStateAllow}`
+                                : `${styles.selectedRepoState} ${styles.selectedRepoStateMute}`
                             }
                           >
-                            <span
-                              className={
-                                listMode === ListMode.Allow
-                                  ? `${styles.selectedRepoState} ${styles.selectedRepoStateAllow}`
-                                  : `${styles.selectedRepoState} ${styles.selectedRepoStateMute}`
-                              }
-                            >
-                              {selectedRepoStateLabel}
-                            </span>
-                            <span className={styles.scopeHintText}>{repoScopeHint}</span>
-                          </div>
+                            {selectedRepoStateLabel}
+                          </span>
+                          <span className={styles.scopeHintText}>{repoScopeHint}</span>
+                        </div>
 
+                        <div className={styles.scopeBox}>
+                          <div className={styles.scopeSectionHeader}>
+                            <h3 className={styles.subsectionTitle}>Available repositories</h3>
+                            <span className={styles.countBadge}>{availableRepos.length}</span>
+                          </div>
                           <RepoSelector
                             hasMore={hasMore}
                             loadMoreRepos={loadMoreRepos}
                             onSelect={handleSelectRepo}
                             repos={availableRepos}
                           />
+                        </div>
 
-                          <div className={styles.selectedReposSection}>
-                            <div className={styles.selectedReposHeader}>
-                              <h3 className={styles.subsectionTitle}>{selectedRepoTitle}</h3>
-                              <span className={styles.countBadge}>{selectedRepos.length}</span>
-                            </div>
-                            {selectedRepos.length === 0 ? (
-                              <div className={styles.inlineEmptyState}>{selectedRepoEmptyMessage}</div>
-                            ) : (
-                              <div className={styles.selectedReposList}>
-                                {selectedRepos.map((repo) => (
-                                  <article
-                                    className={
-                                      listMode === ListMode.Allow
-                                        ? `${styles.selectedRepoCard} ${styles.selectedRepoCardAllow}`
-                                        : `${styles.selectedRepoCard} ${styles.selectedRepoCardMute}`
-                                    }
-                                    key={repo}
-                                  >
-                                    <div className={styles.selectedRepoInfo}>
-                                      <strong className={styles.selectedRepoName}>{repo}</strong>
-                                    </div>
-                                    <div className={styles.selectedRepoMeta}>
-                                      <span
-                                        className={
-                                          listMode === ListMode.Allow
-                                            ? `${styles.selectedRepoState} ${styles.selectedRepoStateAllow}`
-                                            : `${styles.selectedRepoState} ${styles.selectedRepoStateMute}`
-                                        }
-                                      >
-                                        {selectedRepoStateLabel}
-                                      </span>
-                                      <button
-                                        aria-label={`Remove ${repo}`}
-                                        className={styles.repoChipButton}
-                                        onClick={() => handleUnselectRepo(repo)}
-                                        type='button'
-                                      >
-                                        Remove
-                                      </button>
-                                    </div>
-                                  </article>
-                                ))}
-                              </div>
-                            )}
+                        <div className={`${styles.scopeBox} ${styles.selectedReposSection}`}>
+                          <div className={styles.scopeSectionHeader}>
+                            <h3 className={styles.subsectionTitle}>{selectedRepoTitle}</h3>
+                            <span className={styles.countBadge}>{selectedRepos.length}</span>
                           </div>
-
-                          <label className={styles.preferenceCard}>
-                            <div>
-                              <h3 className={styles.subsectionTitle}>Mute lost-star notifications</h3>
-                              <p className={styles.sectionText}>
-                                Keep delivery focused on new stars and ignore unstar events.
-                              </p>
+                          {selectedRepos.length === 0 ? (
+                            <div className={styles.inlineEmptyState}>{selectedRepoEmptyMessage}</div>
+                          ) : (
+                            <div className={styles.selectedReposList}>
+                              {selectedRepos.map((repo) => (
+                                <article
+                                  className={
+                                    listMode === ListMode.Allow
+                                      ? `${styles.selectedRepoCard} ${styles.selectedRepoCardAllow}`
+                                      : `${styles.selectedRepoCard} ${styles.selectedRepoCardMute}`
+                                  }
+                                  key={repo}
+                                >
+                                  <div className={styles.selectedRepoInfo}>
+                                    <strong className={styles.selectedRepoName}>{repo}</strong>
+                                  </div>
+                                  <div className={styles.selectedRepoMeta}>
+                                    <span
+                                      className={
+                                        listMode === ListMode.Allow
+                                          ? `${styles.selectedRepoState} ${styles.selectedRepoStateAllow}`
+                                          : `${styles.selectedRepoState} ${styles.selectedRepoStateMute}`
+                                      }
+                                    >
+                                      {selectedRepoStateLabel}
+                                    </span>
+                                    <button
+                                      aria-label={`Remove ${repo}`}
+                                      className={styles.repoChipButton}
+                                      onClick={() => handleUnselectRepo(repo)}
+                                      type='button'
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                </article>
+                              ))}
                             </div>
-                            <input
-                              checked={settings.mute_lost_stars}
-                              className={styles.preferenceToggle}
-                              onChange={(event) =>
-                                setSettings((current) => ({
-                                  ...current,
-                                  mute_lost_stars: event.target.checked,
-                                }))
-                              }
-                              type='checkbox'
-                            />
-                          </label>
-                        </>
-                      )}
-                    </section>
-                  </div>
+                          )}
+                        </div>
 
-                  <section className={`${styles.panel} ${styles.actionsPanel}`}>
+                        <label className={styles.preferenceCard}>
+                          <div>
+                            <h3 className={styles.subsectionTitle}>Mute lost-star notifications</h3>
+                            <p className={styles.sectionText}>
+                              Keep delivery focused on new stars and ignore unstar events.
+                            </p>
+                          </div>
+                          <input
+                            checked={settings.mute_lost_stars}
+                            className={styles.preferenceToggle}
+                            onChange={(event) =>
+                              setSettings((current) => ({
+                                ...current,
+                                mute_lost_stars: event.target.checked,
+                              }))
+                            }
+                            type='checkbox'
+                          />
+                        </label>
+                      </>
+                    )}
+                  </section>
+                  <aside className={`${styles.panel} ${styles.actionsPanel}`}>
                     <div>
                       <p className={styles.sectionEyebrow}>Actions</p>
-                      <h2 className={styles.sectionTitle}>Validate, test, and save</h2>
+                      <h2 className={styles.sectionTitle}>Validate and save</h2>
                       <p className={styles.sectionText}>
-                        Validate checks the structure, test sends a sample notification, and save stores the current
-                        account policy.
+                        Run checks, send a sample, and store the configuration for this installation.
                       </p>
+                    </div>
+                    <div className={styles.summaryRow}>
+                      <span className={styles.summaryPill}>
+                        <FiCheckCircle />
+                        {currentSettings.notify_settings.length} destinations configured
+                      </span>
+                      <span className={styles.summaryPill}>
+                        <FiFilter />
+                        {currentSettings.allow_repos.length > 0
+                          ? `${currentSettings.allow_repos.length} allow-listed repositories`
+                          : `${currentSettings.mute_repos.length} muted repositories`}
+                      </span>
                     </div>
                     <div className={styles.actionButtons}>
                       <button
@@ -686,20 +697,8 @@ const App: FC = () => {
                         {isDeleting ? 'Deleting…' : 'Delete saved configuration'}
                       </button>
                     </div>
-                    <div className={styles.summaryRow}>
-                      <span className={styles.summaryPill}>
-                        <FiCheckCircle />
-                        {currentSettings.notify_settings.length} destinations configured
-                      </span>
-                      <span className={styles.summaryPill}>
-                        <FiFilter />
-                        {currentSettings.allow_repos.length > 0
-                          ? `${currentSettings.allow_repos.length} allow-listed repositories`
-                          : `${currentSettings.mute_repos.length} muted repositories`}
-                      </span>
-                    </div>
-                  </section>
-                </>
+                  </aside>
+                </div>
               )}
             </>
           )}

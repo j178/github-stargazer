@@ -246,6 +246,13 @@
   gap: 8px;
 }
 
+.fieldMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .fieldWide {
   grid-column: 1 / -1;
 }
@@ -259,6 +266,7 @@
 .fieldHint {
   font-size: 0.84rem;
   color: var(--text-muted);
+  text-align: right;
 }
 
 .input,
@@ -405,10 +413,104 @@
   margin-top: 14px;
 }
 
+.emptyGuide,
 .inlineEmptyState,
 .emptyState {
   border-radius: 20px;
   color: var(--text-muted);
+}
+
+.emptyGuide {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px dashed rgba(15, 23, 42, 0.14);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(247, 250, 252, 0.88)), rgba(255, 255, 255, 0.88);
+}
+
+.emptyGuideHeader,
+.emptyGuideIcons,
+.emptyGuideStep {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.emptyGuideHeader {
+  justify-content: space-between;
+}
+
+.emptyGuideBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.1);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.emptyGuideIcons {
+  flex-wrap: wrap;
+}
+
+.emptyGuideIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.06);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.emptyGuideSteps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.emptyGuideStep {
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.emptyGuideStepActive {
+  border-color: rgba(15, 118, 110, 0.2);
+  background: rgba(240, 253, 250, 0.92);
+}
+
+.emptyGuideStepNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--text-strong);
+  font-size: 0.74rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.emptyGuideStepActive .emptyGuideStepNumber {
+  background: rgba(15, 118, 110, 0.14);
+  color: var(--accent);
+}
+
+.emptyGuideStepLabel {
+  color: var(--text-strong);
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
 .inlineEmptyState {
@@ -435,6 +537,15 @@
   .settingCardHeader {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .emptyGuideHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .emptyGuideSteps {
+    grid-template-columns: 1fr;
   }
 
   .primaryButton,
