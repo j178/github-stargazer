@@ -10,7 +10,7 @@
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(240px, 320px);
+  grid-template-columns: minmax(0, 1.38fr) minmax(320px, 390px);
   gap: 18px;
   align-items: start;
   margin-bottom: 20px;
@@ -106,7 +106,7 @@
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: 8px;
+  gap: 14px;
   border-radius: 24px;
   padding: 22px;
 }
@@ -120,9 +120,60 @@
 }
 
 .heroCardValue {
+  display: block;
   font-size: 1.32rem;
   line-height: 1.15;
   letter-spacing: -0.03em;
+}
+
+.workspaceCardTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.workspaceAccountControls {
+  display: grid;
+  gap: 10px;
+}
+
+.workspaceSelectField,
+.workspaceInstallButton {
+  width: 100%;
+}
+
+.workspaceRefreshButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.workspaceRefreshButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text-strong);
+}
+
+.workspaceRefreshButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.64;
+  transform: none;
 }
 
 .main {
@@ -200,7 +251,7 @@
 
 .workspaceGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr) minmax(260px, 0.62fr);
+  grid-template-columns: minmax(300px, 0.84fr) minmax(420px, 1.28fr) minmax(260px, 0.54fr);
   align-items: start;
   gap: 24px;
 }
@@ -351,6 +402,34 @@
   line-height: 1.55;
 }
 
+.scopeModeMeta {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.scopeModeStat {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.scopeModeStatLabel {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.scopeModeStatValue {
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
 .scopeOverview {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 16px;
@@ -388,7 +467,7 @@
 }
 
 .scopeWorkspace {
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  grid-template-columns: minmax(0, 1.02fr) minmax(320px, 0.98fr);
   margin-bottom: 20px;
 }
 
@@ -638,7 +717,7 @@
 
 @media (max-width: 1360px) {
   .workspaceGrid {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
   }
 
   .actionsPanel {
@@ -651,6 +730,15 @@
   .hero,
   .workspaceGrid {
     grid-template-columns: 1fr;
+  }
+
+  .workspaceAccountControls {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .workspaceInstallButton {
+    width: auto;
   }
 
   .scopeWorkspace {
@@ -692,6 +780,15 @@
     grid-template-columns: 1fr;
   }
 
+  .scopeModeStat {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .scopeModeStatValue {
+    white-space: normal;
+  }
+
   .modeSwitch {
     width: 100%;
   }
@@ -699,6 +796,20 @@
   .modeButton,
   .modeButtonActive {
     flex: 1;
+  }
+
+  .workspaceCardTop {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .workspaceAccountControls {
+    grid-template-columns: 1fr;
+  }
+
+  .workspaceRefreshButton,
+  .workspaceInstallButton {
+    width: 100%;
   }
 
   .actionButtons {

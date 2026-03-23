@@ -15,7 +15,14 @@ import {
 } from 'react-icons/fi'
 import { ToastContainer, toast } from 'react-toastify'
 import styles from './App.module.css'
-import { createEmptySettings, type Installation, normalizeSettings, type RepoInfo, type Settings } from './models'
+import {
+  createEmptySettings,
+  type Installation,
+  type NotifySetting,
+  normalizeSettings,
+  type RepoInfo,
+  type Settings,
+} from './models'
 import NotificationConfig from './NotificationConfig'
 import RepoSelector from './RepoSelector'
 import 'react-toastify/dist/ReactToastify.css'
@@ -43,6 +50,29 @@ const buildSettingsPayload = (settings: Settings, selectedRepos: string[], listM
   mute_repos: listMode === ListMode.Mute ? selectedRepos : [],
 })
 
+const normalizeNotifySettingSnapshot = (notifySetting: NotifySetting): NotifySetting =>
+  Object.fromEntries(
+    Object.entries(notifySetting)
+      .filter(([, value]) => value)
+      .sort(([left], [right]) => left.localeCompare(right))
+  ) as NotifySetting
+
+const serializeSettingsSnapshot = (settings: Settings) =>
+  JSON.stringify({
+    ...settings,
+    notify_settings: [...settings.notify_settings]
+      .map(normalizeNotifySettingSnapshot)
+      .sort((left, right) =>
+        JSON.stringify(normalizeNotifySettingSnapshot(left)).localeCompare(
+          JSON.stringify(normalizeNotifySettingSnapshot(right))
+        )
+      ),
+    allow_repos: [...settings.allow_repos].sort((left, right) => left.localeCompare(right)),
+    mute_repos: [...settings.mute_repos].sort((left, right) => left.localeCompare(right)),
+  } satisfies Settings)
+
+const EMPTY_SETTINGS_SNAPSHOT = serializeSettingsSnapshot(createEmptySettings())
+
 const deriveRepoSelection = (settings: Settings) => {
   if (settings.allow_repos.length > 0) {
     return {
@@ -65,8 +95,8 @@ const AccountSelect: FC<{
   onInstallAnother: () => void
 }> = ({ installations, selectedAccount, isRefreshing, onChange, onInstallAnother }) => {
   return (
-    <div className={styles.accountControls}>
-      <label className={styles.selectField}>
+    <div className={`${styles.accountControls} ${styles.workspaceAccountControls}`}>
+      <label className={`${styles.selectField} ${styles.workspaceSelectField}`}>
         <span className={styles.fieldLabel}>GitHub account</span>
         <select className={styles.accountSelect} onChange={onChange} value={selectedAccount?.account ?? ''}>
           {installations.length === 0 ? (
@@ -85,7 +115,12 @@ const AccountSelect: FC<{
           )}
         </select>
       </label>
-      <button className={styles.secondaryButton} disabled={isRefreshing} onClick={onInstallAnother} type='button'>
+      <button
+        className={`${styles.secondaryButton} ${styles.workspaceInstallButton}`}
+        disabled={isRefreshing}
+        onClick={onInstallAnother}
+        type='button'
+      >
         <FiExternalLink />
         Install on another account
       </button>
@@ -114,6 +149,7 @@ const App: FC = () => {
   const [settings, setSettings] = useState<Settings>(createEmptySettings())
   const [listMode, setListMode] = useState(ListMode.Mute)
   const [selectedRepos, setSelectedRepos] = useState<string[]>([])
+  const [savedSettingsSnapshot, setSavedSettingsSnapshot] = useState(EMPTY_SETTINGS_SNAPSHOT)
   const [curPage, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [isChecking, setIsChecking] = useState(false)
@@ -179,6 +215,7 @@ const App: FC = () => {
       setRepos([])
       setSelectedRepos([])
       setListMode(ListMode.Mute)
+      setSavedSettingsSnapshot(EMPTY_SETTINGS_SNAPSHOT)
       setPage(1)
       setHasMore(true)
       return
@@ -192,6 +229,7 @@ const App: FC = () => {
       setRepos([])
       setSelectedRepos([])
       setListMode(ListMode.Mute)
+      setSavedSettingsSnapshot(EMPTY_SETTINGS_SNAPSHOT)
       setPage(1)
       setHasMore(true)
 
@@ -212,6 +250,7 @@ const App: FC = () => {
         setSettings(normalizedSettings)
         setSelectedRepos(selection.repos)
         setListMode(selection.listMode)
+        setSavedSettingsSnapshot(serializeSettingsSnapshot(normalizedSettings))
         setRepos(nextRepos)
         setHasMore(nextRepos.length > 0)
       } catch (error) {
@@ -355,12 +394,15 @@ const App: FC = () => {
       return
     }
 
+    const nextSnapshot = serializeSettingsSnapshot(buildSettingsPayload(settings, selectedRepos, listMode))
+
     setIsSaving(true)
     try {
       await axios.post(
         `/api/settings/${selectedAccount.account}`,
         buildSettingsPayload(settings, selectedRepos, listMode)
       )
+      setSavedSettingsSnapshot(nextSnapshot)
       toast.success('Configuration saved')
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to save configuration'))
@@ -385,6 +427,7 @@ const App: FC = () => {
       setSettings(createEmptySettings())
       setSelectedRepos([])
       setListMode(ListMode.Mute)
+      setSavedSettingsSnapshot(EMPTY_SETTINGS_SNAPSHOT)
       toast.success('Configuration deleted')
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to delete configuration'))
@@ -395,6 +438,7 @@ const App: FC = () => {
 
   const availableRepos = repos.filter((repo) => !selectedRepos.includes(repo.name))
   const currentSettings = buildSettingsPayload(settings, selectedRepos, listMode)
+  const hasUnsavedChanges = serializeSettingsSnapshot(currentSettings) !== savedSettingsSnapshot
   const isBusy = isChecking || isTesting || isSaving || isDeleting
   const scopeModes = [
     {
@@ -468,14 +512,39 @@ const App: FC = () => {
               </span>
             </div>
           </div>
-          <aside className={styles.heroCard}>
-            <span className={styles.heroCardLabel}>Current workspace</span>
-            <strong className={styles.heroCardValue}>{selectedAccount?.account ?? 'No account selected'}</strong>
-            <p className={styles.heroCardText}>
-              {selectedAccount
-                ? 'Changes on this page apply only to the selected installation.'
-                : 'Pick a GitHub account or organization to start configuring notifications.'}
-            </p>
+          <aside className={`${styles.heroCard} ${styles.workspaceCard}`}>
+            <div className={styles.workspaceCardTop}>
+              <div>
+                <span className={styles.heroCardLabel}>Current workspace</span>
+                <strong className={styles.heroCardValue}>{selectedAccount?.account ?? 'No account selected'}</strong>
+                <p className={styles.heroCardText}>
+                  {selectedAccount
+                    ? 'Changes on this page apply only to the selected installation.'
+                    : 'Pick a GitHub account or organization to start configuring notifications.'}
+                </p>
+              </div>
+              {isLoggedIn ? (
+                <button
+                  aria-label='Refresh installations'
+                  className={styles.workspaceRefreshButton}
+                  disabled={isRefreshingAccounts}
+                  onClick={() => void refreshInstallations()}
+                  title='Refresh installations'
+                  type='button'
+                >
+                  <FiRefreshCw />
+                </button>
+              ) : null}
+            </div>
+            {isLoggedIn ? (
+              <AccountSelect
+                installations={installations}
+                isRefreshing={isRefreshingAccounts}
+                onChange={handleAccountChange}
+                onInstallAnother={handleInstallAnotherAccount}
+                selectedAccount={selectedAccount}
+              />
+            ) : null}
           </aside>
         </header>
 
@@ -498,270 +567,234 @@ const App: FC = () => {
                 Log in with GitHub
               </a>
             </section>
+          ) : !selectedAccount ? (
+            <section className={styles.panel}>
+              <div className={styles.emptyState}>
+                <h2 className={styles.emptyStateTitle}>
+                  {installations.length === 0 ? 'No installations found' : 'Select an account to continue'}
+                </h2>
+                <p className={styles.emptyStateText}>
+                  {installations.length === 0
+                    ? 'Install the GitHub app on a personal account or organization, then refresh the list.'
+                    : 'The configuration editor appears once an installation is selected.'}
+                </p>
+              </div>
+            </section>
           ) : (
-            <>
+            <div className={styles.workspaceGrid}>
+              <section className={styles.panel}>
+                <NotificationConfig settings={settings} setSettings={setSettings} />
+              </section>
+
               <section className={styles.panel}>
                 <div className={styles.panelHeader}>
                   <div>
-                    <p className={styles.sectionEyebrow}>Account</p>
-                    <h2 className={styles.sectionTitle}>Choose an installation</h2>
+                    <p className={styles.sectionEyebrow}>Repository scope</p>
+                    <h2 className={styles.sectionTitle}>Design the delivery policy</h2>
                     <p className={styles.sectionText}>
-                      Each personal account and organization keeps an independent notification policy.
+                      First decide how the installation behaves by default, then list the repositories that should
+                      behave differently.
                     </p>
                   </div>
-                  <button
-                    className={styles.ghostButton}
-                    disabled={isRefreshingAccounts}
-                    onClick={() => void refreshInstallations()}
-                    type='button'
-                  >
-                    <FiRefreshCw />
-                    Refresh
-                  </button>
                 </div>
-                <AccountSelect
-                  installations={installations}
-                  isRefreshing={isRefreshingAccounts}
-                  onChange={handleAccountChange}
-                  onInstallAnother={handleInstallAnotherAccount}
-                  selectedAccount={selectedAccount}
-                />
-              </section>
 
-              {!selectedAccount ? (
-                <section className={styles.panel}>
-                  <div className={styles.emptyState}>
-                    <h2 className={styles.emptyStateTitle}>
-                      {installations.length === 0 ? 'No installations found' : 'Select an account to continue'}
-                    </h2>
-                    <p className={styles.emptyStateText}>
-                      {installations.length === 0
-                        ? 'Install the GitHub app on a personal account or organization, then refresh the list.'
-                        : 'The configuration editor appears once an installation is selected.'}
-                    </p>
-                  </div>
-                </section>
-              ) : (
-                <div className={styles.workspaceGrid}>
-                  <section className={styles.panel}>
-                    <NotificationConfig settings={settings} setSettings={setSettings} />
-                  </section>
+                {isLoadingAccountData ? (
+                  <div className={styles.loadingState}>Loading repositories and existing rules…</div>
+                ) : (
+                  <>
+                    <div className={styles.scopeModeGrid} role='tablist' aria-label='Repository delivery policy'>
+                      {scopeModes.map((scopeMode) => {
+                        const isActive = listMode === scopeMode.mode
+                        return (
+                          <button
+                            aria-pressed={isActive}
+                            className={
+                              isActive ? `${styles.scopeModeCard} ${styles.scopeModeCardActive}` : styles.scopeModeCard
+                            }
+                            key={scopeMode.mode}
+                            onClick={() => setListMode(scopeMode.mode)}
+                            type='button'
+                          >
+                            <span className={styles.scopeModeEyebrow}>{scopeMode.eyebrow}</span>
+                            <strong className={styles.scopeModeTitle}>{scopeMode.title}</strong>
+                            <span className={styles.scopeModeText}>{scopeMode.description}</span>
+                            <div className={styles.scopeModeMeta}>
+                              <div className={styles.scopeModeStat}>
+                                <span className={styles.scopeModeStatLabel}>{scopeMode.listedLabel}</span>
+                                <strong
+                                  className={
+                                    scopeMode.mode === ListMode.Allow
+                                      ? `${styles.scopeModeStatValue} ${styles.scopeModeStatValuePositive}`
+                                      : `${styles.scopeModeStatValue} ${styles.scopeModeStatValueMuted}`
+                                  }
+                                >
+                                  {scopeMode.listedValue}
+                                </strong>
+                              </div>
+                              <div className={styles.scopeModeStat}>
+                                <span className={styles.scopeModeStatLabel}>{scopeMode.defaultLabel}</span>
+                                <strong
+                                  className={
+                                    scopeMode.mode === ListMode.Allow
+                                      ? `${styles.scopeModeStatValue} ${styles.scopeModeStatValueBlocked}`
+                                      : `${styles.scopeModeStatValue} ${styles.scopeModeStatValuePositive}`
+                                  }
+                                >
+                                  {scopeMode.defaultValue}
+                                </strong>
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
 
-                  <section className={styles.panel}>
-                    <div className={styles.panelHeader}>
-                      <div>
-                        <p className={styles.sectionEyebrow}>Repository scope</p>
-                        <h2 className={styles.sectionTitle}>Design the delivery policy</h2>
-                        <p className={styles.sectionText}>
-                          First decide how the installation behaves by default, then list the repositories that should
-                          behave differently.
-                        </p>
+                    <div className={styles.scopeWorkspace}>
+                      <div className={`${styles.scopeBox} ${styles.scopeBrowserPanel}`}>
+                        <div className={styles.scopeSectionHeader}>
+                          <div>
+                            <p className={styles.scopeSectionEyebrow}>Repository browser</p>
+                            <h3 className={styles.subsectionTitle}>{scopeMeta.browserTitle}</h3>
+                          </div>
+                          <span className={styles.countBadge}>{availableRepos.length}</span>
+                        </div>
+                        <p className={styles.scopeSectionText}>{scopeMeta.browserDescription}</p>
+                        <RepoSelector
+                          hasMore={hasMore}
+                          loadMoreRepos={loadMoreRepos}
+                          onSelect={handleSelectRepo}
+                          repos={availableRepos}
+                        />
+                      </div>
+
+                      <div className={`${styles.scopeBox} ${styles.scopeRulesPanel}`}>
+                        <div className={styles.scopeSectionHeader}>
+                          <div>
+                            <p className={styles.scopeSectionEyebrow}>Current policy</p>
+                            <h3 className={styles.subsectionTitle}>{scopeMeta.listTitle}</h3>
+                          </div>
+                          <span
+                            className={
+                              listMode === ListMode.Allow
+                                ? `${styles.scopeListBadge} ${styles.scopeListBadgeAllow}`
+                                : `${styles.scopeListBadge} ${styles.scopeListBadgeMute}`
+                            }
+                          >
+                            {scopeMeta.listBadge}
+                          </span>
+                        </div>
+                        <p className={styles.scopeSectionText}>{scopeMeta.listDescription}</p>
+                        {selectedRepos.length === 0 ? (
+                          <div className={styles.scopeEmptyState}>
+                            <strong className={styles.scopeEmptyTitle}>{scopeMeta.emptyTitle}</strong>
+                            <p className={styles.scopeEmptyText}>{scopeMeta.emptyText}</p>
+                          </div>
+                        ) : (
+                          <div className={styles.scopeRuleList}>
+                            {selectedRepos.map((repo, index) => (
+                              <article className={styles.scopeRuleRow} key={repo}>
+                                <div className={styles.scopeRuleIdentity}>
+                                  <span className={styles.scopeRuleIndex}>{String(index + 1).padStart(2, '0')}</span>
+                                  <strong className={styles.scopeRuleName}>{repo}</strong>
+                                </div>
+                                <button
+                                  aria-label={`Remove ${repo}`}
+                                  className={styles.scopeRuleRemove}
+                                  onClick={() => handleUnselectRepo(repo)}
+                                  title={`Remove ${repo}`}
+                                  type='button'
+                                >
+                                  <FiX />
+                                </button>
+                              </article>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {isLoadingAccountData ? (
-                      <div className={styles.loadingState}>Loading repositories and existing rules…</div>
-                    ) : (
-                      <>
-                        <div className={styles.scopeModeGrid} role='tablist' aria-label='Repository delivery policy'>
-                          {scopeModes.map((scopeMode) => {
-                            const isActive = listMode === scopeMode.mode
-                            return (
-                              <button
-                                aria-pressed={isActive}
-                                className={
-                                  isActive
-                                    ? `${styles.scopeModeCard} ${styles.scopeModeCardActive}`
-                                    : styles.scopeModeCard
-                                }
-                                key={scopeMode.mode}
-                                onClick={() => setListMode(scopeMode.mode)}
-                                type='button'
-                              >
-                                <span className={styles.scopeModeEyebrow}>{scopeMode.eyebrow}</span>
-                                <strong className={styles.scopeModeTitle}>{scopeMode.title}</strong>
-                                <span className={styles.scopeModeText}>{scopeMode.description}</span>
-                                <div className={styles.scopeModeMeta}>
-                                  <div className={styles.scopeModeStat}>
-                                    <span className={styles.scopeModeStatLabel}>{scopeMode.listedLabel}</span>
-                                    <strong
-                                      className={
-                                        scopeMode.mode === ListMode.Allow
-                                          ? `${styles.scopeModeStatValue} ${styles.scopeModeStatValuePositive}`
-                                          : `${styles.scopeModeStatValue} ${styles.scopeModeStatValueMuted}`
-                                      }
-                                    >
-                                      {scopeMode.listedValue}
-                                    </strong>
-                                  </div>
-                                  <div className={styles.scopeModeStat}>
-                                    <span className={styles.scopeModeStatLabel}>{scopeMode.defaultLabel}</span>
-                                    <strong
-                                      className={
-                                        scopeMode.mode === ListMode.Allow
-                                          ? `${styles.scopeModeStatValue} ${styles.scopeModeStatValueBlocked}`
-                                          : `${styles.scopeModeStatValue} ${styles.scopeModeStatValuePositive}`
-                                      }
-                                    >
-                                      {scopeMode.defaultValue}
-                                    </strong>
-                                  </div>
-                                </div>
-                              </button>
-                            )
-                          })}
-                        </div>
-
-                        <div className={styles.scopeWorkspace}>
-                          <div className={`${styles.scopeBox} ${styles.scopeBrowserPanel}`}>
-                            <div className={styles.scopeSectionHeader}>
-                              <div>
-                                <p className={styles.scopeSectionEyebrow}>Repository browser</p>
-                                <h3 className={styles.subsectionTitle}>{scopeMeta.browserTitle}</h3>
-                              </div>
-                              <span className={styles.countBadge}>{availableRepos.length}</span>
-                            </div>
-                            <p className={styles.scopeSectionText}>{scopeMeta.browserDescription}</p>
-                            <RepoSelector
-                              hasMore={hasMore}
-                              loadMoreRepos={loadMoreRepos}
-                              onSelect={handleSelectRepo}
-                              repos={availableRepos}
-                            />
-                          </div>
-
-                          <div className={`${styles.scopeBox} ${styles.scopeRulesPanel}`}>
-                            <div className={styles.scopeSectionHeader}>
-                              <div>
-                                <p className={styles.scopeSectionEyebrow}>Current policy</p>
-                                <h3 className={styles.subsectionTitle}>{scopeMeta.listTitle}</h3>
-                              </div>
-                              <span
-                                className={
-                                  listMode === ListMode.Allow
-                                    ? `${styles.scopeListBadge} ${styles.scopeListBadgeAllow}`
-                                    : `${styles.scopeListBadge} ${styles.scopeListBadgeMute}`
-                                }
-                              >
-                                {scopeMeta.listBadge}
-                              </span>
-                            </div>
-                            <p className={styles.scopeSectionText}>{scopeMeta.listDescription}</p>
-                            {selectedRepos.length === 0 ? (
-                              <div className={styles.scopeEmptyState}>
-                                <strong className={styles.scopeEmptyTitle}>{scopeMeta.emptyTitle}</strong>
-                                <p className={styles.scopeEmptyText}>{scopeMeta.emptyText}</p>
-                              </div>
-                            ) : (
-                              <div className={styles.scopeRuleList}>
-                                {selectedRepos.map((repo, index) => (
-                                  <article className={styles.scopeRuleRow} key={repo}>
-                                    <div className={styles.scopeRuleIdentity}>
-                                      <span className={styles.scopeRuleIndex}>
-                                        {String(index + 1).padStart(2, '0')}
-                                      </span>
-                                      <strong className={styles.scopeRuleName}>{repo}</strong>
-                                    </div>
-                                    <button
-                                      aria-label={`Remove ${repo}`}
-                                      className={styles.scopeRuleRemove}
-                                      onClick={() => handleUnselectRepo(repo)}
-                                      title={`Remove ${repo}`}
-                                      type='button'
-                                    >
-                                      <FiX />
-                                    </button>
-                                  </article>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <label className={styles.preferenceCard}>
-                          <div>
-                            <h3 className={styles.subsectionTitle}>Mute lost-star notifications</h3>
-                            <p className={styles.sectionText}>
-                              Keep delivery focused on new stars and ignore unstar events.
-                            </p>
-                          </div>
-                          <input
-                            checked={settings.mute_lost_stars}
-                            className={styles.preferenceToggle}
-                            onChange={(event) =>
-                              setSettings((current) => ({
-                                ...current,
-                                mute_lost_stars: event.target.checked,
-                              }))
-                            }
-                            type='checkbox'
-                          />
-                        </label>
-                      </>
-                    )}
-                  </section>
-                  <aside className={`${styles.panel} ${styles.actionsPanel}`}>
-                    <div>
-                      <p className={styles.sectionEyebrow}>Actions</p>
-                      <h2 className={styles.sectionTitle}>Validate and save</h2>
-                      <p className={styles.sectionText}>
-                        Run checks, send a sample, and store the configuration for this installation.
-                      </p>
-                    </div>
-                    <div className={styles.summaryRow}>
-                      <span className={styles.summaryPill}>
-                        <FiCheckCircle />
-                        {currentSettings.notify_settings.length} destinations configured
-                      </span>
-                      <span className={styles.summaryPill}>
-                        <FiFilter />
-                        {currentSettings.allow_repos.length > 0
-                          ? `${currentSettings.allow_repos.length} allow-listed repositories`
-                          : `${currentSettings.mute_repos.length} muted repositories`}
-                      </span>
-                    </div>
-                    <div className={styles.actionButtons}>
-                      <button
-                        className={styles.secondaryButton}
-                        disabled={isBusy || isLoadingAccountData}
-                        onClick={() => void handleValidateSettings()}
-                        type='button'
-                      >
-                        <FiShield />
-                        {isChecking ? 'Validating…' : 'Validate'}
-                      </button>
-                      <button
-                        className={styles.secondaryButton}
-                        disabled={isBusy || isLoadingAccountData}
-                        onClick={() => void handleTestSettings()}
-                        type='button'
-                      >
-                        <FiSend />
-                        {isTesting ? 'Sending…' : 'Send test'}
-                      </button>
-                      <button
-                        className={styles.primaryButton}
-                        disabled={isBusy || isLoadingAccountData}
-                        onClick={() => void handleSaveSettings()}
-                        type='button'
-                      >
-                        <FiSave />
-                        {isSaving ? 'Saving…' : 'Save configuration'}
-                      </button>
-                      <button
-                        className={styles.dangerButton}
-                        disabled={isBusy || isLoadingAccountData}
-                        onClick={() => void handleDeleteSettings()}
-                        type='button'
-                      >
-                        <FiTrash2 />
-                        {isDeleting ? 'Deleting…' : 'Delete saved configuration'}
-                      </button>
-                    </div>
-                  </aside>
+                    <label className={styles.preferenceCard}>
+                      <div>
+                        <h3 className={styles.subsectionTitle}>Mute lost-star notifications</h3>
+                        <p className={styles.sectionText}>
+                          Keep delivery focused on new stars and ignore unstar events.
+                        </p>
+                      </div>
+                      <input
+                        checked={settings.mute_lost_stars}
+                        className={styles.preferenceToggle}
+                        onChange={(event) =>
+                          setSettings((current) => ({
+                            ...current,
+                            mute_lost_stars: event.target.checked,
+                          }))
+                        }
+                        type='checkbox'
+                      />
+                    </label>
+                  </>
+                )}
+              </section>
+              <aside className={`${styles.panel} ${styles.actionsPanel}`}>
+                <div>
+                  <p className={styles.sectionEyebrow}>Actions</p>
+                  <h2 className={styles.sectionTitle}>Validate and save</h2>
+                  <p className={styles.sectionText}>
+                    Run checks, send a sample, and store the configuration for this installation.
+                  </p>
                 </div>
-              )}
-            </>
+                <div className={styles.summaryRow}>
+                  <span className={styles.summaryPill}>
+                    <FiCheckCircle />
+                    {currentSettings.notify_settings.length} destinations configured
+                  </span>
+                  <span className={styles.summaryPill}>
+                    <FiFilter />
+                    {currentSettings.allow_repos.length > 0
+                      ? `${currentSettings.allow_repos.length} allow-listed repositories`
+                      : `${currentSettings.mute_repos.length} muted repositories`}
+                  </span>
+                </div>
+                <div className={styles.actionButtons}>
+                  <button
+                    className={styles.secondaryButton}
+                    disabled={isBusy || isLoadingAccountData}
+                    onClick={() => void handleValidateSettings()}
+                    type='button'
+                  >
+                    <FiShield />
+                    {isChecking ? 'Validating…' : 'Validate'}
+                  </button>
+                  <button
+                    className={styles.secondaryButton}
+                    disabled={isBusy || isLoadingAccountData}
+                    onClick={() => void handleTestSettings()}
+                    type='button'
+                  >
+                    <FiSend />
+                    {isTesting ? 'Sending…' : 'Send test'}
+                  </button>
+                  <button
+                    className={hasUnsavedChanges ? styles.primaryButton : styles.secondaryButton}
+                    disabled={isBusy || isLoadingAccountData}
+                    onClick={() => void handleSaveSettings()}
+                    type='button'
+                  >
+                    <FiSave />
+                    {isSaving ? 'Saving…' : 'Save configuration'}
+                  </button>
+                  <button
+                    className={styles.dangerButton}
+                    disabled={isBusy || isLoadingAccountData}
+                    onClick={() => void handleDeleteSettings()}
+                    type='button'
+                  >
+                    <FiTrash2 />
+                    {isDeleting ? 'Deleting…' : 'Delete saved configuration'}
+                  </button>
+                </div>
+              </aside>
+            </div>
           )}
         </main>
 
