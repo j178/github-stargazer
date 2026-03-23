@@ -4,7 +4,37 @@ Install [this app](https://github.com/apps/stars-notifier) to your GitHub accoun
 
 Click https://github.com/apps/stars-notifier/installations/new/ to install.
 
-**Note**: This project is still under development, the configuration UI is not ready yet. You can configure it by sending API requests by yourself.
+The configuration UI is now available locally and can be developed with Bun + Vite.
+
+## Frontend Development
+
+Install dependencies with Bun:
+
+```sh
+bun install
+```
+
+Run the frontend dev server:
+
+```sh
+bun run dev
+```
+
+Run the local Go backend in another terminal:
+
+```sh
+go run ./cmd/server
+```
+
+The Vite dev server proxies `/api/*` requests to `http://localhost:8080` by default.
+
+Useful frontend commands:
+
+```sh
+bun run lint
+bun run format
+bun run build
+```
 
 ## Want to run your own instance?
 

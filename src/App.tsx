@@ -1,5 +1,5 @@
 import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import { type ChangeEvent, type FC, useEffect, useState } from 'react'
 import {
   FiBell,
   FiCheckCircle,
@@ -13,12 +13,10 @@ import {
   FiTrash2,
 } from 'react-icons/fi'
 import { ToastContainer, toast } from 'react-toastify'
-
+import styles from './App.module.css'
+import { createEmptySettings, type Installation, normalizeSettings, type RepoInfo, type Settings } from './models'
 import NotificationConfig from './NotificationConfig'
 import RepoSelector from './RepoSelector'
-import { Installation, RepoInfo, Settings, createEmptySettings, normalizeSettings } from './models'
-
-import styles from './App.module.css'
 import 'react-toastify/dist/ReactToastify.css'
 
 enum ListMode {
@@ -58,11 +56,11 @@ const deriveRepoSelection = (settings: Settings) => {
   }
 }
 
-const AccountSelect: React.FC<{
+const AccountSelect: FC<{
   installations: Installation[]
   selectedAccount: Installation | null
   isRefreshing: boolean
-  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void
+  onChange: (event: ChangeEvent<HTMLSelectElement>) => void
   onInstallAnother: () => void
 }> = ({ installations, selectedAccount, isRefreshing, onChange, onInstallAnother }) => {
   return (
@@ -94,7 +92,7 @@ const AccountSelect: React.FC<{
   )
 }
 
-const Footer: React.FC = () => {
+const Footer: FC = () => {
   return (
     <footer className={styles.footer}>
       <a href='https://github.com/apps/stars-notifier' rel='noopener noreferrer' target='_blank'>
@@ -104,7 +102,7 @@ const Footer: React.FC = () => {
   )
 }
 
-const App: React.FC = () => {
+const App: FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
   const [isRefreshingAccounts, setIsRefreshingAccounts] = useState(false)
@@ -286,7 +284,7 @@ const App: React.FC = () => {
     }, 1000)
   }
 
-  const handleAccountChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleAccountChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const nextAccount = installations.find((installation) => installation.account === event.target.value) ?? null
     setSelectedAccount(nextAccount)
   }
@@ -397,6 +395,23 @@ const App: React.FC = () => {
   const availableRepos = repos.filter((repo) => !selectedRepos.includes(repo.name))
   const currentSettings = buildSettingsPayload(settings, selectedRepos, listMode)
   const isBusy = isChecking || isTesting || isSaving || isDeleting
+  const repoScopeLabel = listMode === ListMode.Allow ? 'Allow list' : 'Mute list'
+  const repoScopeTitle =
+    listMode === ListMode.Allow ? 'Only selected repositories can notify.' : 'Selected repositories are muted.'
+  const repoScopeText =
+    listMode === ListMode.Allow
+      ? 'Everything outside this list stays silent until it is explicitly added.'
+      : 'Every other repository can still send notifications unless it is added here.'
+  const selectedRepoTitle = listMode === ListMode.Allow ? 'Allowed repositories' : 'Muted repositories'
+  const selectedRepoDescription =
+    listMode === ListMode.Allow
+      ? 'These repositories are explicitly included in delivery.'
+      : 'These repositories are explicitly excluded from delivery.'
+  const selectedRepoStateLabel = listMode === ListMode.Allow ? 'Allowed' : 'Muted'
+  const selectedRepoEmptyMessage =
+    listMode === ListMode.Allow
+      ? 'No repositories have been allow-listed yet. Add items from the list above.'
+      : 'No repositories are muted yet. Add items from the list above if you want to silence them.'
 
   return (
     <div className={styles.page}>
@@ -404,9 +419,9 @@ const App: React.FC = () => {
         <header className={styles.hero}>
           <div className={styles.heroContent}>
             <p className={styles.heroEyebrow}>GitHub Stars Delivery</p>
-            <h1 className={styles.heroTitle}>Modern controls for where star activity lands.</h1>
+            <h1 className={styles.heroTitle}>Notification settings for star activity.</h1>
             <p className={styles.heroText}>
-              Configure notification channels, fine-tune repository scope, and keep noisy events out of the way.
+              Choose delivery channels, define repository scope, and keep noisy events out of the way.
             </p>
             <div className={styles.heroBadges}>
               <span className={styles.heroBadge}>
@@ -543,6 +558,18 @@ const App: React.FC = () => {
                               : 'Selected repositories are muted, while everything else can notify.'}
                           </p>
 
+                          <div
+                            className={
+                              listMode === ListMode.Allow
+                                ? `${styles.scopeSummaryCard} ${styles.scopeSummaryCardAllow}`
+                                : `${styles.scopeSummaryCard} ${styles.scopeSummaryCardMute}`
+                            }
+                          >
+                            <span className={styles.scopeSummaryLabel}>{repoScopeLabel}</span>
+                            <strong className={styles.scopeSummaryTitle}>{repoScopeTitle}</strong>
+                            <p className={styles.scopeSummaryText}>{repoScopeText}</p>
+                          </div>
+
                           <RepoSelector
                             hasMore={hasMore}
                             loadMoreRepos={loadMoreRepos}
@@ -552,27 +579,53 @@ const App: React.FC = () => {
 
                           <div className={styles.selectedReposSection}>
                             <div className={styles.selectedReposHeader}>
-                              <h3 className={styles.subsectionTitle}>Selected repositories</h3>
+                              <div className={styles.selectedReposHeading}>
+                                <h3 className={styles.subsectionTitle}>{selectedRepoTitle}</h3>
+                                <p className={styles.sectionText}>{selectedRepoDescription}</p>
+                              </div>
                               <span className={styles.countBadge}>{selectedRepos.length}</span>
                             </div>
                             {selectedRepos.length === 0 ? (
-                              <div className={styles.inlineEmptyState}>
-                                No repositories selected yet. Add items from the list above.
-                              </div>
+                              <div className={styles.inlineEmptyState}>{selectedRepoEmptyMessage}</div>
                             ) : (
                               <div className={styles.selectedReposList}>
                                 {selectedRepos.map((repo) => (
-                                  <div className={styles.repoChip} key={repo}>
-                                    <span>{repo}</span>
-                                    <button
-                                      aria-label={`Remove ${repo}`}
-                                      className={styles.repoChipButton}
-                                      onClick={() => handleUnselectRepo(repo)}
-                                      type='button'
-                                    >
-                                      Remove
-                                    </button>
-                                  </div>
+                                  <article
+                                    className={
+                                      listMode === ListMode.Allow
+                                        ? `${styles.selectedRepoCard} ${styles.selectedRepoCardAllow}`
+                                        : `${styles.selectedRepoCard} ${styles.selectedRepoCardMute}`
+                                    }
+                                    key={repo}
+                                  >
+                                    <div className={styles.selectedRepoInfo}>
+                                      <strong className={styles.selectedRepoName}>{repo}</strong>
+                                      <span className={styles.selectedRepoHint}>
+                                        {listMode === ListMode.Allow
+                                          ? 'Explicitly allowed to send notifications.'
+                                          : 'Muted from sending notifications.'}
+                                      </span>
+                                    </div>
+                                    <div className={styles.selectedRepoMeta}>
+                                      <span
+                                        className={
+                                          listMode === ListMode.Allow
+                                            ? `${styles.selectedRepoState} ${styles.selectedRepoStateAllow}`
+                                            : `${styles.selectedRepoState} ${styles.selectedRepoStateMute}`
+                                        }
+                                      >
+                                        {selectedRepoStateLabel}
+                                      </span>
+                                      <button
+                                        aria-label={`Remove ${repo}`}
+                                        className={styles.repoChipButton}
+                                        onClick={() => handleUnselectRepo(repo)}
+                                        type='button'
+                                      >
+                                        Remove
+                                      </button>
+                                    </div>
+                                  </article>
                                 ))}
                               </div>
                             )}

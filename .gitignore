@@ -2,6 +2,7 @@
 .env*
 .idea
 node_modules
+.bun
 
 # next.js
 .next/

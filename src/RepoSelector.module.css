@@ -8,8 +8,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
-  padding: 0 16px;
+  min-height: 48px;
+  padding: 0 14px;
   border-radius: 16px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   background: rgba(255, 255, 255, 0.94);
@@ -30,8 +30,8 @@
 
 .repoList {
   display: grid;
-  gap: 12px;
-  max-height: 540px;
+  gap: 8px;
+  max-height: 500px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -39,10 +39,10 @@
 .repoCard {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
-  padding: 18px;
-  border-radius: 20px;
+  padding: 14px 16px;
+  border-radius: 16px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.9);
   text-align: left;
@@ -73,6 +73,7 @@
 
 .repoCardTop {
   justify-content: space-between;
+  align-items: flex-start;
 }
 
 .repoIdentity {
@@ -83,12 +84,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
   background: rgba(15, 118, 110, 0.1);
   color: var(--accent);
-  font-size: 1rem;
+  font-size: 0.92rem;
   flex-shrink: 0;
 }
 
@@ -98,8 +99,16 @@
 }
 
 .repoAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  background: rgba(240, 253, 250, 0.92);
   color: var(--accent);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -109,7 +118,15 @@
 .endOfList {
   margin: 0;
   color: var(--text-muted);
-  line-height: 1.6;
+  line-height: 1.5;
+}
+
+.repoDescription {
+  font-size: 0.9rem;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .repoBadge {

@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { type FC, useCallback, useEffect, useRef, useState } from 'react'
 import { FiArrowRight, FiSearch } from 'react-icons/fi'
 import { GoRepo, GoRepoForked } from 'react-icons/go'
 
-import { RepoInfo } from './models'
+import type { RepoInfo } from './models'
 
 import styles from './RepoSelector.module.css'
 
-const RepoSelector: React.FC<{
+const RepoSelector: FC<{
   repos: RepoInfo[]
   onSelect: (repoName: string) => void
   loadMoreRepos: () => Promise<void>
@@ -80,7 +80,7 @@ const RepoSelector: React.FC<{
         />
       </div>
 
-      <div className={styles.repoList} role='list'>
+      <div className={styles.repoList}>
         {filteredRepos.length === 0 ? (
           <div className={styles.emptyState}>
             No repositories match the current search.

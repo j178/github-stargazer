@@ -1,13 +1,22 @@
 import axios from 'axios'
-import React, { useCallback, useEffect, useState } from 'react'
+import {
+  type Dispatch,
+  type FC,
+  type ReactElement,
+  type ReactNode,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react'
 import { FaBell, FaDiscord, FaPlug, FaTelegram } from 'react-icons/fa'
 import { FiCheckCircle, FiEdit2, FiExternalLink, FiLink, FiPlus, FiRefreshCw, FiTrash2, FiX } from 'react-icons/fi'
 
-import { NotificationService, NotifySetting, Settings, notificationServices } from './models'
+import { type NotificationService, type NotifySetting, notificationServices, type Settings } from './models'
 
 import styles from './NotificationConfig.module.css'
 
-const serviceIcons: Record<NotificationService, React.ReactElement> = {
+const serviceIcons: Record<NotificationService, ReactElement> = {
   telegram: <FaTelegram />,
   discord_webhook: <FaDiscord />,
   discord_bot: <FaDiscord />,
@@ -25,25 +34,25 @@ const serviceMeta: Record<
 > = {
   telegram: {
     label: 'Telegram',
-    description: 'Deliver star activity to a Telegram chat or group.',
+    description: 'Send star activity to a Telegram chat.',
     quickConnect: 'Link a Telegram chat with the default bot, or enter the chat ID manually.',
   },
   discord_webhook: {
     label: 'Discord Webhook',
-    description: 'Send rich embeds through a Discord webhook URL pair.',
+    description: 'Post rich embeds through a Discord webhook.',
   },
   discord_bot: {
     label: 'Discord Bot',
-    description: 'Use a Discord bot to post into a channel with command-based linking.',
+    description: 'Send updates with a linked Discord bot.',
     quickConnect: 'Invite the bot, then run `/connect <token>` in the channel you want to use.',
   },
   bark: {
     label: 'Bark',
-    description: 'Push lightweight alerts to Bark on iPhone or iPad.',
+    description: 'Push lightweight alerts to Bark.',
   },
   webhook: {
     label: 'Generic Webhook',
-    description: 'Call any HTTP endpoint with optional headers and a message template.',
+    description: 'Send star updates to any HTTP endpoint.',
   },
 }
 
@@ -234,24 +243,30 @@ const getSettingDetails = (setting: NotifySetting) => {
   }
 }
 
-const Field: React.FC<{
+const Field: FC<{
   label: string
   hint?: string
   wide?: boolean
-  children: React.ReactNode
+  children: ReactNode
 }> = ({ label, hint, wide, children }) => {
   return (
-    <label className={wide ? `${styles.field} ${styles.fieldWide}` : styles.field}>
+    <div className={wide ? `${styles.field} ${styles.fieldWide}` : styles.field}>
       <span className={styles.fieldLabel}>{label}</span>
       {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
       {children}
-    </label>
+    </div>
   )
 }
 
-const NotificationConfig: React.FC<{
+const getSettingKey = (setting: NotifySetting) =>
+  Object.entries(setting)
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    .map(([key, value]) => `${key}:${value ?? ''}`)
+    .join('|')
+
+const NotificationConfig: FC<{
   settings: Settings
-  setSettings: React.Dispatch<React.SetStateAction<Settings>>
+  setSettings: Dispatch<SetStateAction<Settings>>
 }> = ({ settings, setSettings }) => {
   const [draft, setDraft] = useState<NotifySetting | null>(null)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
@@ -426,12 +441,15 @@ const NotificationConfig: React.FC<{
       return
     }
 
-    void checkConnectionResult(true)
+    const initialPoll = window.setTimeout(() => {
+      void checkConnectionResult(true)
+    }, 0)
     const timer = window.setInterval(() => {
       void checkConnectionResult(true)
     }, 2500)
 
     return () => {
+      window.clearTimeout(initialPoll)
       window.clearInterval(timer)
     }
   }, [checkConnectionResult, connectionState, connectionToken, draft])
@@ -443,10 +461,8 @@ const NotificationConfig: React.FC<{
       <div className={styles.sectionHeader}>
         <div>
           <p className={styles.sectionEyebrow}>Notification channels</p>
-          <h2 className={styles.sectionTitle}>Define where notifications are delivered</h2>
-          <p className={styles.sectionText}>
-            Add up to 10 destinations. Each account can fan out notifications to multiple services.
-          </p>
+          <h2 className={styles.sectionTitle}>Choose notification channels</h2>
+          <p className={styles.sectionText}>Add up to 10 destinations for this account.</p>
         </div>
         <span className={styles.limitBadge}>{settings.notify_settings.length}/10 configured</span>
       </div>
@@ -464,8 +480,10 @@ const NotificationConfig: React.FC<{
               type='button'
             >
               <span className={styles.serviceIcon}>{serviceIcons[service]}</span>
-              <span className={styles.serviceCardLabel}>{meta.label}</span>
-              <span className={styles.serviceCardDescription}>{meta.description}</span>
+              <span className={styles.serviceCopy}>
+                <span className={styles.serviceCardLabel}>{meta.label}</span>
+                <span className={styles.serviceCardDescription}>{meta.description}</span>
+              </span>
             </button>
           )
         })}
@@ -772,7 +790,7 @@ const NotificationConfig: React.FC<{
         ) : (
           <div className={styles.settingsGrid}>
             {settings.notify_settings.map((setting, index) => (
-              <div className={styles.settingCard} key={`${setting.service}-${index}`}>
+              <div className={styles.settingCard} key={getSettingKey(setting)}>
                 <div className={styles.settingCardHeader}>
                   <div className={styles.settingCardTitle}>
                     <span className={styles.serviceIcon}>{serviceIcons[setting.service]}</span>

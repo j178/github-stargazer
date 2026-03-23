@@ -9,7 +9,9 @@ import (
 )
 
 func main() {
-	_ = godotenv.Load(".env", ".env.local")
+	if err := godotenv.Load(".env", ".env.local"); err != nil {
+		log.Printf("warning: failed to load dotenv files (.env, .env.local): %v", err)
+	}
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_BOT_TOKEN"))
 	if err != nil {
 		panic(err)

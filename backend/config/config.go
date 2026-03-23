@@ -47,7 +47,9 @@ var (
 )
 
 func loadEnv() {
-	_ = godotenv.Load(".env", ".env.local")
+	if err := godotenv.Load(".env", ".env.local"); err != nil {
+		log.Printf("warning: failed to load dotenv files (.env, .env.local): %v", err)
+	}
 
 	appIdStr := env("GITHUB_APP_ID")
 	var err error

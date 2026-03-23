@@ -1,6 +1,6 @@
 .page {
   min-height: 100vh;
-  padding: 40px 20px 56px;
+  padding: 28px 20px 48px;
 }
 
 .shell {
@@ -10,10 +10,10 @@
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 360px);
-  gap: 24px;
-  align-items: stretch;
-  margin-bottom: 28px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(240px, 320px);
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 20px;
 }
 
 .heroContent,
@@ -26,13 +26,13 @@
 }
 
 .heroContent {
-  border-radius: 30px;
-  padding: 36px;
+  border-radius: 24px;
+  padding: 24px 26px;
 }
 
 .heroEyebrow,
 .sectionEyebrow {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -42,9 +42,9 @@
 
 .heroTitle {
   margin: 0;
-  max-width: 12ch;
-  font-size: clamp(2.4rem, 4vw, 4.2rem);
-  line-height: 0.98;
+  max-width: 14ch;
+  font-size: clamp(1.95rem, 3vw, 3rem);
+  line-height: 1.02;
   letter-spacing: -0.04em;
 }
 
@@ -58,9 +58,10 @@
 }
 
 .heroText {
-  max-width: 58ch;
-  margin-top: 16px;
-  font-size: 1rem;
+  max-width: 56ch;
+  margin-top: 10px;
+  font-size: 0.96rem;
+  line-height: 1.55;
 }
 
 .heroBadges,
@@ -76,8 +77,13 @@
   gap: 12px;
 }
 
+.accountControls {
+  align-items: flex-end;
+}
+
 .heroBadges {
-  margin-top: 28px;
+  margin-top: 18px;
+  gap: 10px;
 }
 
 .heroBadge,
@@ -86,23 +92,23 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 34px;
+  padding: 0 12px;
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.92);
   color: var(--text-strong);
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   font-weight: 600;
 }
 
 .heroCard {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 12px;
-  border-radius: 30px;
-  padding: 28px;
+  justify-content: flex-start;
+  gap: 8px;
+  border-radius: 24px;
+  padding: 22px;
 }
 
 .heroCardLabel {
@@ -114,7 +120,8 @@
 }
 
 .heroCardValue {
-  font-size: 1.55rem;
+  font-size: 1.32rem;
+  line-height: 1.15;
   letter-spacing: -0.03em;
 }
 
@@ -125,8 +132,8 @@
 }
 
 .panel {
-  border-radius: 26px;
-  padding: 28px;
+  border-radius: 22px;
+  padding: 24px;
 }
 
 .panelHeader {
@@ -144,7 +151,7 @@
 }
 
 .sectionTitle {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
 }
 
 .subsectionTitle {
@@ -282,38 +289,137 @@
 }
 
 .selectedReposSection {
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
 .selectedReposHeader {
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
+  align-items: flex-start;
+  margin-bottom: 10px;
 }
 
 .selectedReposList {
-  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
 }
 
-.repoChip {
+.selectedReposHeading {
+  display: grid;
+  gap: 4px;
+}
+
+.scopeSummaryCard {
+  margin: 16px 0 18px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.scopeSummaryCardAllow {
+  border-color: rgba(15, 118, 110, 0.18);
+  background: rgba(240, 253, 250, 0.92);
+}
+
+.scopeSummaryCardMute {
+  border-color: rgba(244, 63, 94, 0.16);
+  background: rgba(255, 241, 242, 0.9);
+}
+
+.scopeSummaryLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.scopeSummaryTitle {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-strong);
+  font-size: 1rem;
+}
+
+.scopeSummaryText {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.selectedRepoCard {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.selectedRepoCardAllow {
+  border-color: rgba(15, 118, 110, 0.18);
+  background: rgba(240, 253, 250, 0.9);
+}
+
+.selectedRepoCardMute {
+  border-color: rgba(244, 63, 94, 0.16);
+  background: rgba(255, 241, 242, 0.88);
+}
+
+.selectedRepoInfo {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.selectedRepoName {
+  color: var(--text-strong);
+  word-break: break-word;
+}
+
+.selectedRepoHint {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.selectedRepoMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.selectedRepoState {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  min-height: 44px;
-  padding: 6px 8px 6px 14px;
+  min-height: 28px;
+  padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--text-strong);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.selectedRepoStateAllow {
+  background: rgba(15, 118, 110, 0.12);
+  color: #0f766e;
+}
+
+.selectedRepoStateMute {
+  background: rgba(244, 63, 94, 0.12);
+  color: #be123c;
 }
 
 .repoChipButton {
-  min-height: 32px;
+  min-height: 30px;
   padding: 0 12px;
-  border: none;
+  border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.08);
-  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-strong);
   cursor: pointer;
 }
 
@@ -322,8 +428,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 28px;
-  padding: 18px 20px;
+  margin-top: 20px;
+  padding: 16px 18px;
   border-radius: 20px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.9);
@@ -416,12 +522,13 @@
 
   .heroTitle {
     max-width: none;
-    font-size: 2.4rem;
+    font-size: 2.1rem;
   }
 
   .loginPanel,
   .preferenceCard,
-  .panelHeader {
+  .panelHeader,
+  .selectedRepoCard {
     flex-direction: column;
     align-items: stretch;
   }
@@ -437,6 +544,10 @@
 
   .actionButtons {
     flex-direction: column;
+  }
+
+  .selectedRepoMeta {
+    align-items: flex-start;
   }
 
   .primaryButton,

@@ -20,11 +20,12 @@ body,
 
 body {
   margin: 0;
-  background: radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 28%),
+  background:
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.14), transparent 28%),
     radial-gradient(circle at top right, rgba(37, 99, 235, 0.1), transparent 30%),
     linear-gradient(180deg, #f8fbff 0%, #eef3f8 100%);
   color: var(--text-strong);
-  font-family: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', sans-serif;
+  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -41,7 +42,7 @@ a {
 }
 
 code {
-  font-family: 'SFMono-Regular', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 ::selection {
