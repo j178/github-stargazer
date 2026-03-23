@@ -10,7 +10,17 @@ import {
   useState,
 } from 'react'
 import { FaBell, FaDiscord, FaPlug, FaTelegram } from 'react-icons/fa'
-import { FiCheckCircle, FiEdit2, FiExternalLink, FiLink, FiPlus, FiRefreshCw, FiTrash2, FiX } from 'react-icons/fi'
+import {
+  FiAlertCircle,
+  FiCheckCircle,
+  FiEdit2,
+  FiExternalLink,
+  FiLink,
+  FiPlus,
+  FiRefreshCw,
+  FiTrash2,
+  FiX,
+} from 'react-icons/fi'
 
 import { type NotificationService, type NotifySetting, notificationServices, type Settings } from './models'
 
@@ -457,6 +467,7 @@ const NotificationConfig: FC<{
   }, [checkConnectionResult, connectionState, connectionToken, draft])
 
   const validationMessage = draft ? getRequiredFieldMessage(draft) : null
+  const isOverLimit = settings.notify_settings.length > 10
 
   return (
     <div className={styles.notificationConfig}>
@@ -464,9 +475,13 @@ const NotificationConfig: FC<{
         <div>
           <p className={styles.sectionEyebrow}>Notification channels</p>
           <h2 className={styles.sectionTitle}>Choose notification channels</h2>
-          <p className={styles.sectionText}>Add up to 10 destinations for this account.</p>
         </div>
-        <span className={styles.limitBadge}>{settings.notify_settings.length}/10 configured</span>
+        {isOverLimit ? (
+          <span className={`${styles.limitBadge} ${styles.limitBadgeWarning}`}>
+            <FiAlertCircle />
+            {settings.notify_settings.length}/10 configured
+          </span>
+        ) : null}
       </div>
 
       <div className={styles.serviceGrid}>
@@ -500,10 +515,6 @@ const NotificationConfig: FC<{
               </h3>
               <p className={styles.editorText}>{serviceMeta[draft.service].description}</p>
             </div>
-            <button className={styles.ghostButton} onClick={cancelDraft} type='button'>
-              <FiX />
-              Cancel
-            </button>
           </div>
 
           {serviceMeta[draft.service].quickConnect ? (
@@ -513,7 +524,11 @@ const NotificationConfig: FC<{
                 <p className={styles.connectText}>{serviceMeta[draft.service].quickConnect}</p>
               </div>
               {getConnectPlatform(draft.service) ? (
-                <button className={styles.secondaryButton} onClick={() => void handleStartConnection()} type='button'>
+                <button
+                  className={`${styles.secondaryButton} ${styles.connectButton}`}
+                  onClick={() => void handleStartConnection()}
+                  type='button'
+                >
                   <FiLink />
                   Generate token
                 </button>
@@ -781,7 +796,6 @@ const NotificationConfig: FC<{
         <div className={styles.sectionHeader}>
           <div>
             <h3 className={styles.subsectionTitle}>Configured channels</h3>
-            <p className={styles.sectionText}>Existing destinations can be edited or removed at any time.</p>
           </div>
         </div>
 

@@ -61,10 +61,7 @@ const RepoSelector: FC<{
       return true
     }
 
-    return (
-      repo.name.toLowerCase().includes(normalizedSearch) ||
-      (repo.description ?? '').toLowerCase().includes(normalizedSearch)
-    )
+    return repo.name.toLowerCase().includes(normalizedSearch)
   })
 
   return (
@@ -74,7 +71,7 @@ const RepoSelector: FC<{
         <input
           className={styles.searchInput}
           onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder='Search repositories by name or description'
+          placeholder='Search repositories by name'
           type='text'
           value={searchTerm}
         />
@@ -107,7 +104,6 @@ const RepoSelector: FC<{
                     <FiArrowRight />
                   </span>
                 </div>
-                {repo.description?.trim() ? <p className={styles.repoDescription}>{repo.description}</p> : null}
               </button>
             )
           })

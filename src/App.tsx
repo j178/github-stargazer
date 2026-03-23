@@ -2,6 +2,7 @@ import axios from 'axios'
 import { type ChangeEvent, type FC, useEffect, useState } from 'react'
 import {
   FiBell,
+  FiBellOff,
   FiCheckCircle,
   FiExternalLink,
   FiFilter,
@@ -466,20 +467,20 @@ const App: FC = () => {
     listMode === ListMode.Allow
       ? {
           browserTitle: 'Choose repositories',
-          browserDescription: 'Search and add the repositories that should stay active.',
+          browserDescription: '',
           listTitle: 'Allowed repositories',
           listDescription: 'Only repositories in this list can send notifications.',
           listBadge: 'Allow list',
           emptyTitle: 'No repositories selected yet',
-          emptyText: 'Add repositories to define the allow list for this installation.',
+          emptyText: '',
           listedValue: 'Notify',
           unlistedValue: 'Blocked',
         }
       : {
           browserTitle: 'Choose repositories to mute',
-          browserDescription: 'Search and add the repositories you want to silence.',
+          browserDescription: '',
           listTitle: 'Muted repositories',
-          listDescription: 'Repositories in this list are silenced. Everything else stays active.',
+          listDescription: '',
           listBadge: 'Mute list',
           emptyTitle: 'No repositories muted',
           emptyText: 'Add repositories only if you want to silence a few noisy projects.',
@@ -517,11 +518,11 @@ const App: FC = () => {
               <div>
                 <span className={styles.heroCardLabel}>Current workspace</span>
                 <strong className={styles.heroCardValue}>{selectedAccount?.account ?? 'No account selected'}</strong>
-                <p className={styles.heroCardText}>
-                  {selectedAccount
-                    ? 'Changes on this page apply only to the selected installation.'
-                    : 'Pick a GitHub account or organization to start configuring notifications.'}
-                </p>
+                {!selectedAccount ? (
+                  <p className={styles.heroCardText}>
+                    Pick a GitHub account or organization to start configuring notifications.
+                  </p>
+                ) : null}
               </div>
               {isLoggedIn ? (
                 <button
@@ -591,10 +592,6 @@ const App: FC = () => {
                   <div>
                     <p className={styles.sectionEyebrow}>Repository scope</p>
                     <h2 className={styles.sectionTitle}>Design the delivery policy</h2>
-                    <p className={styles.sectionText}>
-                      First decide how the installation behaves by default, then list the repositories that should
-                      behave differently.
-                    </p>
                   </div>
                 </div>
 
@@ -658,7 +655,9 @@ const App: FC = () => {
                           </div>
                           <span className={styles.countBadge}>{availableRepos.length}</span>
                         </div>
-                        <p className={styles.scopeSectionText}>{scopeMeta.browserDescription}</p>
+                        {scopeMeta.browserDescription ? (
+                          <p className={styles.scopeSectionText}>{scopeMeta.browserDescription}</p>
+                        ) : null}
                         <RepoSelector
                           hasMore={hasMore}
                           loadMoreRepos={loadMoreRepos}
@@ -714,7 +713,10 @@ const App: FC = () => {
                     </div>
 
                     <label className={styles.preferenceCard}>
-                      <div>
+                      <div className={styles.preferenceContent}>
+                        <span className={styles.preferenceIcon}>
+                          <FiBellOff />
+                        </span>
                         <h3 className={styles.subsectionTitle}>Mute lost-star notifications</h3>
                         <p className={styles.sectionText}>
                           Keep delivery focused on new stars and ignore unstar events.
@@ -739,9 +741,6 @@ const App: FC = () => {
                 <div>
                   <p className={styles.sectionEyebrow}>Actions</p>
                   <h2 className={styles.sectionTitle}>Validate and save</h2>
-                  <p className={styles.sectionText}>
-                    Run checks, send a sample, and store the configuration for this installation.
-                  </p>
                 </div>
                 <div className={styles.summaryRow}>
                   <span className={styles.summaryPill}>
@@ -784,13 +783,13 @@ const App: FC = () => {
                     {isSaving ? 'Saving…' : 'Save configuration'}
                   </button>
                   <button
-                    className={styles.dangerButton}
+                    className={`${styles.dangerButton} ${styles.subtleDangerButton}`}
                     disabled={isBusy || isLoadingAccountData}
                     onClick={() => void handleDeleteSettings()}
                     type='button'
                   >
                     <FiTrash2 />
-                    {isDeleting ? 'Deleting…' : 'Delete saved configuration'}
+                    {isDeleting ? 'Deleting…' : 'Delete configuration'}
                   </button>
                 </div>
               </aside>
