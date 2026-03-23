@@ -1,231 +1,449 @@
-.container {
-  font-family: Arial, sans-serif;
-  max-width: 800px;
+.page {
+  min-height: 100vh;
+  padding: 40px 20px 56px;
+}
+
+.shell {
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 20px;
-  background-color: #f9f9f9;
 }
 
-.multipleSelect {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  font-size: 1em;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  height: 100px; /* Set height for multiple select */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 360px);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 28px;
 }
 
-header {
-  text-align: center;
-  margin-bottom: 20px;
+.heroContent,
+.heroCard,
+.panel {
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(16px);
 }
 
-.title {
-  font-size: 2em;
-  color: #333;
+.heroContent {
+  border-radius: 30px;
+  padding: 36px;
 }
 
-main {
+.heroEyebrow,
+.sectionEyebrow {
+  margin: 0 0 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.heroTitle {
+  margin: 0;
+  max-width: 12ch;
+  font-size: clamp(2.4rem, 4vw, 4.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.heroText,
+.sectionText,
+.modeSummary,
+.heroCardText {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.heroText {
+  max-width: 58ch;
+  margin-top: 16px;
+  font-size: 1rem;
+}
+
+.heroBadges,
+.summaryRow,
+.actionButtons,
+.selectedReposList,
+.accountControls,
+.panelHeader,
+.modeSwitch,
+.selectedReposHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.heroBadges {
+  margin-top: 28px;
+}
+
+.heroBadge,
+.summaryPill,
+.countBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-strong);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.heroCard {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  border-radius: 30px;
+  padding: 28px;
+}
+
+.heroCardLabel {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.heroCardValue {
+  font-size: 1.55rem;
+  letter-spacing: -0.03em;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.panel {
+  border-radius: 26px;
+  padding: 28px;
+}
+
+.panelHeader {
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 22px;
+}
+
+.sectionTitle,
+.subsectionTitle,
+.emptyStateTitle {
+  margin: 0;
+  letter-spacing: -0.03em;
+  color: var(--text-strong);
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+}
+
+.subsectionTitle {
+  font-size: 1.08rem;
+}
+
+.selectField {
+  flex: 1 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fieldLabel {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.accountSelect,
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.ghostButton,
+.primaryLink,
+.modeButton,
+.modeButtonActive,
+.repoChipButton {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.accountSelect {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 16px;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.96);
+  padding: 0 16px;
+  color: var(--text-strong);
+}
+
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: 24px;
+}
+
+.modeSwitch {
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.modeButton,
+.modeButtonActive,
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.ghostButton,
+.primaryLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.modeButton {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.modeButtonActive {
+  background: #ffffff;
+  color: var(--text-strong);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.primaryButton,
+.primaryLink {
+  background: linear-gradient(135deg, #0f766e 0%, #0b5b55 100%);
+  color: #ffffff;
+  box-shadow: 0 16px 30px rgba(15, 118, 110, 0.22);
+}
+
+.secondaryButton {
+  border-color: var(--border-strong);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-strong);
+}
+
+.ghostButton {
+  border-color: var(--border-soft);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-muted);
+}
+
+.dangerButton {
+  border-color: rgba(185, 28, 28, 0.16);
+  background: rgba(254, 242, 242, 0.95);
+  color: #b91c1c;
+}
+
+.primaryButton:hover,
+.secondaryButton:hover,
+.dangerButton:hover,
+.ghostButton:hover,
+.primaryLink:hover,
+.modeButton:hover,
+.modeButtonActive:hover,
+.repoChipButton:hover {
+  transform: translateY(-1px);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled,
+.ghostButton:disabled,
+.modeButton:disabled,
+.modeButtonActive:disabled {
+  cursor: not-allowed;
+  opacity: 0.64;
+  transform: none;
+}
+
+.selectedReposSection {
+  margin-top: 24px;
+}
+
+.selectedReposHeader {
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.selectedReposList {
+  margin-top: 12px;
+}
+
+.repoChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-strong);
+}
+
+.repoChipButton {
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.preferenceCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.preferenceToggle {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}
+
+.actionsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.summaryRow {
+  margin-top: 2px;
+}
+
+.loadingState,
+.emptyState,
+.inlineEmptyState {
+  border-radius: 20px;
+  border: 1px dashed rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--text-muted);
+}
+
+.loadingState,
+.emptyState {
+  padding: 28px;
+}
+
+.inlineEmptyState {
+  padding: 18px;
+}
+
+.loginPanel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 20px;
 }
 
-section {
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+.emptyStateTitle {
+  font-size: 1.35rem;
 }
 
-select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  font-size: 1em;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+.emptyStateText {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  line-height: 1.7;
 }
 
-.configSection {
-  margin-top: 20px;
-}
-
-textarea {
-  width: 100%;
-  min-height: 100px;
-  padding: 10px;
-  margin-top: 10px;
-  font-size: 1em;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-.buttonGroup {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-button {
-  padding: 10px 20px;
-  font-size: 1em;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-button:hover {
-  background-color: #e0e0e0;
-}
-
-footer {
+.footer {
+  margin-top: 26px;
   text-align: center;
-  margin-top: 40px;
+  color: var(--text-muted);
 }
 
-.logo {
-  height: 1em;
-  vertical-align: middle;
-  margin-left: 5px;
-}
-
-a {
-  color: #0070f3;
+.footer a {
+  color: inherit;
   text-decoration: none;
 }
 
-a:hover {
+.footer a:hover {
   text-decoration: underline;
 }
 
-.loginButton {
-  display: inline-block;
-  padding: 10px 20px;
-  font-size: 1em;
-  border-radius: 4px;
-  background-color: #0070f3;
-  color: white;
-  text-decoration: none;
-  margin-top: 20px;
+@media (max-width: 1080px) {
+  .hero,
+  .workspaceGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.loginButton:hover {
-  background-color: #005bb5;
-}
-
-.repoSelectorSection {
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-}
-
-.selectorContainer {
-  margin-bottom: 20px;
-}
-
-.listModeContainer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.toggleButton {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.toggleButton:hover {
-  background-color: #0056b3;
-}
-
-.selectedReposContainer {
-  margin-bottom: 20px;
-}
-
-.repoItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  background-color: #e9ecef;
-  border-radius: 5px;
-  margin-bottom: 10px;
-}
-
-.removeButton {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.removeButton:hover {
-  background-color: #c82333;
-}
-
-.settingsContainer {
-  margin-bottom: 20px;
-}
-
-.settingItem {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.settingItem label {
-  margin-right: 10px;
-}
-
-.settingItem input {
-  cursor: pointer;
-}
-
-.testButton,
-.saveButton {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.testButton:hover,
-.saveButton:hover {
-  background-color: #218838;
-}
-
-@media (max-width: 768px) {
-  .listModeContainer {
-    flex-direction: column;
-    align-items: flex-start;
+@media (max-width: 720px) {
+  .page {
+    padding: 22px 14px 40px;
   }
 
-  .buttonGroup {
+  .heroContent,
+  .heroCard,
+  .panel {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .heroTitle {
+    max-width: none;
+    font-size: 2.4rem;
+  }
+
+  .loginPanel,
+  .preferenceCard,
+  .panelHeader {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .testButton,
-  .saveButton {
+  .modeSwitch {
     width: 100%;
-    margin-bottom: 10px;
   }
 
-  .toggleButton {
+  .modeButton,
+  .modeButtonActive {
+    flex: 1;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+  }
+
+  .primaryButton,
+  .secondaryButton,
+  .dangerButton,
+  .ghostButton,
+  .primaryLink {
     width: 100%;
-    margin-top: 10px;
   }
 }

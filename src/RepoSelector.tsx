@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { FiArrowRight, FiSearch } from 'react-icons/fi'
 import { GoRepo, GoRepoForked } from 'react-icons/go'
 
 import { RepoInfo } from './models'
@@ -7,83 +8,125 @@ import styles from './RepoSelector.module.css'
 
 const RepoSelector: React.FC<{
   repos: RepoInfo[]
-  onSelect: (event: React.ChangeEvent<HTMLSelectElement>) => void
+  onSelect: (repoName: string) => void
   loadMoreRepos: () => Promise<void>
   hasMore: boolean
 }> = ({ repos, onSelect, loadMoreRepos, hasMore }) => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [displayedRepos, setDisplayedRepos] = useState<RepoInfo[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const observer = useRef<IntersectionObserver>()
+  const observer = useRef<IntersectionObserver | null>(null)
 
   useEffect(() => {
-    setDisplayedRepos(repos)
-  }, [repos])
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value)
-    const filteredRepos = repos.filter((repo) => repo.name.toLowerCase().includes(event.target.value.toLowerCase()))
-    setDisplayedRepos(filteredRepos)
-  }
+    return () => {
+      observer.current?.disconnect()
+    }
+  }, [])
 
   const loadMore = useCallback(async () => {
-    if (!hasMore || isLoading) return
-    setIsLoading(true)
-    await loadMoreRepos()
-    setIsLoading(false)
-  }, [loadMoreRepos, isLoading, hasMore])
+    if (!hasMore || isLoading) {
+      return
+    }
 
-  const lastRepoElementRef = useCallback(
-    (node: HTMLOptionElement | null) => {
-      if (isLoading) return
-      if (observer.current) observer.current.disconnect()
+    setIsLoading(true)
+    try {
+      await loadMoreRepos()
+    } finally {
+      setIsLoading(false)
+    }
+  }, [hasMore, isLoading, loadMoreRepos])
+
+  const lastRepoRef = useCallback(
+    (node: HTMLButtonElement | null) => {
+      if (isLoading || !hasMore) {
+        return
+      }
+
+      observer.current?.disconnect()
       observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          loadMore()
+        if (entries[0]?.isIntersecting) {
+          void loadMore()
         }
       })
-      if (node) observer.current.observe(node)
+
+      if (node) {
+        observer.current.observe(node)
+      }
     },
-    [isLoading, loadMore]
+    [hasMore, isLoading, loadMore]
   )
+
+  const normalizedSearch = searchTerm.trim().toLowerCase()
+  const filteredRepos = repos.filter((repo) => {
+    if (!normalizedSearch) {
+      return true
+    }
+
+    return (
+      repo.name.toLowerCase().includes(normalizedSearch) ||
+      (repo.description ?? '').toLowerCase().includes(normalizedSearch)
+    )
+  })
 
   return (
     <div className={styles.repoSelector}>
-      <input
-        type='text'
-        placeholder='Search Repositories'
-        value={searchTerm}
-        onChange={handleSearchChange}
-        className={styles.searchInput}
-      />
-      <div className={styles.selectContainer}>
-        <select size={10} className={styles.repoSelect} onChange={onSelect}>
-          <option className={styles.searchOption}>
-            <input
-              type='text'
-              placeholder='Search Repositories'
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className={styles.searchInput}
-            />
-          </option>
-          {displayedRepos.map((repo, index) => {
-            if (displayedRepos.length === index + 1) {
-              return (
-                <option ref={lastRepoElementRef} key={repo.name} value={repo.name}>
-                  {repo.name}
-                </option>
-              )
-            } else {
-              return (
-                <option key={repo.name} value={repo.name}>
-                  {repo.fork ? <GoRepoForked /> : <GoRepo />} {repo.name}
-                </option>
-              )
-            }
-          })}
-        </select>
-        {isLoading && <div className={styles.spinner}></div>}
+      <div className={styles.searchField}>
+        <FiSearch />
+        <input
+          className={styles.searchInput}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          placeholder='Search repositories by name or description'
+          type='text'
+          value={searchTerm}
+        />
+      </div>
+
+      <div className={styles.repoList} role='list'>
+        {filteredRepos.length === 0 ? (
+          <div className={styles.emptyState}>
+            No repositories match the current search.
+            {hasMore ? ' Load more results or adjust the search terms.' : ''}
+          </div>
+        ) : (
+          filteredRepos.map((repo, index) => {
+            const isLastItem = index === filteredRepos.length - 1
+            return (
+              <button
+                className={styles.repoCard}
+                key={repo.name}
+                onClick={() => onSelect(repo.name)}
+                ref={isLastItem ? lastRepoRef : undefined}
+                type='button'
+              >
+                <div className={styles.repoCardTop}>
+                  <div className={styles.repoIdentity}>
+                    <span className={styles.repoIcon}>{repo.fork ? <GoRepoForked /> : <GoRepo />}</span>
+                    <strong className={styles.repoName}>{repo.name}</strong>
+                  </div>
+                  <span className={styles.repoAction}>
+                    Add
+                    <FiArrowRight />
+                  </span>
+                </div>
+                <p className={styles.repoDescription}>
+                  {repo.description?.trim() || 'No repository description provided.'}
+                </p>
+                <div className={styles.repoMeta}>
+                  <span className={styles.repoBadge}>{repo.fork ? 'Fork' : 'Source repository'}</span>
+                </div>
+              </button>
+            )
+          })
+        )}
+      </div>
+
+      <div className={styles.footer}>
+        {hasMore ? (
+          <button className={styles.loadMoreButton} disabled={isLoading} onClick={() => void loadMore()} type='button'>
+            {isLoading ? 'Loading…' : 'Load more repositories'}
+          </button>
+        ) : (
+          <span className={styles.endOfList}>All available repositories are loaded.</span>
+        )}
       </div>
     </div>
   )
