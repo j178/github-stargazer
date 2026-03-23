@@ -395,18 +395,9 @@ const App: FC = () => {
   const availableRepos = repos.filter((repo) => !selectedRepos.includes(repo.name))
   const currentSettings = buildSettingsPayload(settings, selectedRepos, listMode)
   const isBusy = isChecking || isTesting || isSaving || isDeleting
-  const repoScopeLabel = listMode === ListMode.Allow ? 'Allow list' : 'Mute list'
-  const repoScopeTitle =
+  const repoScopeHint =
     listMode === ListMode.Allow ? 'Only selected repositories can notify.' : 'Selected repositories are muted.'
-  const repoScopeText =
-    listMode === ListMode.Allow
-      ? 'Everything outside this list stays silent until it is explicitly added.'
-      : 'Every other repository can still send notifications unless it is added here.'
   const selectedRepoTitle = listMode === ListMode.Allow ? 'Allowed repositories' : 'Muted repositories'
-  const selectedRepoDescription =
-    listMode === ListMode.Allow
-      ? 'These repositories are explicitly included in delivery.'
-      : 'These repositories are explicitly excluded from delivery.'
   const selectedRepoStateLabel = listMode === ListMode.Allow ? 'Allowed' : 'Muted'
   const selectedRepoEmptyMessage =
     listMode === ListMode.Allow
@@ -552,22 +543,23 @@ const App: FC = () => {
                         <div className={styles.loadingState}>Loading repositories and existing rules…</div>
                       ) : (
                         <>
-                          <p className={styles.modeSummary}>
-                            {listMode === ListMode.Allow
-                              ? 'Only the selected repositories can trigger notifications.'
-                              : 'Selected repositories are muted, while everything else can notify.'}
-                          </p>
-
                           <div
                             className={
                               listMode === ListMode.Allow
-                                ? `${styles.scopeSummaryCard} ${styles.scopeSummaryCardAllow}`
-                                : `${styles.scopeSummaryCard} ${styles.scopeSummaryCardMute}`
+                                ? `${styles.scopeHint} ${styles.scopeHintAllow}`
+                                : `${styles.scopeHint} ${styles.scopeHintMute}`
                             }
                           >
-                            <span className={styles.scopeSummaryLabel}>{repoScopeLabel}</span>
-                            <strong className={styles.scopeSummaryTitle}>{repoScopeTitle}</strong>
-                            <p className={styles.scopeSummaryText}>{repoScopeText}</p>
+                            <span
+                              className={
+                                listMode === ListMode.Allow
+                                  ? `${styles.selectedRepoState} ${styles.selectedRepoStateAllow}`
+                                  : `${styles.selectedRepoState} ${styles.selectedRepoStateMute}`
+                              }
+                            >
+                              {selectedRepoStateLabel}
+                            </span>
+                            <span className={styles.scopeHintText}>{repoScopeHint}</span>
                           </div>
 
                           <RepoSelector
@@ -579,10 +571,7 @@ const App: FC = () => {
 
                           <div className={styles.selectedReposSection}>
                             <div className={styles.selectedReposHeader}>
-                              <div className={styles.selectedReposHeading}>
-                                <h3 className={styles.subsectionTitle}>{selectedRepoTitle}</h3>
-                                <p className={styles.sectionText}>{selectedRepoDescription}</p>
-                              </div>
+                              <h3 className={styles.subsectionTitle}>{selectedRepoTitle}</h3>
                               <span className={styles.countBadge}>{selectedRepos.length}</span>
                             </div>
                             {selectedRepos.length === 0 ? (
@@ -600,11 +589,6 @@ const App: FC = () => {
                                   >
                                     <div className={styles.selectedRepoInfo}>
                                       <strong className={styles.selectedRepoName}>{repo}</strong>
-                                      <span className={styles.selectedRepoHint}>
-                                        {listMode === ListMode.Allow
-                                          ? 'Explicitly allowed to send notifications.'
-                                          : 'Muted from sending notifications.'}
-                                      </span>
                                     </div>
                                     <div className={styles.selectedRepoMeta}>
                                       <span

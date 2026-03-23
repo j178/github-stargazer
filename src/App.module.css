@@ -300,60 +300,44 @@
 
 .selectedReposList {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.scopeHint {
+  display: inline-flex;
+  align-items: center;
   gap: 10px;
-}
-
-.selectedReposHeading {
-  display: grid;
-  gap: 4px;
-}
-
-.scopeSummaryCard {
-  margin: 16px 0 18px;
-  padding: 14px 16px;
-  border-radius: 18px;
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+  border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.9);
 }
 
-.scopeSummaryCardAllow {
+.scopeHintAllow {
   border-color: rgba(15, 118, 110, 0.18);
   background: rgba(240, 253, 250, 0.92);
 }
 
-.scopeSummaryCardMute {
+.scopeHintMute {
   border-color: rgba(244, 63, 94, 0.16);
   background: rgba(255, 241, 242, 0.9);
 }
 
-.scopeSummaryLabel {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.scopeHintText {
   color: var(--text-muted);
-}
-
-.scopeSummaryTitle {
-  display: block;
-  margin-top: 4px;
-  color: var(--text-strong);
-  font-size: 1rem;
-}
-
-.scopeSummaryText {
-  margin: 6px 0 0;
-  color: var(--text-muted);
-  line-height: 1.55;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .selectedRepoCard {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px 14px 14px 16px;
-  border-radius: 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 10px 10px 12px;
+  border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
@@ -368,26 +352,18 @@
 }
 
 .selectedRepoInfo {
-  display: grid;
-  gap: 4px;
   min-width: 0;
 }
 
 .selectedRepoName {
   color: var(--text-strong);
+  font-size: 0.92rem;
   word-break: break-word;
-}
-
-.selectedRepoHint {
-  font-size: 0.85rem;
-  line-height: 1.45;
-  color: var(--text-muted);
 }
 
 .selectedRepoMeta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
   flex-shrink: 0;
 }
@@ -395,10 +371,10 @@
 .selectedRepoState {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -414,12 +390,13 @@
 }
 
 .repoChipButton {
-  min-height: 30px;
-  padding: 0 12px;
+  min-height: 28px;
+  padding: 0 10px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.72);
   color: var(--text-strong);
+  font-size: 0.84rem;
   cursor: pointer;
 }
 
