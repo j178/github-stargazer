@@ -1,343 +1,677 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
+import {
+  FiBell,
+  FiCheckCircle,
+  FiExternalLink,
+  FiFilter,
+  FiGithub,
+  FiRefreshCw,
+  FiSave,
+  FiSend,
+  FiShield,
+  FiTrash2,
+} from 'react-icons/fi'
 import { ToastContainer, toast } from 'react-toastify'
-import { Tooltip } from 'react-tooltip'
 
 import NotificationConfig from './NotificationConfig'
 import RepoSelector from './RepoSelector'
-import { Installation, RepoInfo, Settings } from './models'
+import { Installation, RepoInfo, Settings, createEmptySettings, normalizeSettings } from './models'
 
 import styles from './App.module.css'
 import 'react-toastify/dist/ReactToastify.css'
-import 'react-tooltip/dist/react-tooltip.css'
 
 enum ListMode {
   Allow = 'allow',
   Mute = 'mute',
 }
 
-const AccountSelect: React.FC<{
-  installations: Installation[]
-  selectedAccount: Installation | null
-  handleAccountChange: (event: React.ChangeEvent<HTMLSelectElement>) => void
-  updateAccountState: () => void
-}> = ({ installations, selectedAccount, handleAccountChange, updateAccountState }) => {
-  const [, setPopup] = useState<Window | null>(null)
-
-  const handleAddAccount = () => {
-    const newPopup = window.open(
-      'https://github.com/apps/stars-notifier/installations/new',
-      'popup',
-      'width=600,height=600'
-    )!
-    setPopup(newPopup)
-
-    const checkPopup = setInterval(() => {
-      if (newPopup.closed) {
-        clearInterval(checkPopup)
-        setPopup(null)
-        // Call a function to update the account state after the user installs the app
-        updateAccountState()
-      }
-    }, 1000)
-  }
-
-  const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = event.target.value
-    if (value === 'add-account') {
-      handleAddAccount()
-    } else {
-      handleAccountChange(event)
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (axios.isAxiosError(error)) {
+    const message =
+      error.response?.data?.error || error.response?.data?.message || error.response?.data?.status || error.message
+    if (message) {
+      return `${fallback}: ${message}`
     }
   }
 
-  return (
-    <select id='account-select' onChange={handleChange} value={selectedAccount?.account}>
-      <option value='' disabled>
-        Select an account
-      </option>
-      {installations.map((installation) => (
-        <option key={installation.id} value={installation.account}>
-          {installation.account} ({installation.account_type})
-        </option>
-      ))}
-      <option value='add-account'>Add GitHub Account</option>
-    </select>
-  )
+  return fallback
 }
-const Header: React.FC = () => {
+
+const buildSettingsPayload = (settings: Settings, selectedRepos: string[], listMode: ListMode): Settings => ({
+  ...settings,
+  allow_repos: listMode === ListMode.Allow ? selectedRepos : [],
+  mute_repos: listMode === ListMode.Mute ? selectedRepos : [],
+})
+
+const deriveRepoSelection = (settings: Settings) => {
+  if (settings.allow_repos.length > 0) {
+    return {
+      listMode: ListMode.Allow,
+      repos: settings.allow_repos,
+    }
+  }
+
+  return {
+    listMode: ListMode.Mute,
+    repos: settings.mute_repos,
+  }
+}
+
+const AccountSelect: React.FC<{
+  installations: Installation[]
+  selectedAccount: Installation | null
+  isRefreshing: boolean
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void
+  onInstallAnother: () => void
+}> = ({ installations, selectedAccount, isRefreshing, onChange, onInstallAnother }) => {
   return (
-    <header>
-      <h1 className={styles.title}>Star++ Configuration</h1>
-    </header>
+    <div className={styles.accountControls}>
+      <label className={styles.selectField}>
+        <span className={styles.fieldLabel}>GitHub account</span>
+        <select className={styles.accountSelect} onChange={onChange} value={selectedAccount?.account ?? ''}>
+          {installations.length === 0 ? (
+            <option value=''>No installations available</option>
+          ) : (
+            <>
+              <option value='' disabled>
+                Select an account
+              </option>
+              {installations.map((installation) => (
+                <option key={installation.id} value={installation.account}>
+                  {installation.account} ({installation.account_type})
+                </option>
+              ))}
+            </>
+          )}
+        </select>
+      </label>
+      <button className={styles.secondaryButton} disabled={isRefreshing} onClick={onInstallAnother} type='button'>
+        <FiExternalLink />
+        Install on another account
+      </button>
+    </div>
   )
 }
 
 const Footer: React.FC = () => {
   return (
-    <footer>
-      <a href='https://github.com/apps/stars-notifier' target='_blank' rel='noopener noreferrer'>
-        Powered by <img src='/avatar.png' alt='Star++' className={styles.logo} />
+    <footer className={styles.footer}>
+      <a href='https://github.com/apps/stars-notifier' rel='noopener noreferrer' target='_blank'>
+        Powered by Star++
       </a>
     </footer>
   )
 }
 
 const App: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(true)
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
+  const [isInitializing, setIsInitializing] = useState(true)
+  const [isRefreshingAccounts, setIsRefreshingAccounts] = useState(false)
+  const [isLoadingAccountData, setIsLoadingAccountData] = useState(false)
   const [installations, setInstallations] = useState<Installation[]>([])
   const [repos, setRepos] = useState<RepoInfo[]>([])
   const [selectedAccount, setSelectedAccount] = useState<Installation | null>(null)
-  const [settings, setSettings] = useState<Settings | null>(null)
+  const [settings, setSettings] = useState<Settings>(createEmptySettings())
   const [listMode, setListMode] = useState(ListMode.Mute)
   const [selectedRepos, setSelectedRepos] = useState<string[]>([])
   const [curPage, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
-
-  const toggleListMode = () => {
-    const mode = listMode === ListMode.Allow ? ListMode.Mute : ListMode.Allow
-    setListMode(mode)
-    mode === ListMode.Allow
-      ? setSettings({
-          ...settings!,
-          allow_repos: selectedRepos,
-          mute_repos: [],
-        })
-      : setSettings({
-          ...settings!,
-          mute_repos: selectedRepos,
-          allow_repos: [],
-        })
-  }
+  const [isChecking, setIsChecking] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    // Fetch installations on mount
-    async function fetchInstallations() {
+    let isMounted = true
+
+    const fetchInstallations = async () => {
+      setIsRefreshingAccounts(true)
       try {
         const response = await axios.get('/api/installations')
-        setIsLoggedIn(true)
-        setInstallations(response.data)
-      } catch (error: any) {
-        if (error.response.status === 401) {
-          setIsLoggedIn(false)
+        if (!isMounted) {
+          return
         }
-        console.error('Failed to fetch installations', error)
+
+        const nextInstallations = response.data as Installation[]
+        setInstallations(nextInstallations)
+        setIsLoggedIn(true)
+        setSelectedAccount((current) => {
+          if (current) {
+            return (
+              nextInstallations.find((installation) => installation.account === current.account) ??
+              nextInstallations[0] ??
+              null
+            )
+          }
+
+          return nextInstallations[0] ?? null
+        })
+      } catch (error) {
+        if (!isMounted) {
+          return
+        }
+
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          setIsLoggedIn(false)
+          setInstallations([])
+          setSelectedAccount(null)
+        } else {
+          toast.error(getErrorMessage(error, 'Failed to load installations'))
+        }
+      } finally {
+        if (isMounted) {
+          setIsRefreshingAccounts(false)
+          setIsInitializing(false)
+        }
       }
     }
 
-    fetchInstallations()
+    void fetchInstallations()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   useEffect(() => {
-    // Fetch settings when selected account changes
-    if (selectedAccount) {
-      async function fetchSettings() {
-        try {
-          const response = await axios.get(`/api/settings/${selectedAccount?.account}`)
-          setSettings(response.data)
-        } catch (error) {
-          console.error('Failed to fetch settings', error)
-        }
-      }
-
-      async function fetchRepos() {
-        try {
-          const response = await axios.get(`/api/repos/${selectedAccount?.id}`)
-          setRepos(response.data)
-        } catch (error) {
-          console.error('Failed to fetch repos', error)
-        }
-      }
-
-      fetchSettings()
+    if (!selectedAccount) {
+      setSettings(createEmptySettings())
       setRepos([])
-      fetchRepos()
+      setSelectedRepos([])
+      setListMode(ListMode.Mute)
       setPage(1)
       setHasMore(true)
-      setSelectedRepos([])
+      return
     }
-  }, [selectedAccount, installations])
+
+    let isMounted = true
+
+    const fetchAccountData = async () => {
+      setIsLoadingAccountData(true)
+      setSettings(createEmptySettings())
+      setRepos([])
+      setSelectedRepos([])
+      setListMode(ListMode.Mute)
+      setPage(1)
+      setHasMore(true)
+
+      try {
+        const [settingsResponse, reposResponse] = await Promise.all([
+          axios.get(`/api/settings/${selectedAccount.account}`),
+          axios.get(`/api/repos/${selectedAccount.id}`),
+        ])
+
+        if (!isMounted) {
+          return
+        }
+
+        const normalizedSettings = normalizeSettings(settingsResponse.data)
+        const selection = deriveRepoSelection(normalizedSettings)
+        const nextRepos = (reposResponse.data ?? []) as RepoInfo[]
+
+        setSettings(normalizedSettings)
+        setSelectedRepos(selection.repos)
+        setListMode(selection.listMode)
+        setRepos(nextRepos)
+        setHasMore(nextRepos.length > 0)
+      } catch (error) {
+        if (!isMounted) {
+          return
+        }
+
+        toast.error(getErrorMessage(error, `Failed to load configuration for ${selectedAccount.account}`))
+      } finally {
+        if (isMounted) {
+          setIsLoadingAccountData(false)
+        }
+      }
+    }
+
+    void fetchAccountData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [selectedAccount])
+
+  const refreshInstallations = async () => {
+    setIsRefreshingAccounts(true)
+    try {
+      const response = await axios.get('/api/installations')
+      const nextInstallations = response.data as Installation[]
+      setInstallations(nextInstallations)
+      setIsLoggedIn(true)
+      setSelectedAccount((current) => {
+        if (current) {
+          return (
+            nextInstallations.find((installation) => installation.account === current.account) ??
+            nextInstallations[0] ??
+            null
+          )
+        }
+
+        return nextInstallations[0] ?? null
+      })
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        setIsLoggedIn(false)
+      } else {
+        toast.error(getErrorMessage(error, 'Failed to refresh installations'))
+      }
+    } finally {
+      setIsRefreshingAccounts(false)
+    }
+  }
+
+  const handleInstallAnotherAccount = () => {
+    const popup = window.open(
+      'https://github.com/apps/stars-notifier/installations/new',
+      'github-installation',
+      'width=720,height=780'
+    )
+
+    if (!popup) {
+      window.location.href = 'https://github.com/apps/stars-notifier/installations/new'
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      if (!popup.closed) {
+        return
+      }
+
+      window.clearInterval(timer)
+      void refreshInstallations()
+    }, 1000)
+  }
 
   const handleAccountChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedAccount(installations.find((installation) => installation.account === event.target.value) || null)
+    const nextAccount = installations.find((installation) => installation.account === event.target.value) ?? null
+    setSelectedAccount(nextAccount)
   }
 
-  const handleSelectRepo = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const repo = event.target.value
-    if (!selectedRepos.includes(repo)) {
-      const repos = [...selectedRepos, repo]
-      setSelectedRepos(repos)
-      listMode === ListMode.Allow
-        ? setSettings({
-            ...settings!,
-            allow_repos: repos,
-            mute_repos: [],
-          })
-        : setSettings({
-            ...settings!,
-            mute_repos: repos,
-            allow_repos: [],
-          })
-    }
+  const handleSelectRepo = (repoName: string) => {
+    setSelectedRepos((current) => {
+      if (current.includes(repoName)) {
+        return current
+      }
+
+      return [...current, repoName]
+    })
   }
 
-  const handleUnselectRepo = (repo: string) => {
-    const repos = selectedRepos.filter((r) => r !== repo)
-    setSelectedRepos(repos)
-    listMode === ListMode.Allow
-      ? setSettings({ ...settings!, allow_repos: repos, mute_repos: [] })
-      : setSettings({ ...settings!, mute_repos: repos, allow_repos: [] })
+  const handleUnselectRepo = (repoName: string) => {
+    setSelectedRepos((current) => current.filter((repo) => repo !== repoName))
   }
 
   const loadMoreRepos = async () => {
-    const newPage = curPage + 1
+    if (!selectedAccount) {
+      return
+    }
+
+    const nextPage = curPage + 1
     try {
-      const response = await axios.get(`/api/repos/${selectedAccount?.id}?page=${newPage}`)
-      if (response.data.length === 0) {
+      const response = await axios.get(`/api/repos/${selectedAccount.id}?page=${nextPage}`)
+      const nextRepos = (response.data ?? []) as RepoInfo[]
+      if (nextRepos.length === 0) {
         setHasMore(false)
         return
       }
-      setRepos([...repos, ...response.data])
-      setPage(newPage)
+
+      setRepos((current) => [...current, ...nextRepos])
+      setPage(nextPage)
       setHasMore(true)
     } catch (error) {
-      console.error('Failed to fetch repos', error)
+      toast.error(getErrorMessage(error, 'Failed to load more repositories'))
+    }
+  }
+
+  const handleValidateSettings = async () => {
+    setIsChecking(true)
+    try {
+      await axios.post('/api/settings/check', buildSettingsPayload(settings, selectedRepos, listMode))
+      toast.success('Configuration is valid')
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Configuration validation failed'))
+    } finally {
+      setIsChecking(false)
     }
   }
 
   const handleTestSettings = async () => {
+    setIsTesting(true)
     try {
-      await axios.post('/api/settings/test', settings)
-      toast.success('Test successful')
+      await axios.post('/api/settings/test', buildSettingsPayload(settings, selectedRepos, listMode))
+      toast.success('Test notification sent')
     } catch (error) {
-      console.error('Failed to test settings', error)
-      toast.error('Test failed')
+      toast.error(getErrorMessage(error, 'Failed to send test notification'))
+    } finally {
+      setIsTesting(false)
     }
   }
 
   const handleSaveSettings = async () => {
+    if (!selectedAccount) {
+      return
+    }
+
+    setIsSaving(true)
     try {
-      await axios.post(`/api/settings/${selectedAccount}`, settings)
-      toast.success('Settings saved successfully')
+      await axios.post(
+        `/api/settings/${selectedAccount.account}`,
+        buildSettingsPayload(settings, selectedRepos, listMode)
+      )
+      toast.success('Configuration saved')
     } catch (error) {
-      console.error('Failed to save settings', error)
-      toast.error('Failed to save settings')
+      toast.error(getErrorMessage(error, 'Failed to save configuration'))
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  if (!isLoggedIn) {
-    return (
-      <div className={styles.container}>
-        <Header />
-        <main>
-          <section>
-            <p>Please log in through GitHub to continue.</p>
-            <a href='/api/authorize' className={styles.loginButton}>
-              Log in with GitHub
-            </a>
-          </section>
-        </main>
-        <Footer />
-        <ToastContainer />
-      </div>
-    )
+  const handleDeleteSettings = async () => {
+    if (!selectedAccount) {
+      return
+    }
+
+    const confirmed = window.confirm(`Delete the saved configuration for ${selectedAccount.account}?`)
+    if (!confirmed) {
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      await axios.delete(`/api/settings/${selectedAccount.account}`)
+      setSettings(createEmptySettings())
+      setSelectedRepos([])
+      setListMode(ListMode.Mute)
+      toast.success('Configuration deleted')
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to delete configuration'))
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
+  const availableRepos = repos.filter((repo) => !selectedRepos.includes(repo.name))
+  const currentSettings = buildSettingsPayload(settings, selectedRepos, listMode)
+  const isBusy = isChecking || isTesting || isSaving || isDeleting
+
   return (
-    <div className={styles.container}>
-      <Header />
-      <main>
-        <section>
-          <label htmlFor='account-select'>Select Account:</label>
-          <AccountSelect
-            handleAccountChange={handleAccountChange}
-            selectedAccount={selectedAccount!}
-            installations={installations}
-            updateAccountState={() => {
-              try {
-                axios.get('/api/installations').then((response) => {
-                  setInstallations(response.data)
-                })
-              } catch (error) {
-                console.error('Failed to fetch installations', error)
-              }
-            }}
-          />
-        </section>
-        {selectedAccount && settings && (
-          <section>
-            <NotificationConfig settings={settings} setSettings={setSettings} />
-            <RepoSelector
-              repos={repos.filter((repo) => !selectedRepos.includes(repo.name))}
-              onSelect={handleSelectRepo}
-              loadMoreRepos={loadMoreRepos}
-              hasMore={hasMore}
-            />
-
-            <div className={styles.listModeContainer}>
-              <h3>
-                {listMode === 'allow'
-                  ? 'Allow notifications from these repos only'
-                  : 'Mute notifications from these repos'}
-              </h3>
-              <button className={styles.toggleButton} onClick={toggleListMode}>
-                Change to {listMode === 'allow' ? 'Mute' : 'Allow'}
-              </button>
+    <div className={styles.page}>
+      <div className={styles.shell}>
+        <header className={styles.hero}>
+          <div className={styles.heroContent}>
+            <p className={styles.heroEyebrow}>GitHub Stars Delivery</p>
+            <h1 className={styles.heroTitle}>Modern controls for where star activity lands.</h1>
+            <p className={styles.heroText}>
+              Configure notification channels, fine-tune repository scope, and keep noisy events out of the way.
+            </p>
+            <div className={styles.heroBadges}>
+              <span className={styles.heroBadge}>
+                <FiGithub />
+                {installations.length} account{installations.length === 1 ? '' : 's'}
+              </span>
+              <span className={styles.heroBadge}>
+                <FiBell />
+                {settings.notify_settings.length} channel{settings.notify_settings.length === 1 ? '' : 's'}
+              </span>
+              <span className={styles.heroBadge}>
+                <FiFilter />
+                {selectedRepos.length} repo rule{selectedRepos.length === 1 ? '' : 's'}
+              </span>
             </div>
+          </div>
+          <aside className={styles.heroCard}>
+            <span className={styles.heroCardLabel}>Current workspace</span>
+            <strong className={styles.heroCardValue}>{selectedAccount?.account ?? 'No account selected'}</strong>
+            <p className={styles.heroCardText}>
+              {selectedAccount
+                ? 'Changes on this page apply only to the selected installation.'
+                : 'Pick a GitHub account or organization to start configuring notifications.'}
+            </p>
+          </aside>
+        </header>
 
-            <div className={styles.selectedReposContainer}>
-              {selectedRepos.map((repo) => (
-                <div key={repo} className={styles.repoItem}>
-                  {repo}
-                  <button className={styles.removeButton} onClick={() => handleUnselectRepo(repo)}>
-                    Remove
+        <main className={styles.main}>
+          {isInitializing ? (
+            <section className={styles.panel}>
+              <div className={styles.loadingState}>Loading configuration workspace…</div>
+            </section>
+          ) : !isLoggedIn ? (
+            <section className={`${styles.panel} ${styles.loginPanel}`}>
+              <div>
+                <p className={styles.sectionEyebrow}>Authentication</p>
+                <h2 className={styles.sectionTitle}>Sign in before editing configuration</h2>
+                <p className={styles.sectionText}>
+                  The configuration page uses your GitHub session to list installations and save account-specific rules.
+                </p>
+              </div>
+              <a className={styles.primaryLink} href='/api/authorize'>
+                <FiGithub />
+                Log in with GitHub
+              </a>
+            </section>
+          ) : (
+            <>
+              <section className={styles.panel}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <p className={styles.sectionEyebrow}>Account</p>
+                    <h2 className={styles.sectionTitle}>Choose an installation</h2>
+                    <p className={styles.sectionText}>
+                      Each personal account and organization keeps an independent notification policy.
+                    </p>
+                  </div>
+                  <button
+                    className={styles.ghostButton}
+                    disabled={isRefreshingAccounts}
+                    onClick={() => void refreshInstallations()}
+                    type='button'
+                  >
+                    <FiRefreshCw />
+                    Refresh
                   </button>
                 </div>
-              ))}
-            </div>
-
-            <div className={styles.settingsContainer}>
-              <div className={styles.settingItem}>
-                <label
-                  htmlFor='mute-star-lost'
-                  data-tooltip-id='tooltip'
-                  data-tooltip-content="Don't send notifications when lost stars"
-                >
-                  Mute Star Lost:
-                </label>
-                <input
-                  type='checkbox'
-                  id='mute-star-lost'
-                  checked={settings.mute_lost_stars}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      mute_lost_stars: e.target.checked,
-                    })
-                  }
+                <AccountSelect
+                  installations={installations}
+                  isRefreshing={isRefreshingAccounts}
+                  onChange={handleAccountChange}
+                  onInstallAnother={handleInstallAnotherAccount}
+                  selectedAccount={selectedAccount}
                 />
-              </div>
-            </div>
+              </section>
 
-            <div className={styles.buttonGroup}>
-              <button
-                className={styles.testButton}
-                data-tooltip-id='tooltip'
-                data-tooltip-content='Send a test notification to verify settings'
-                onClick={handleTestSettings}
-              >
-                Test Settings
-              </button>
-              <button className={styles.saveButton} onClick={handleSaveSettings}>
-                Save Settings
-              </button>
-            </div>
-          </section>
-        )}
-      </main>
-      <Footer />
-      <ToastContainer closeOnClick />
-      <Tooltip id='tooltip' />
+              {!selectedAccount ? (
+                <section className={styles.panel}>
+                  <div className={styles.emptyState}>
+                    <h2 className={styles.emptyStateTitle}>
+                      {installations.length === 0 ? 'No installations found' : 'Select an account to continue'}
+                    </h2>
+                    <p className={styles.emptyStateText}>
+                      {installations.length === 0
+                        ? 'Install the GitHub app on a personal account or organization, then refresh the list.'
+                        : 'The configuration editor appears once an installation is selected.'}
+                    </p>
+                  </div>
+                </section>
+              ) : (
+                <>
+                  <div className={styles.workspaceGrid}>
+                    <section className={styles.panel}>
+                      <NotificationConfig settings={settings} setSettings={setSettings} />
+                    </section>
+
+                    <section className={styles.panel}>
+                      <div className={styles.panelHeader}>
+                        <div>
+                          <p className={styles.sectionEyebrow}>Repository scope</p>
+                          <h2 className={styles.sectionTitle}>Choose which repositories can notify</h2>
+                          <p className={styles.sectionText}>
+                            Use a mute list to silence specific repositories, or switch to an allow list for a tighter
+                            setup.
+                          </p>
+                        </div>
+                        <div className={styles.modeSwitch} role='tablist' aria-label='Repository list mode'>
+                          <button
+                            aria-pressed={listMode === ListMode.Mute}
+                            className={listMode === ListMode.Mute ? styles.modeButtonActive : styles.modeButton}
+                            onClick={() => setListMode(ListMode.Mute)}
+                            type='button'
+                          >
+                            Mute list
+                          </button>
+                          <button
+                            aria-pressed={listMode === ListMode.Allow}
+                            className={listMode === ListMode.Allow ? styles.modeButtonActive : styles.modeButton}
+                            onClick={() => setListMode(ListMode.Allow)}
+                            type='button'
+                          >
+                            Allow list
+                          </button>
+                        </div>
+                      </div>
+
+                      {isLoadingAccountData ? (
+                        <div className={styles.loadingState}>Loading repositories and existing rules…</div>
+                      ) : (
+                        <>
+                          <p className={styles.modeSummary}>
+                            {listMode === ListMode.Allow
+                              ? 'Only the selected repositories can trigger notifications.'
+                              : 'Selected repositories are muted, while everything else can notify.'}
+                          </p>
+
+                          <RepoSelector
+                            hasMore={hasMore}
+                            loadMoreRepos={loadMoreRepos}
+                            onSelect={handleSelectRepo}
+                            repos={availableRepos}
+                          />
+
+                          <div className={styles.selectedReposSection}>
+                            <div className={styles.selectedReposHeader}>
+                              <h3 className={styles.subsectionTitle}>Selected repositories</h3>
+                              <span className={styles.countBadge}>{selectedRepos.length}</span>
+                            </div>
+                            {selectedRepos.length === 0 ? (
+                              <div className={styles.inlineEmptyState}>
+                                No repositories selected yet. Add items from the list above.
+                              </div>
+                            ) : (
+                              <div className={styles.selectedReposList}>
+                                {selectedRepos.map((repo) => (
+                                  <div className={styles.repoChip} key={repo}>
+                                    <span>{repo}</span>
+                                    <button
+                                      aria-label={`Remove ${repo}`}
+                                      className={styles.repoChipButton}
+                                      onClick={() => handleUnselectRepo(repo)}
+                                      type='button'
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          <label className={styles.preferenceCard}>
+                            <div>
+                              <h3 className={styles.subsectionTitle}>Mute lost-star notifications</h3>
+                              <p className={styles.sectionText}>
+                                Keep delivery focused on new stars and ignore unstar events.
+                              </p>
+                            </div>
+                            <input
+                              checked={settings.mute_lost_stars}
+                              className={styles.preferenceToggle}
+                              onChange={(event) =>
+                                setSettings((current) => ({
+                                  ...current,
+                                  mute_lost_stars: event.target.checked,
+                                }))
+                              }
+                              type='checkbox'
+                            />
+                          </label>
+                        </>
+                      )}
+                    </section>
+                  </div>
+
+                  <section className={`${styles.panel} ${styles.actionsPanel}`}>
+                    <div>
+                      <p className={styles.sectionEyebrow}>Actions</p>
+                      <h2 className={styles.sectionTitle}>Validate, test, and save</h2>
+                      <p className={styles.sectionText}>
+                        Validate checks the structure, test sends a sample notification, and save stores the current
+                        account policy.
+                      </p>
+                    </div>
+                    <div className={styles.actionButtons}>
+                      <button
+                        className={styles.secondaryButton}
+                        disabled={isBusy || isLoadingAccountData}
+                        onClick={() => void handleValidateSettings()}
+                        type='button'
+                      >
+                        <FiShield />
+                        {isChecking ? 'Validating…' : 'Validate'}
+                      </button>
+                      <button
+                        className={styles.secondaryButton}
+                        disabled={isBusy || isLoadingAccountData}
+                        onClick={() => void handleTestSettings()}
+                        type='button'
+                      >
+                        <FiSend />
+                        {isTesting ? 'Sending…' : 'Send test'}
+                      </button>
+                      <button
+                        className={styles.primaryButton}
+                        disabled={isBusy || isLoadingAccountData}
+                        onClick={() => void handleSaveSettings()}
+                        type='button'
+                      >
+                        <FiSave />
+                        {isSaving ? 'Saving…' : 'Save configuration'}
+                      </button>
+                      <button
+                        className={styles.dangerButton}
+                        disabled={isBusy || isLoadingAccountData}
+                        onClick={() => void handleDeleteSettings()}
+                        type='button'
+                      >
+                        <FiTrash2 />
+                        {isDeleting ? 'Deleting…' : 'Delete saved configuration'}
+                      </button>
+                    </div>
+                    <div className={styles.summaryRow}>
+                      <span className={styles.summaryPill}>
+                        <FiCheckCircle />
+                        {currentSettings.notify_settings.length} destinations configured
+                      </span>
+                      <span className={styles.summaryPill}>
+                        <FiFilter />
+                        {currentSettings.allow_repos.length > 0
+                          ? `${currentSettings.allow_repos.length} allow-listed repositories`
+                          : `${currentSettings.mute_repos.length} muted repositories`}
+                      </span>
+                    </div>
+                  </section>
+                </>
+              )}
+            </>
+          )}
+        </main>
+
+        <Footer />
+      </div>
+
+      <ToastContainer autoClose={3500} closeOnClick newestOnTop position='top-right' />
     </div>
   )
 }
