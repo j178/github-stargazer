@@ -1,6 +1,7 @@
 package notify
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/j178/github_stargazer/backend/config"
-	"github.com/j178/github_stargazer/backend/utils"
 )
 
 var DefaultDiscordBot = sync.OnceValue(
@@ -43,9 +43,9 @@ func (d *discordBotService) Configure(settings map[string]string) error {
 	}
 
 	d.channelID = channelID
-	d.username = utils.Or(settings["username"], defaultUsername)
-	d.avatarURL = utils.Or(settings["avatar_url"], defaultAvatar)
-	color := utils.Or(settings["color"], defaultColor)
+	d.username = cmp.Or(settings["username"], defaultUsername)
+	d.avatarURL = cmp.Or(settings["avatar_url"], defaultAvatar)
+	color := cmp.Or(settings["color"], defaultColor)
 	var err error
 	d.color, err = strconv.ParseInt(color, 16, 32)
 	if err != nil {

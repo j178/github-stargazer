@@ -1,14 +1,13 @@
 package notify
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"strconv"
 
 	"github.com/bwmarrin/discordgo"
-
-	"github.com/j178/github_stargazer/backend/utils"
 )
 
 const (
@@ -43,10 +42,10 @@ func (s *discordWebhookService) Configure(settings map[string]string) error {
 
 	s.webhookID = webhookID
 	s.webhookToken = webhookToken
-	s.username = utils.Or(settings["username"], defaultUsername)
-	s.avatarURL = utils.Or(settings["avatar_url"], defaultAvatar)
+	s.username = cmp.Or(settings["username"], defaultUsername)
+	s.avatarURL = cmp.Or(settings["avatar_url"], defaultAvatar)
 
-	color := utils.Or(settings["color"], defaultColor)
+	color := cmp.Or(settings["color"], defaultColor)
 	var err error
 	s.color, err = strconv.ParseInt(color, 16, 32)
 	if err != nil {
