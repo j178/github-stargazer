@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v84/github"
 	"golang.org/x/oauth2"
 	oauthGitHub "golang.org/x/oauth2/github"
 

@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v84/github"
 	"github.com/sourcegraph/conc/pool"
 
 	"github.com/j178/github_stargazer/backend/cache"

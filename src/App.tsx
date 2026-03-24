@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { type ChangeEvent, type FC, useEffect, useRef, useState } from 'react'
+import { type ChangeEvent, type FC, useCallback, useEffect, useRef, useState } from 'react'
 import {
   FiBell,
   FiBellOff,
@@ -400,6 +400,25 @@ const App: FC = () => {
     }
   }
 
+  const searchRepos = useCallback(
+    async (query: string) => {
+      if (!selectedAccount) {
+        return []
+      }
+
+      const response = await axios.get(`/api/repos/${selectedAccount.id}/search`, {
+        params: {
+          q: query,
+          limit: 20,
+        },
+      })
+
+      const nextRepos = (response.data ?? []) as RepoInfo[]
+      return nextRepos.filter((repo) => !selectedRepos.includes(repo.name))
+    },
+    [selectedAccount, selectedRepos]
+  )
+
   const handleValidateSettings = async () => {
     setIsChecking(true)
     try {
@@ -722,6 +741,7 @@ const App: FC = () => {
                                 loadMoreRepos={loadMoreRepos}
                                 onSelect={handleSelectRepoFromPicker}
                                 repos={availableRepos}
+                                searchRepos={searchRepos}
                               />
                             </section>
                           ) : null}

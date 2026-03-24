@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/go-github/v53/github"
+	"github.com/google/go-github/v84/github"
 	"github.com/samber/lo"
 
 	"github.com/j178/github_stargazer/backend/routes"
@@ -19,6 +20,18 @@ import (
 )
 
 const MaxSettingsCount = 10
+
+const (
+	installedReposPerPage = 30
+	repoSearchLimit       = 20
+)
+
+type repoPayload struct {
+	ID          int64  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Fork        bool   `json:"fork"`
+}
 
 func GetSettings(c *gin.Context) {
 	login := c.GetString("login")
@@ -168,11 +181,64 @@ func Installations(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-func InstalledRepos(c *gin.Context) {
+func parseInstallationID(c *gin.Context) (int64, bool) {
 	installationIDStr := c.Param("installationID")
 	installationID, err := strconv.ParseInt(installationIDStr, 10, 64)
 	if err != nil {
 		routes.Abort(c, http.StatusBadRequest, nil, "invalid installationID")
+		return 0, false
+	}
+	return installationID, true
+}
+
+func listInstallationRepos(ctx context.Context, installationID int64) ([]repoPayload, error) {
+	return cache.GetOrCreate(
+		ctx,
+		cache.Key{"installation_repos", strconv.FormatInt(installationID, 10)},
+		10*time.Minute,
+		func() ([]repoPayload, error) {
+			token, err := cache.GetInstallationToken(ctx, installationID)
+			if err != nil {
+				return nil, err
+			}
+
+			client := github.NewTokenClient(ctx, token)
+			opts := &github.ListOptions{PerPage: 100}
+			repos := make([]repoPayload, 0, 10)
+
+			for {
+				list, resp, err := client.Apps.ListRepos(ctx, opts)
+				if err != nil {
+					return nil, err
+				}
+				repos = append(repos, serializeRepos(list.Repositories)...)
+				if resp.NextPage == 0 {
+					break
+				}
+				opts.Page = resp.NextPage
+			}
+
+			return repos, nil
+		},
+	)
+}
+
+func serializeRepos(repos []*github.Repository) []repoPayload {
+	returnRepos := make([]repoPayload, len(repos))
+	for i, item := range repos {
+		returnRepos[i] = repoPayload{
+			ID:          item.GetID(),
+			Name:        item.GetFullName(),
+			Description: item.GetDescription(),
+			Fork:        item.GetFork(),
+		}
+	}
+	return returnRepos
+}
+
+func InstalledRepos(c *gin.Context) {
+	installationID, ok := parseInstallationID(c)
+	if !ok {
 		return
 	}
 	page := c.DefaultQuery("page", "1")
@@ -181,30 +247,67 @@ func InstalledRepos(c *gin.Context) {
 		routes.Abort(c, http.StatusBadRequest, nil, "invalid page")
 		return
 	}
-
-	token, err := cache.GetInstallationToken(c, installationID)
-	if err != nil {
-		routes.Abort(c, http.StatusInternalServerError, err, "get token")
+	if pageInt < 1 {
+		routes.Abort(c, http.StatusBadRequest, nil, "invalid page")
+		return
 	}
 
-	client := github.NewTokenClient(c, token)
-	opts := &github.ListOptions{PerPage: 30, Page: pageInt}
-	repos, _, err := client.Apps.ListRepos(c, opts)
+	repos, err := listInstallationRepos(c, installationID)
 	if err != nil {
 		routes.Abort(c, http.StatusInternalServerError, err, "list repos")
 		return
 	}
-	returnRepos := make([]map[string]any, len(repos.Repositories))
-	for i, item := range repos.Repositories {
-		returnRepos[i] = map[string]any{
-			"id":          item.GetID(),
-			"name":        item.GetFullName(),
-			"description": item.GetDescription(),
-			"fork":        item.GetFork(),
+
+	start := (pageInt - 1) * installedReposPerPage
+	if start >= len(repos) {
+		c.JSON(http.StatusOK, []repoPayload{})
+		return
+	}
+	end := min(start+installedReposPerPage, len(repos))
+	c.JSON(http.StatusOK, repos[start:end])
+}
+
+func SearchInstalledRepos(c *gin.Context) {
+	installationID, ok := parseInstallationID(c)
+	if !ok {
+		return
+	}
+
+	query := strings.TrimSpace(c.Query("q"))
+	if query == "" {
+		c.JSON(http.StatusOK, []repoPayload{})
+		return
+	}
+
+	limit := repoSearchLimit
+	if limitStr := strings.TrimSpace(c.Query("limit")); limitStr != "" {
+		value, err := strconv.Atoi(limitStr)
+		if err != nil || value < 1 || value > 100 {
+			routes.Abort(c, http.StatusBadRequest, nil, "invalid limit")
+			return
+		}
+		limit = value
+	}
+
+	repos, err := listInstallationRepos(c, installationID)
+	if err != nil {
+		routes.Abort(c, http.StatusInternalServerError, err, "search repos")
+		return
+	}
+
+	normalizedQuery := strings.ToLower(query)
+	matches := make([]repoPayload, 0, limit)
+	for _, repo := range repos {
+		if !strings.Contains(strings.ToLower(repo.Name), normalizedQuery) {
+			continue
+		}
+		matches = append(matches, repo)
+		if len(matches) >= limit {
+			break
 		}
 	}
 
-	c.JSON(http.StatusOK, returnRepos)
+	c.JSON(http.StatusOK, matches)
 }
 
 func CheckSettings(c *gin.Context) {

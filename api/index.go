@@ -47,6 +47,7 @@ func initRouter() *gin.Engine {
 		admin.POST("/api/settings/check", configure.CheckSettings)
 		admin.POST("/api/settings/test", configure.TestNotify)
 		admin.GET("/api/repos/:installationID", configure.InstalledRepos)
+		admin.GET("/api/repos/:installationID/search", configure.SearchInstalledRepos)
 		admin.POST("/api/connect/:platform", configure.GenerateConnectToken)
 		admin.GET("/api/connect/:platform/:token", configure.GetConnectResult)
 	}

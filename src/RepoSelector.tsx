@@ -10,12 +10,16 @@ const RepoSelector: FC<{
   repos: RepoInfo[]
   onSelect: (repoName: string) => void
   loadMoreRepos: () => Promise<void>
+  searchRepos: (query: string) => Promise<RepoInfo[]>
   hasMore: boolean
   autoFocus?: boolean
   expanded?: boolean
-}> = ({ repos, onSelect, loadMoreRepos, hasMore, autoFocus = false, expanded = false }) => {
+}> = ({ repos, onSelect, loadMoreRepos, searchRepos, hasMore, autoFocus = false, expanded = false }) => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<RepoInfo[]>([])
+  const [searchError, setSearchError] = useState('')
   const observer = useRef<IntersectionObserver | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
@@ -40,21 +44,24 @@ const RepoSelector: FC<{
   }, [autoFocus])
 
   const loadMore = useCallback(async () => {
-    if (!hasMore || isLoading) {
+    if (!hasMore || isLoadingMore) {
       return
     }
 
-    setIsLoading(true)
+    setIsLoadingMore(true)
     try {
       await loadMoreRepos()
     } finally {
-      setIsLoading(false)
+      setIsLoadingMore(false)
     }
-  }, [hasMore, isLoading, loadMoreRepos])
+  }, [hasMore, isLoadingMore, loadMoreRepos])
+
+  const normalizedSearch = searchTerm.trim().toLowerCase()
+  const displayedRepos = normalizedSearch ? searchResults : repos
 
   const lastRepoRef = useCallback(
     (node: HTMLButtonElement | null) => {
-      if (isLoading || !hasMore) {
+      if (isLoadingMore || !hasMore || normalizedSearch) {
         return
       }
 
@@ -69,25 +76,53 @@ const RepoSelector: FC<{
         observer.current.observe(node)
       }
     },
-    [hasMore, isLoading, loadMore]
+    [hasMore, isLoadingMore, loadMore, normalizedSearch]
   )
 
-  const normalizedSearch = searchTerm.trim().toLowerCase()
-  const filteredRepos = repos.filter((repo) => {
-    if (!normalizedSearch) {
-      return true
-    }
-
-    return repo.name.toLowerCase().includes(normalizedSearch)
-  })
-
   useEffect(() => {
-    if (normalizedSearch || filteredRepos.length > 0 || !hasMore || isLoading) {
+    if (normalizedSearch || repos.length > 0 || !hasMore || isLoadingMore) {
       return
     }
 
     void loadMore()
-  }, [filteredRepos.length, hasMore, isLoading, loadMore, normalizedSearch])
+  }, [repos.length, hasMore, isLoadingMore, loadMore, normalizedSearch])
+
+  useEffect(() => {
+    if (!normalizedSearch) {
+      setSearchResults([])
+      setSearchError('')
+      setIsSearching(false)
+      return
+    }
+
+    let isActive = true
+    const searchTimer = window.setTimeout(async () => {
+      setIsSearching(true)
+      setSearchError('')
+      try {
+        const results = await searchRepos(normalizedSearch)
+        if (!isActive) {
+          return
+        }
+        setSearchResults(results)
+      } catch {
+        if (!isActive) {
+          return
+        }
+        setSearchResults([])
+        setSearchError('Failed to search repositories.')
+      } finally {
+        if (isActive) {
+          setIsSearching(false)
+        }
+      }
+    }, 220)
+
+    return () => {
+      isActive = false
+      window.clearTimeout(searchTimer)
+    }
+  }, [normalizedSearch, searchRepos])
 
   return (
     <div className={styles.repoSelector}>
@@ -104,14 +139,19 @@ const RepoSelector: FC<{
       </div>
 
       <div className={expanded ? `${styles.repoList} ${styles.repoListExpanded}` : styles.repoList}>
-        {filteredRepos.length === 0 ? (
+        {isSearching && displayedRepos.length === 0 ? (
+          <div className={styles.emptyState}>Searching repositories…</div>
+        ) : searchError ? (
+          <div className={styles.emptyState}>{searchError}</div>
+        ) : displayedRepos.length === 0 ? (
           <div className={styles.emptyState}>
-            No repositories match the current search.
-            {hasMore ? ' Load more results or adjust the search terms.' : ''}
+            {normalizedSearch
+              ? 'No repositories match the current search.'
+              : 'No more repositories are available to add.'}
           </div>
         ) : (
-          filteredRepos.map((repo, index) => {
-            const isLastItem = index === filteredRepos.length - 1
+          displayedRepos.map((repo, index) => {
+            const isLastItem = index === displayedRepos.length - 1
             return (
               <button
                 className={styles.repoCard}
