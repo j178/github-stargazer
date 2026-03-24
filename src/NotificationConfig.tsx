@@ -143,20 +143,18 @@ const createDraft = (service: NotificationService): NotifySetting => {
   }
 }
 
-const getRequiredFieldMessage = (draft: NotifySetting) => {
+const hasMissingRequiredFields = (draft: NotifySetting) => {
   switch (draft.service) {
     case 'telegram':
-      return draft.chat_id?.trim() ? null : 'Chat ID is required for Telegram notifications.'
+      return !draft.chat_id?.trim()
     case 'discord_webhook':
-      return draft.webhook_id?.trim() && draft.webhook_token?.trim()
-        ? null
-        : 'Webhook ID and webhook token are required.'
+      return !draft.webhook_id?.trim() || !draft.webhook_token?.trim()
     case 'discord_bot':
-      return draft.channel_id?.trim() ? null : 'Channel ID is required for Discord bot delivery.'
+      return !draft.channel_id?.trim()
     case 'bark':
-      return draft.key?.trim() ? null : 'Bark key is required.'
+      return !draft.key?.trim()
     case 'webhook':
-      return draft.url?.trim() ? null : 'Webhook URL is required.'
+      return !draft.url?.trim()
   }
 }
 
@@ -256,16 +254,20 @@ const getSettingDetails = (setting: NotifySetting) => {
 const Field: FC<{
   label: string
   hint?: string
+  required?: boolean
   wide?: boolean
   children: ReactNode
-}> = ({ label, hint, wide, children }) => {
+}> = ({ label, hint, required, wide, children }) => {
   return (
     <div className={wide ? `${styles.field} ${styles.fieldWide}` : styles.field}>
       <div className={styles.fieldMeta}>
-        <span className={styles.fieldLabel}>{label}</span>
-        {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
+        <span className={styles.fieldLabel}>
+          {label}
+          {required ? <span className={styles.requiredMark}>*</span> : null}
+        </span>
       </div>
       {children}
+      {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
     </div>
   )
 }
@@ -334,10 +336,7 @@ const NotificationConfig: FC<{
       return
     }
 
-    const validationMessage = getRequiredFieldMessage(draft)
-    if (validationMessage) {
-      setConnectionState('error')
-      setConnectionMessage(validationMessage)
+    if (hasMissingRequiredFields(draft)) {
       return
     }
 
@@ -466,7 +465,7 @@ const NotificationConfig: FC<{
     }
   }, [checkConnectionResult, connectionState, connectionToken, draft])
 
-  const validationMessage = draft ? getRequiredFieldMessage(draft) : null
+  const isDraftInvalid = draft ? hasMissingRequiredFields(draft) : false
   const isOverLimit = settings.notify_settings.length > 10
 
   return (
@@ -484,27 +483,34 @@ const NotificationConfig: FC<{
         ) : null}
       </div>
 
-      <div className={styles.serviceGrid}>
-        {notificationServices.map((service) => {
-          const meta = serviceMeta[service]
-          const isActive = draft?.service === service
+      {!draft ? (
+        <div className={styles.servicePicker}>
+          <label className={styles.serviceSelectField}>
+            <span className={styles.serviceSelectLabel}>Add a new channel</span>
+            <select
+              className={styles.serviceSelect}
+              defaultValue=''
+              onChange={(event) => {
+                const nextService = event.target.value as NotificationService
+                if (!nextService) {
+                  return
+                }
 
-          return (
-            <button
-              className={isActive ? `${styles.serviceCard} ${styles.serviceCardActive}` : styles.serviceCard}
-              key={service}
-              onClick={() => beginDraft(service)}
-              type='button'
+                beginDraft(nextService)
+              }}
             >
-              <span className={styles.serviceIcon}>{serviceIcons[service]}</span>
-              <span className={styles.serviceCopy}>
-                <span className={styles.serviceCardLabel}>{meta.label}</span>
-                <span className={styles.serviceCardDescription}>{meta.description}</span>
-              </span>
-            </button>
-          )
-        })}
-      </div>
+              <option disabled value=''>
+                Choose a channel type
+              </option>
+              {notificationServices.map((service) => (
+                <option key={service} value={service}>
+                  {serviceMeta[service].label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      ) : null}
 
       {draft ? (
         <div className={styles.editorCard}>
@@ -517,7 +523,7 @@ const NotificationConfig: FC<{
             </div>
           </div>
 
-          {serviceMeta[draft.service].quickConnect ? (
+          {serviceMeta[draft.service].quickConnect && !connectionToken ? (
             <div className={styles.connectCallout}>
               <div>
                 <h4 className={styles.connectTitle}>Quick connect</h4>
@@ -580,7 +586,7 @@ const NotificationConfig: FC<{
           <div className={styles.fieldGrid}>
             {draft.service === 'telegram' ? (
               <>
-                <Field hint='Required' label='Chat ID'>
+                <Field label='Chat ID' required>
                   <input
                     className={styles.input}
                     onChange={(event) => updateDraftField('chat_id', event.target.value)}
@@ -589,11 +595,11 @@ const NotificationConfig: FC<{
                     value={draft.chat_id ?? ''}
                   />
                 </Field>
-                <Field hint='Optional custom bot token' label='Bot Token'>
+                <Field label='Bot Token'>
                   <input
                     className={styles.input}
                     onChange={(event) => updateDraftField('token', event.target.value)}
-                    placeholder='Leave empty to use the default bot'
+                    placeholder='Leave blank to use the built-in bot'
                     type='text'
                     value={draft.token ?? ''}
                   />
@@ -608,7 +614,7 @@ const NotificationConfig: FC<{
 
             {draft.service === 'discord_webhook' ? (
               <>
-                <Field hint='Required' label='Webhook ID'>
+                <Field label='Webhook ID' required>
                   <input
                     className={styles.input}
                     onChange={(event) => updateDraftField('webhook_id', event.target.value)}
@@ -617,7 +623,7 @@ const NotificationConfig: FC<{
                     value={draft.webhook_id ?? ''}
                   />
                 </Field>
-                <Field hint='Required' label='Webhook Token'>
+                <Field label='Webhook Token' required>
                   <input
                     className={styles.input}
                     onChange={(event) => updateDraftField('webhook_token', event.target.value)}
@@ -658,7 +664,7 @@ const NotificationConfig: FC<{
 
             {draft.service === 'discord_bot' ? (
               <>
-                <Field hint='Required' label='Channel ID'>
+                <Field label='Channel ID' required>
                   <input
                     className={styles.input}
                     onChange={(event) => updateDraftField('channel_id', event.target.value)}
@@ -667,11 +673,11 @@ const NotificationConfig: FC<{
                     value={draft.channel_id ?? ''}
                   />
                 </Field>
-                <Field hint='Optional custom bot token' label='Bot Token'>
+                <Field label='Bot Token'>
                   <input
                     className={styles.input}
                     onChange={(event) => updateDraftField('token', event.target.value)}
-                    placeholder='Leave empty to use the default bot'
+                    placeholder='Leave blank to use the built-in bot'
                     type='text'
                     value={draft.token ?? ''}
                   />
@@ -708,7 +714,7 @@ const NotificationConfig: FC<{
 
             {draft.service === 'bark' ? (
               <>
-                <Field hint='Required' label='Key'>
+                <Field label='Key' required>
                   <input
                     className={styles.input}
                     onChange={(event) => updateDraftField('key', event.target.value)}
@@ -731,7 +737,7 @@ const NotificationConfig: FC<{
 
             {draft.service === 'webhook' ? (
               <>
-                <Field hint='Required' label='Webhook URL' wide>
+                <Field label='Webhook URL' required wide>
                   <input
                     className={styles.input}
                     onChange={(event) => updateDraftField('url', event.target.value)}
@@ -772,11 +778,10 @@ const NotificationConfig: FC<{
           </div>
 
           <div className={styles.editorFooter}>
-            <div className={styles.validationMessage}>{validationMessage ?? 'Required fields are complete.'}</div>
             <div className={styles.inlineActions}>
               <button
                 className={styles.primaryButton}
-                disabled={Boolean(validationMessage)}
+                disabled={isDraftInvalid}
                 onClick={handleApplyDraft}
                 type='button'
               >
@@ -797,6 +802,7 @@ const NotificationConfig: FC<{
           <div>
             <h3 className={styles.subsectionTitle}>Configured channels</h3>
           </div>
+          <span className={styles.sectionCountBadge}>{settings.notify_settings.length}/10</span>
         </div>
 
         {settings.notify_settings.length === 0 ? (
@@ -813,7 +819,29 @@ const NotificationConfig: FC<{
                       <p>{serviceMeta[setting.service].description}</p>
                     </div>
                   </div>
-                  <span className={styles.settingIndex}>#{index + 1}</span>
+                  <div className={styles.settingCardMeta}>
+                    <span className={styles.settingIndex}>#{index + 1}</span>
+                    <div className={styles.cardActions}>
+                      <button
+                        aria-label={`Edit ${serviceMeta[setting.service].label}`}
+                        className={`${styles.ghostButton} ${styles.cardActionButton}`}
+                        onClick={() => handleEditService(index)}
+                        title={`Edit ${serviceMeta[setting.service].label}`}
+                        type='button'
+                      >
+                        <FiEdit2 />
+                      </button>
+                      <button
+                        aria-label={`Remove ${serviceMeta[setting.service].label}`}
+                        className={`${styles.dangerButton} ${styles.cardActionButton}`}
+                        onClick={() => handleRemoveService(index)}
+                        title={`Remove ${serviceMeta[setting.service].label}`}
+                        type='button'
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 <dl className={styles.detailList}>
                   {getSettingDetails(setting).map((detail) => (
@@ -823,16 +851,6 @@ const NotificationConfig: FC<{
                     </div>
                   ))}
                 </dl>
-                <div className={styles.cardActions}>
-                  <button className={styles.ghostButton} onClick={() => handleEditService(index)} type='button'>
-                    <FiEdit2 />
-                    Edit
-                  </button>
-                  <button className={styles.dangerButton} onClick={() => handleRemoveService(index)} type='button'>
-                    <FiTrash2 />
-                    Remove
-                  </button>
-                </div>
               </div>
             ))}
           </div>

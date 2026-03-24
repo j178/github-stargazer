@@ -1,14 +1,15 @@
 import axios from 'axios'
-import { type ChangeEvent, type FC, useEffect, useState } from 'react'
+import { type ChangeEvent, type FC, useEffect, useRef, useState } from 'react'
 import {
   FiBell,
   FiBellOff,
-  FiCheckCircle,
+  FiChevronDown,
   FiExternalLink,
   FiFilter,
   FiGithub,
   FiRefreshCw,
   FiSave,
+  FiSearch,
   FiSend,
   FiShield,
   FiTrash2,
@@ -157,6 +158,8 @@ const App: FC = () => {
   const [isTesting, setIsTesting] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isRepoPickerOpen, setIsRepoPickerOpen] = useState(false)
+  const repoPickerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -219,6 +222,7 @@ const App: FC = () => {
       setSavedSettingsSnapshot(EMPTY_SETTINGS_SNAPSHOT)
       setPage(1)
       setHasMore(true)
+      setIsRepoPickerOpen(false)
       return
     }
 
@@ -273,6 +277,31 @@ const App: FC = () => {
       isMounted = false
     }
   }, [selectedAccount])
+
+  useEffect(() => {
+    if (!isRepoPickerOpen) {
+      return
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsRepoPickerOpen(false)
+      }
+    }
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!repoPickerRef.current?.contains(event.target as Node)) {
+        setIsRepoPickerOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('mousedown', handlePointerDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('mousedown', handlePointerDown)
+    }
+  }, [isRepoPickerOpen])
 
   const refreshInstallations = async () => {
     setIsRefreshingAccounts(true)
@@ -342,6 +371,11 @@ const App: FC = () => {
 
   const handleUnselectRepo = (repoName: string) => {
     setSelectedRepos((current) => current.filter((repo) => repo !== repoName))
+  }
+
+  const handleSelectRepoFromPicker = (repoName: string) => {
+    handleSelectRepo(repoName)
+    setIsRepoPickerOpen(false)
   }
 
   const loadMoreRepos = async () => {
@@ -441,51 +475,37 @@ const App: FC = () => {
   const currentSettings = buildSettingsPayload(settings, selectedRepos, listMode)
   const hasUnsavedChanges = serializeSettingsSnapshot(currentSettings) !== savedSettingsSnapshot
   const isBusy = isChecking || isTesting || isSaving || isDeleting
+  const canOpenRepoPicker = availableRepos.length > 0 || hasMore
+  const scopedRepoCount =
+    currentSettings.allow_repos.length > 0 ? currentSettings.allow_repos.length : currentSettings.mute_repos.length
+  const scopedRepoLabel = currentSettings.allow_repos.length > 0 ? 'allow-listed' : 'muted'
+  const scopePolicyMessage =
+    listMode === ListMode.Allow
+      ? selectedRepos.length === 0
+        ? 'No repositories will notify until you add them. All others stay muted.'
+        : 'Only the repositories above will notify. All others are muted.'
+      : selectedRepos.length === 0
+        ? 'No repositories are muted. All repositories will notify.'
+        : 'The repositories above are muted. All others will notify.'
   const scopeModes = [
     {
       mode: ListMode.Mute,
-      eyebrow: 'Recommended default',
       title: 'Mute exceptions',
-      description: 'Most repositories can notify. Add only the ones you want to silence.',
-      listedLabel: 'Listed repositories',
-      listedValue: 'Muted',
-      defaultLabel: 'Everything else',
-      defaultValue: 'Notify',
     },
     {
       mode: ListMode.Allow,
-      eyebrow: 'Tighter control',
       title: 'Allow only',
-      description: 'Nothing notifies until it is explicitly added to the list.',
-      listedLabel: 'Listed repositories',
-      listedValue: 'Notify',
-      defaultLabel: 'Everything else',
-      defaultValue: 'Blocked',
     },
   ]
   const scopeMeta =
     listMode === ListMode.Allow
       ? {
-          browserTitle: 'Choose repositories',
-          browserDescription: '',
-          listTitle: 'Allowed repositories',
-          listDescription: 'Only repositories in this list can send notifications.',
           listBadge: 'Allow list',
-          emptyTitle: 'No repositories selected yet',
-          emptyText: '',
-          listedValue: 'Notify',
-          unlistedValue: 'Blocked',
+          emptyTitle: 'No repositories selected',
         }
       : {
-          browserTitle: 'Choose repositories to mute',
-          browserDescription: '',
-          listTitle: 'Muted repositories',
-          listDescription: '',
           listBadge: 'Mute list',
           emptyTitle: 'No repositories muted',
-          emptyText: 'Add repositories only if you want to silence a few noisy projects.',
-          listedValue: 'Muted',
-          unlistedValue: 'Notify',
         }
 
   return (
@@ -599,94 +619,37 @@ const App: FC = () => {
                   <div className={styles.loadingState}>Loading repositories and existing rules…</div>
                 ) : (
                   <>
-                    <div className={styles.scopeModeGrid} role='tablist' aria-label='Repository delivery policy'>
-                      {scopeModes.map((scopeMode) => {
-                        const isActive = listMode === scopeMode.mode
-                        return (
-                          <button
-                            aria-pressed={isActive}
-                            className={
-                              isActive ? `${styles.scopeModeCard} ${styles.scopeModeCardActive}` : styles.scopeModeCard
-                            }
-                            key={scopeMode.mode}
-                            onClick={() => setListMode(scopeMode.mode)}
-                            type='button'
-                          >
-                            <span className={styles.scopeModeEyebrow}>{scopeMode.eyebrow}</span>
-                            <strong className={styles.scopeModeTitle}>{scopeMode.title}</strong>
-                            <span className={styles.scopeModeText}>{scopeMode.description}</span>
-                            <div className={styles.scopeModeMeta}>
-                              <div className={styles.scopeModeStat}>
-                                <span className={styles.scopeModeStatLabel}>{scopeMode.listedLabel}</span>
-                                <strong
-                                  className={
-                                    scopeMode.mode === ListMode.Allow
-                                      ? `${styles.scopeModeStatValue} ${styles.scopeModeStatValuePositive}`
-                                      : `${styles.scopeModeStatValue} ${styles.scopeModeStatValueMuted}`
-                                  }
-                                >
-                                  {scopeMode.listedValue}
-                                </strong>
-                              </div>
-                              <div className={styles.scopeModeStat}>
-                                <span className={styles.scopeModeStatLabel}>{scopeMode.defaultLabel}</span>
-                                <strong
-                                  className={
-                                    scopeMode.mode === ListMode.Allow
-                                      ? `${styles.scopeModeStatValue} ${styles.scopeModeStatValueBlocked}`
-                                      : `${styles.scopeModeStatValue} ${styles.scopeModeStatValuePositive}`
-                                  }
-                                >
-                                  {scopeMode.defaultValue}
-                                </strong>
-                              </div>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-
                     <div className={styles.scopeWorkspace}>
-                      <div className={`${styles.scopeBox} ${styles.scopeBrowserPanel}`}>
-                        <div className={styles.scopeSectionHeader}>
-                          <div>
-                            <p className={styles.scopeSectionEyebrow}>Repository browser</p>
-                            <h3 className={styles.subsectionTitle}>{scopeMeta.browserTitle}</h3>
-                          </div>
-                          <span className={styles.countBadge}>{availableRepos.length}</span>
-                        </div>
-                        {scopeMeta.browserDescription ? (
-                          <p className={styles.scopeSectionText}>{scopeMeta.browserDescription}</p>
-                        ) : null}
-                        <RepoSelector
-                          hasMore={hasMore}
-                          loadMoreRepos={loadMoreRepos}
-                          onSelect={handleSelectRepo}
-                          repos={availableRepos}
-                        />
-                      </div>
-
                       <div className={`${styles.scopeBox} ${styles.scopeRulesPanel}`}>
-                        <div className={styles.scopeSectionHeader}>
-                          <div>
-                            <p className={styles.scopeSectionEyebrow}>Current policy</p>
-                            <h3 className={styles.subsectionTitle}>{scopeMeta.listTitle}</h3>
-                          </div>
-                          <span
-                            className={
-                              listMode === ListMode.Allow
-                                ? `${styles.scopeListBadge} ${styles.scopeListBadgeAllow}`
-                                : `${styles.scopeListBadge} ${styles.scopeListBadgeMute}`
-                            }
+                        <div className={styles.scopePolicyHeader}>
+                          <div
+                            className={styles.scopePolicyToggle}
+                            role='tablist'
+                            aria-label='Repository delivery policy'
                           >
-                            {scopeMeta.listBadge}
-                          </span>
+                            {scopeModes.map((scopeMode) => {
+                              const isActive = listMode === scopeMode.mode
+                              return (
+                                <button
+                                  aria-pressed={isActive}
+                                  className={
+                                    isActive
+                                      ? `${styles.scopePolicyButton} ${styles.scopePolicyButtonActive}`
+                                      : styles.scopePolicyButton
+                                  }
+                                  key={scopeMode.mode}
+                                  onClick={() => setListMode(scopeMode.mode)}
+                                  type='button'
+                                >
+                                  {scopeMode.title}
+                                </button>
+                              )
+                            })}
+                          </div>
                         </div>
-                        <p className={styles.scopeSectionText}>{scopeMeta.listDescription}</p>
                         {selectedRepos.length === 0 ? (
                           <div className={styles.scopeEmptyState}>
                             <strong className={styles.scopeEmptyTitle}>{scopeMeta.emptyTitle}</strong>
-                            <p className={styles.scopeEmptyText}>{scopeMeta.emptyText}</p>
                           </div>
                         ) : (
                           <div className={styles.scopeRuleList}>
@@ -694,6 +657,16 @@ const App: FC = () => {
                               <article className={styles.scopeRuleRow} key={repo}>
                                 <div className={styles.scopeRuleIdentity}>
                                   <span className={styles.scopeRuleIndex}>{String(index + 1).padStart(2, '0')}</span>
+                                  <span
+                                    aria-hidden='true'
+                                    className={
+                                      listMode === ListMode.Allow
+                                        ? `${styles.scopeRuleStateIcon} ${styles.scopeRuleStateIconAllow}`
+                                        : `${styles.scopeRuleStateIcon} ${styles.scopeRuleStateIconMute}`
+                                    }
+                                  >
+                                    {listMode === ListMode.Allow ? <FiBell /> : <FiBellOff />}
+                                  </span>
                                   <strong className={styles.scopeRuleName}>{repo}</strong>
                                 </div>
                                 <button
@@ -709,6 +682,50 @@ const App: FC = () => {
                             ))}
                           </div>
                         )}
+                        <p className={styles.scopePolicyNote}>{scopePolicyMessage}</p>
+                        <div className={styles.scopeRepoPicker} ref={repoPickerRef}>
+                          <button
+                            aria-controls='repo-picker-dropdown'
+                            aria-expanded={isRepoPickerOpen}
+                            className={styles.scopeRepoTrigger}
+                            disabled={!canOpenRepoPicker}
+                            onClick={() => setIsRepoPickerOpen((current) => !current)}
+                            type='button'
+                          >
+                            <span className={styles.scopeRepoTriggerIcon}>
+                              <FiSearch />
+                            </span>
+                            <span className={styles.scopeRepoTriggerText}>
+                              {canOpenRepoPicker ? 'Search and add repositories' : 'All repositories are already added'}
+                            </span>
+                            <span
+                              aria-hidden='true'
+                              className={
+                                isRepoPickerOpen
+                                  ? `${styles.scopeRepoTriggerCaret} ${styles.scopeRepoTriggerCaretOpen}`
+                                  : styles.scopeRepoTriggerCaret
+                              }
+                            >
+                              <FiChevronDown />
+                            </span>
+                          </button>
+                          {isRepoPickerOpen ? (
+                            <section
+                              aria-label='Add repositories'
+                              className={styles.scopeRepoDropdown}
+                              id='repo-picker-dropdown'
+                            >
+                              <RepoSelector
+                                autoFocus
+                                expanded
+                                hasMore={hasMore}
+                                loadMoreRepos={loadMoreRepos}
+                                onSelect={handleSelectRepoFromPicker}
+                                repos={availableRepos}
+                              />
+                            </section>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
 
@@ -744,14 +761,13 @@ const App: FC = () => {
                 </div>
                 <div className={styles.summaryRow}>
                   <span className={styles.summaryPill}>
-                    <FiCheckCircle />
-                    {currentSettings.notify_settings.length} destinations configured
+                    <FiBell />
+                    {currentSettings.notify_settings.length} channel
+                    {currentSettings.notify_settings.length === 1 ? '' : 's'} configured
                   </span>
                   <span className={styles.summaryPill}>
                     <FiFilter />
-                    {currentSettings.allow_repos.length > 0
-                      ? `${currentSettings.allow_repos.length} allow-listed repositories`
-                      : `${currentSettings.mute_repos.length} muted repositories`}
+                    {scopedRepoCount} {scopedRepoLabel} repositor{scopedRepoCount === 1 ? 'y' : 'ies'}
                   </span>
                 </div>
                 <div className={styles.actionButtons}>

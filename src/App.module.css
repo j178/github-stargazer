@@ -250,13 +250,19 @@
   border-radius: 16px;
   border: 1px solid var(--border-strong);
   background: rgba(255, 255, 255, 0.96);
-  padding: 0 16px;
+  padding: 0 44px 0 16px;
   color: var(--text-strong);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364758b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 12px 8px;
 }
 
 .workspaceGrid {
   display: grid;
-  grid-template-columns: minmax(300px, 0.84fr) minmax(420px, 1.28fr) minmax(260px, 0.54fr);
+  grid-template-columns: minmax(300px, 1fr) minmax(300px, 1fr) minmax(250px, 0.56fr);
   align-items: start;
   gap: 24px;
 }
@@ -366,6 +372,14 @@
 .scopeModeGrid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-bottom: 16px;
+}
+
+.scopeHeaderMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .scopeModeCard {
@@ -481,7 +495,7 @@
 }
 
 .scopeWorkspace {
-  grid-template-columns: minmax(0, 1.02fr) minmax(320px, 0.98fr);
+  grid-template-columns: 1fr;
   margin-bottom: 20px;
 }
 
@@ -503,6 +517,98 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.scopeRulesPanel {
+  gap: 14px;
+}
+
+.scopePolicyHeader {
+  display: block;
+}
+
+.scopePolicyToggle {
+  display: flex;
+  width: 100%;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.scopePolicyButton,
+.scopePolicyButtonActive {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.scopePolicyButtonActive {
+  background: rgba(255, 255, 255, 0.98);
+  color: var(--text-strong);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.scopePolicyButton:hover,
+.scopePolicyButtonActive:hover {
+  transform: translateY(-1px);
+}
+
+.scopePolicySummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+
+.scopePolicyStat {
+  display: grid;
+  gap: 6px;
+  min-width: 126px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.scopePolicyStatLabel {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.scopePolicyStatValue {
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.scopePolicyStatValuePositive {
+  color: #0f766e;
+}
+
+.scopePolicyStatValueMuted {
+  color: #be123c;
+}
+
+.scopePolicyStatValueBlocked {
+  color: #475569;
 }
 
 .scopeListBadge {
@@ -544,6 +650,13 @@
   gap: 8px;
 }
 
+.scopePolicyNote {
+  margin: -2px 0 0;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 .scopeRuleRow {
   display: flex;
   align-items: center;
@@ -556,7 +669,7 @@
 }
 
 .scopeRuleIdentity {
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
   min-width: 0;
   gap: 10px;
@@ -580,6 +693,27 @@
   color: var(--text-strong);
   font-size: 0.92rem;
   word-break: break-word;
+}
+
+.scopeRuleStateIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.scopeRuleStateIconAllow {
+  background: rgba(15, 118, 110, 0.12);
+  color: #0f766e;
+}
+
+.scopeRuleStateIconMute {
+  background: rgba(244, 63, 94, 0.12);
+  color: #be123c;
 }
 
 .scopeRuleRemove {
@@ -627,14 +761,106 @@
   outline-offset: 2px;
 }
 
+.scopeRepoTrigger {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.scopeRepoTrigger:hover:not(:disabled),
+.scopeRepoTrigger:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(15, 118, 110, 0.24);
+  background: rgba(240, 253, 250, 0.9);
+  box-shadow: 0 16px 28px rgba(15, 118, 110, 0.08);
+  color: var(--text-strong);
+}
+
+.scopeRepoTrigger:focus-visible {
+  outline: none;
+}
+
+.scopeRepoTrigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+  transform: none;
+  box-shadow: none;
+}
+
+.scopeRepoTriggerIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.06);
+  color: inherit;
+  font-size: 0.92rem;
+}
+
+.scopeRepoTriggerText {
+  min-width: 0;
+  font-size: 0.96rem;
+  font-weight: 500;
+}
+
+.scopeRepoTriggerCaret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  transition: transform 160ms ease;
+}
+
+.scopeRepoTriggerCaretOpen {
+  transform: rotate(180deg);
+}
+
+.scopeRepoPicker {
+  position: relative;
+}
+
+.scopeRepoDropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 12;
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(248, 250, 252, 0.98);
+  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.18);
+}
+
 .preferenceCard {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  margin-top: 20px;
-  padding: 16px 18px;
-  border-radius: 20px;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 18px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(255, 255, 255, 0.9);
 }
@@ -643,7 +869,7 @@
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: start;
-  gap: 10px 12px;
+  gap: 6px 10px;
 }
 
 .preferenceContent .subsectionTitle,
@@ -651,22 +877,32 @@
   grid-column: 2;
 }
 
+.preferenceContent .subsectionTitle {
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.preferenceContent .sectionText {
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
 .preferenceIcon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
   background: rgba(15, 118, 110, 0.1);
   color: var(--accent);
-  font-size: 0.95rem;
+  font-size: 0.86rem;
   grid-row: 1 / span 2;
 }
 
 .preferenceToggle {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   accent-color: var(--accent);
 }
 
@@ -690,7 +926,9 @@
 }
 
 .actionsPanel .subtleDangerButton {
-  width: auto;
+  width: 100%;
+  align-self: stretch;
+  justify-content: center;
 }
 
 .actionsPanel .summaryRow {
@@ -760,7 +998,7 @@
 
 @media (max-width: 1360px) {
   .workspaceGrid {
-    grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .actionsPanel {
@@ -823,6 +1061,20 @@
     grid-template-columns: 1fr;
   }
 
+  .scopePolicyHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .scopePolicySummary {
+    width: 100%;
+  }
+
+  .scopePolicyStat {
+    min-width: 0;
+    flex: 1;
+  }
+
   .scopeModeStat {
     grid-template-columns: 1fr;
     gap: 4px;
@@ -861,6 +1113,24 @@
 
   .scopeSectionHeader {
     grid-template-columns: 1fr;
+  }
+
+  .scopeHeaderMeta {
+    justify-content: flex-start;
+  }
+
+  .scopePolicyToggle {
+    width: 100%;
+  }
+
+  .scopeRepoDropdown {
+    position: static;
+    margin-top: 10px;
+  }
+
+  .scopePolicyButton,
+  .scopePolicyButtonActive {
+    flex: 1;
   }
 
   .primaryButton,

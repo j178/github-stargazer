@@ -1,5 +1,5 @@
 import { type FC, useCallback, useEffect, useRef, useState } from 'react'
-import { FiArrowRight, FiSearch } from 'react-icons/fi'
+import { FiSearch } from 'react-icons/fi'
 import { GoRepo, GoRepoForked } from 'react-icons/go'
 
 import type { RepoInfo } from './models'
@@ -11,16 +11,33 @@ const RepoSelector: FC<{
   onSelect: (repoName: string) => void
   loadMoreRepos: () => Promise<void>
   hasMore: boolean
-}> = ({ repos, onSelect, loadMoreRepos, hasMore }) => {
+  autoFocus?: boolean
+  expanded?: boolean
+}> = ({ repos, onSelect, loadMoreRepos, hasMore, autoFocus = false, expanded = false }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const observer = useRef<IntersectionObserver | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     return () => {
       observer.current?.disconnect()
     }
   }, [])
+
+  useEffect(() => {
+    if (!autoFocus) {
+      return
+    }
+
+    const focusTimer = window.setTimeout(() => {
+      inputRef.current?.focus()
+    }, 0)
+
+    return () => {
+      window.clearTimeout(focusTimer)
+    }
+  }, [autoFocus])
 
   const loadMore = useCallback(async () => {
     if (!hasMore || isLoading) {
@@ -64,6 +81,14 @@ const RepoSelector: FC<{
     return repo.name.toLowerCase().includes(normalizedSearch)
   })
 
+  useEffect(() => {
+    if (normalizedSearch || filteredRepos.length > 0 || !hasMore || isLoading) {
+      return
+    }
+
+    void loadMore()
+  }, [filteredRepos.length, hasMore, isLoading, loadMore, normalizedSearch])
+
   return (
     <div className={styles.repoSelector}>
       <div className={styles.searchField}>
@@ -72,12 +97,13 @@ const RepoSelector: FC<{
           className={styles.searchInput}
           onChange={(event) => setSearchTerm(event.target.value)}
           placeholder='Search repositories by name'
+          ref={inputRef}
           type='text'
           value={searchTerm}
         />
       </div>
 
-      <div className={styles.repoList}>
+      <div className={expanded ? `${styles.repoList} ${styles.repoListExpanded}` : styles.repoList}>
         {filteredRepos.length === 0 ? (
           <div className={styles.emptyState}>
             No repositories match the current search.
@@ -94,15 +120,9 @@ const RepoSelector: FC<{
                 ref={isLastItem ? lastRepoRef : undefined}
                 type='button'
               >
-                <div className={styles.repoCardTop}>
-                  <div className={styles.repoIdentity}>
-                    <span className={styles.repoIcon}>{repo.fork ? <GoRepoForked /> : <GoRepo />}</span>
-                    <strong className={styles.repoName}>{repo.name}</strong>
-                  </div>
-                  <span className={styles.repoAction}>
-                    Add
-                    <FiArrowRight />
-                  </span>
+                <div className={styles.repoIdentity}>
+                  <span className={styles.repoIcon}>{repo.fork ? <GoRepoForked /> : <GoRepo />}</span>
+                  <strong className={styles.repoName}>{repo.name}</strong>
                 </div>
               </button>
             )

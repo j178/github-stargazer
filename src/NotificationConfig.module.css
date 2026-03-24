@@ -72,6 +72,50 @@
   gap: 12px;
 }
 
+.servicePicker {
+  display: grid;
+  gap: 10px;
+}
+
+.serviceSelectField {
+  display: grid;
+  gap: 10px;
+}
+
+.serviceSelectLabel {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+
+.serviceSelect {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.96);
+  padding: 0 44px 0 16px;
+  color: var(--text-strong);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364758b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 12px 8px;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.serviceSelect:focus {
+  outline: none;
+  border-color: rgba(15, 118, 110, 0.45);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+}
+
 .serviceGrid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
@@ -197,14 +241,16 @@
 
 .connectCallout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 14px;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
   padding: 14px 16px;
   border-radius: 18px;
 }
 
 .connectButton {
   justify-self: start;
+  margin-top: 2px;
 }
 
 .connectTitle {
@@ -213,6 +259,8 @@
 }
 
 .tokenCard {
+  display: grid;
+  gap: 14px;
   padding: 16px;
   border-radius: 18px;
 }
@@ -276,12 +324,12 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .fieldMeta {
-  display: grid;
-  gap: 4px;
+  display: flex;
+  align-items: center;
   justify-items: start;
 }
 
@@ -295,10 +343,16 @@
   color: var(--text-strong);
 }
 
+.requiredMark {
+  margin-left: 4px;
+  color: #dc2626;
+}
+
 .fieldHint {
   font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.35;
+  margin-top: 2px;
 }
 
 .input,
@@ -393,31 +447,46 @@
   transform: none;
 }
 
-.validationMessage {
-  color: var(--text-muted);
-  line-height: 1.6;
-}
-
 .currentSettings {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
+}
+
+.sectionCountBadge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .settingsGrid {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.settingCard {
+  border-radius: 18px;
+  padding: 14px 15px;
 }
 
 .settingCardHeader {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
-  gap: 12px;
+  gap: 10px;
 }
 
 .settingCardTitle {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: flex-start;
   min-width: 0;
 }
@@ -426,21 +495,35 @@
   min-width: 0;
 }
 
+.settingCardTitle .serviceIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  font-size: 0.98rem;
+}
+
+.settingCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .settingIndex {
   flex-shrink: 0;
 }
 
 .detailList {
   display: grid;
-  gap: 8px;
-  margin: 14px 0 0;
+  gap: 4px;
+  margin: 10px 0 0;
 }
 
 .detailRow {
   display: grid;
   grid-template-columns: 108px minmax(0, 1fr);
   gap: 12px;
-  padding: 10px 0;
+  padding: 8px 0;
   border-top: 1px solid rgba(15, 23, 42, 0.06);
 }
 
@@ -458,7 +541,16 @@
 }
 
 .cardActions {
-  margin-top: 14px;
+  display: flex;
+  gap: 6px;
+}
+
+.cardActionButton {
+  width: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border-radius: 10px;
 }
 
 .inlineEmptyState,
@@ -496,11 +588,20 @@
     grid-template-columns: 1fr;
   }
 
+  .settingCardMeta {
+    justify-content: flex-start;
+  }
+
   .primaryButton,
   .secondaryButton,
   .dangerButton,
   .ghostButton {
     width: 100%;
+  }
+
+  .cardActions .cardActionButton {
+    width: 36px;
+    min-width: 36px;
   }
 
   .detailRow {

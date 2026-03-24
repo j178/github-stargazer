@@ -36,8 +36,13 @@
   padding-right: 4px;
 }
 
+.repoListExpanded {
+  max-height: 420px;
+}
+
 .repoCard {
   display: flex;
+  align-items: center;
   width: 100%;
   padding: 10px 12px;
   border-radius: 14px;
@@ -59,17 +64,10 @@
   box-shadow: 0 14px 24px rgba(15, 118, 110, 0.08);
 }
 
-.repoCardTop,
-.repoIdentity,
-.repoAction {
+.repoIdentity {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.repoCardTop {
-  justify-content: space-between;
-  align-items: flex-start;
 }
 
 .repoIdentity {
@@ -95,21 +93,6 @@
   word-break: break-word;
 }
 
-.repoAction {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
-  border: 1px solid rgba(15, 118, 110, 0.16);
-  background: rgba(240, 253, 250, 0.92);
-  color: var(--accent);
-  font-size: 0.76rem;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
 .emptyState {
   margin: 0;
   color: var(--text-muted);
@@ -121,11 +104,4 @@
   border-radius: 18px;
   border: 1px dashed rgba(15, 23, 42, 0.14);
   background: rgba(255, 255, 255, 0.6);
-}
-
-@media (max-width: 640px) {
-  .repoCardTop {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
