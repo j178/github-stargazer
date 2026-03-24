@@ -15,6 +15,7 @@ import (
 	"github.com/j178/github_stargazer/backend/cache"
 	"github.com/j178/github_stargazer/backend/notify"
 	"github.com/j178/github_stargazer/backend/routes"
+	"github.com/j178/github_stargazer/backend/utils"
 )
 
 const MaxSettingsCount = 10
@@ -349,7 +350,7 @@ func TestNotify(c *gin.Context) {
 		return
 	}
 
-	err = notifier.Send(c, "Test Message", "This is a test message from https://github-stargazer.vercel.app/")
+	err = notifier.Send(c, "Test Message", utils.EscapeMarkdown("This is a test message from https://github-stargazer.vercel.app/"))
 	if err != nil {
 		routes.Abort(c, http.StatusInternalServerError, err, "send test notify")
 		return
