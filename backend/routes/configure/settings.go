@@ -12,11 +12,9 @@ import (
 	"github.com/google/go-github/v84/github"
 	"github.com/samber/lo"
 
-	"github.com/j178/github_stargazer/backend/routes"
-
-	"github.com/j178/github_stargazer/backend/notify"
-
 	"github.com/j178/github_stargazer/backend/cache"
+	"github.com/j178/github_stargazer/backend/notify"
+	"github.com/j178/github_stargazer/backend/routes"
 )
 
 const MaxSettingsCount = 10
@@ -135,7 +133,7 @@ func getInstallationAccounts(ctx context.Context, login string) ([]string, error
 
 // check account is associated with login
 func checkAccountAssociation(c *gin.Context, account, login string) bool {
-	installations, err := cache.GetOrCreate[[]string](
+	installations, err := cache.GetOrCreate(
 		c, cache.Key{"installations", login}, 24*time.Hour, func() ([]string, error) {
 			return getInstallationAccounts(c, login)
 		},
@@ -351,7 +349,7 @@ func TestNotify(c *gin.Context) {
 		return
 	}
 
-	err = notifier.Send(c, "test", "this is a test message")
+	err = notifier.Send(c, "Test Message", "This is a test message from https://github-stargazer.vercel.app/")
 	if err != nil {
 		routes.Abort(c, http.StatusInternalServerError, err, "send test notify")
 		return

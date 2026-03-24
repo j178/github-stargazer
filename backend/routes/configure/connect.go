@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/samber/lo"
+
 	"github.com/j178/github_stargazer/backend/cache"
 	"github.com/j178/github_stargazer/backend/config"
 	"github.com/j178/github_stargazer/backend/routes"
 	"github.com/j178/github_stargazer/backend/utils"
-	"github.com/samber/lo"
 )
 
 const ConnectTokenExpire = 10 * time.Minute

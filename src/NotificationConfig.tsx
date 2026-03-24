@@ -7,12 +7,14 @@ import {
   type SetStateAction,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from 'react'
 import { FaBell, FaDiscord, FaPlug, FaTelegram } from 'react-icons/fa'
 import {
   FiAlertCircle,
   FiCheckCircle,
+  FiChevronDown,
   FiEdit2,
   FiExternalLink,
   FiLink,
@@ -287,6 +289,8 @@ const NotificationConfig: FC<{
   const [connectionToken, setConnectionToken] = useState<ConnectionToken | null>(null)
   const [connectionState, setConnectionState] = useState<ConnectionState>('idle')
   const [connectionMessage, setConnectionMessage] = useState('')
+  const [isServiceMenuOpen, setIsServiceMenuOpen] = useState(false)
+  const serviceMenuRef = useRef<HTMLDivElement | null>(null)
 
   const resetConnectionState = () => {
     setConnectionToken(null)
@@ -298,6 +302,7 @@ const NotificationConfig: FC<{
     setDraft(createDraft(service))
     setEditingIndex(null)
     resetConnectionState()
+    setIsServiceMenuOpen(false)
   }
 
   const cancelDraft = () => {
@@ -465,8 +470,307 @@ const NotificationConfig: FC<{
     }
   }, [checkConnectionResult, connectionState, connectionToken, draft])
 
+  useEffect(() => {
+    if (!isServiceMenuOpen) {
+      return
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!serviceMenuRef.current?.contains(event.target as Node)) {
+        setIsServiceMenuOpen(false)
+      }
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsServiceMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isServiceMenuOpen])
+
   const isDraftInvalid = draft ? hasMissingRequiredFields(draft) : false
   const isOverLimit = settings.notify_settings.length > 10
+  const renderDraftEditorBody = () => {
+    if (!draft) {
+      return null
+    }
+
+    return (
+      <>
+        {serviceMeta[draft.service].quickConnect && !connectionToken ? (
+          <div className={styles.connectCallout}>
+            <div>
+              <h4 className={styles.connectTitle}>Quick connect</h4>
+              <p className={styles.connectText}>{serviceMeta[draft.service].quickConnect}</p>
+            </div>
+            {getConnectPlatform(draft.service) ? (
+              <button
+                className={`${styles.secondaryButton} ${styles.connectButton}`}
+                onClick={() => void handleStartConnection()}
+                type='button'
+              >
+                <FiLink />
+                Generate token
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {connectionToken ? (
+          <div className={styles.tokenCard}>
+            <div className={styles.tokenRow}>
+              <span className={styles.tokenLabel}>Connect token</span>
+              <code className={styles.tokenValue}>{connectionToken.token}</code>
+            </div>
+            {connectionToken.bot_url ? (
+              <div className={styles.linkRow}>
+                <a href={connectionToken.bot_url} rel='noopener noreferrer' target='_blank'>
+                  <FiExternalLink />
+                  Open bot
+                </a>
+                {connectionToken.bot_group_url ? (
+                  <a href={connectionToken.bot_group_url} rel='noopener noreferrer' target='_blank'>
+                    <FiExternalLink />
+                    Open group flow
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+            <div className={styles.inlineActions}>
+              <button className={styles.ghostButton} onClick={() => void checkConnectionResult(false)} type='button'>
+                <FiRefreshCw />
+                Check now
+              </button>
+              <span
+                className={
+                  connectionState === 'connected'
+                    ? `${styles.connectionHint} ${styles.connectionHintSuccess}`
+                    : connectionState === 'error'
+                      ? `${styles.connectionHint} ${styles.connectionHintError}`
+                      : styles.connectionHint
+                }
+              >
+                {connectionState === 'connected' ? <FiCheckCircle /> : null}
+                {connectionMessage}
+              </span>
+            </div>
+          </div>
+        ) : null}
+
+        <div className={styles.fieldGrid}>
+          {draft.service === 'telegram' ? (
+            <>
+              <Field label='Chat ID' required>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('chat_id', event.target.value)}
+                  placeholder='379650434'
+                  type='text'
+                  value={draft.chat_id ?? ''}
+                />
+              </Field>
+              <Field label='Bot Token'>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('token', event.target.value)}
+                  placeholder='Leave blank to use the built-in bot'
+                  type='text'
+                  value={draft.token ?? ''}
+                />
+              </Field>
+              {draft.telegram_username ? (
+                <Field hint='Filled after quick connect' label='Telegram Username'>
+                  <input className={styles.input} readOnly type='text' value={draft.telegram_username} />
+                </Field>
+              ) : null}
+            </>
+          ) : null}
+
+          {draft.service === 'discord_webhook' ? (
+            <>
+              <Field label='Webhook ID' required>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('webhook_id', event.target.value)}
+                  placeholder='Webhook ID'
+                  type='text'
+                  value={draft.webhook_id ?? ''}
+                />
+              </Field>
+              <Field label='Webhook Token' required>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('webhook_token', event.target.value)}
+                  placeholder='Webhook token'
+                  type='text'
+                  value={draft.webhook_token ?? ''}
+                />
+              </Field>
+              <Field label='Display Name'>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('username', event.target.value)}
+                  placeholder='Star++'
+                  type='text'
+                  value={draft.username ?? ''}
+                />
+              </Field>
+              <Field label='Avatar URL'>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('avatar_url', event.target.value)}
+                  placeholder='https://...'
+                  type='text'
+                  value={draft.avatar_url ?? ''}
+                />
+              </Field>
+              <Field hint='Hex value without #' label='Accent Color'>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('color', event.target.value)}
+                  placeholder='fd9a00'
+                  type='text'
+                  value={draft.color ?? ''}
+                />
+              </Field>
+            </>
+          ) : null}
+
+          {draft.service === 'discord_bot' ? (
+            <>
+              <Field label='Channel ID' required>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('channel_id', event.target.value)}
+                  placeholder='Channel ID'
+                  type='text'
+                  value={draft.channel_id ?? ''}
+                />
+              </Field>
+              <Field label='Bot Token'>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('token', event.target.value)}
+                  placeholder='Leave blank to use the built-in bot'
+                  type='text'
+                  value={draft.token ?? ''}
+                />
+              </Field>
+              <Field label='Display Name'>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('username', event.target.value)}
+                  placeholder='Star++'
+                  type='text'
+                  value={draft.username ?? ''}
+                />
+              </Field>
+              <Field label='Avatar URL'>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('avatar_url', event.target.value)}
+                  placeholder='https://...'
+                  type='text'
+                  value={draft.avatar_url ?? ''}
+                />
+              </Field>
+              <Field hint='Hex value without #' label='Accent Color'>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('color', event.target.value)}
+                  placeholder='fd9a00'
+                  type='text'
+                  value={draft.color ?? ''}
+                />
+              </Field>
+            </>
+          ) : null}
+
+          {draft.service === 'bark' ? (
+            <>
+              <Field label='Key' required>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('key', event.target.value)}
+                  placeholder='Bark device key'
+                  type='text'
+                  value={draft.key ?? ''}
+                />
+              </Field>
+              <Field label='Server'>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('server', event.target.value)}
+                  placeholder='https://api.day.app/'
+                  type='text'
+                  value={draft.server ?? ''}
+                />
+              </Field>
+            </>
+          ) : null}
+
+          {draft.service === 'webhook' ? (
+            <>
+              <Field label='Webhook URL' required wide>
+                <input
+                  className={styles.input}
+                  onChange={(event) => updateDraftField('url', event.target.value)}
+                  placeholder='https://example.com/webhook'
+                  type='text'
+                  value={draft.url ?? ''}
+                />
+              </Field>
+              <Field label='Method'>
+                <select
+                  className={styles.select}
+                  onChange={(event) => updateDraftField('method', event.target.value)}
+                  value={draft.method ?? 'POST'}
+                >
+                  <option value='POST'>POST</option>
+                  <option value='PUT'>PUT</option>
+                </select>
+              </Field>
+              <Field hint='Semicolon-separated key:value pairs' label='Headers' wide>
+                <textarea
+                  className={styles.textarea}
+                  onChange={(event) => updateDraftField('headers', event.target.value)}
+                  placeholder='Authorization: Bearer token; Content-Type: application/json'
+                  value={draft.headers ?? ''}
+                />
+              </Field>
+              <Field hint='Use {{.Title}} and {{.Message}} placeholders' label='Body Template' wide>
+                <textarea
+                  className={styles.textarea}
+                  onChange={(event) => updateDraftField('body', event.target.value)}
+                  placeholder='{\"title\":\"{{.Title}}\",\"message\":\"{{.Message}}\"}'
+                  value={draft.body ?? ''}
+                />
+              </Field>
+            </>
+          ) : null}
+        </div>
+
+        <div className={styles.editorFooter}>
+          <div className={styles.inlineActions}>
+            <button className={styles.primaryButton} disabled={isDraftInvalid} onClick={handleApplyDraft} type='button'>
+              {editingIndex === null ? <FiPlus /> : <FiEdit2 />}
+              {editingIndex === null ? 'Add channel' : 'Update channel'}
+            </button>
+            <button className={styles.secondaryButton} onClick={cancelDraft} type='button'>
+              <FiX />
+              Cancel
+            </button>
+          </div>
+        </div>
+      </>
+    )
+  }
 
   return (
     <div className={styles.notificationConfig}>
@@ -485,315 +789,64 @@ const NotificationConfig: FC<{
 
       {!draft ? (
         <div className={styles.servicePicker}>
-          <label className={styles.serviceSelectField}>
+          <div className={styles.serviceSelectField}>
             <span className={styles.serviceSelectLabel}>Add a new channel</span>
-            <select
-              className={styles.serviceSelect}
-              defaultValue=''
-              onChange={(event) => {
-                const nextService = event.target.value as NotificationService
-                if (!nextService) {
-                  return
+            <div className={styles.servicePickerMenu} ref={serviceMenuRef}>
+              <button
+                aria-controls='channel-type-menu'
+                aria-expanded={isServiceMenuOpen}
+                className={
+                  isServiceMenuOpen
+                    ? `${styles.servicePickerButton} ${styles.servicePickerButtonOpen}`
+                    : styles.servicePickerButton
                 }
-
-                beginDraft(nextService)
-              }}
-            >
-              <option disabled value=''>
-                Choose a channel type
-              </option>
-              {notificationServices.map((service) => (
-                <option key={service} value={service}>
-                  {serviceMeta[service].label}
-                </option>
-              ))}
-            </select>
-          </label>
+                onClick={() => setIsServiceMenuOpen((current) => !current)}
+                type='button'
+              >
+                <span className={styles.servicePickerButtonText}>Choose a channel type</span>
+                <span
+                  aria-hidden='true'
+                  className={
+                    isServiceMenuOpen
+                      ? `${styles.servicePickerChevron} ${styles.servicePickerChevronOpen}`
+                      : styles.servicePickerChevron
+                  }
+                >
+                  <FiChevronDown />
+                </span>
+              </button>
+              {isServiceMenuOpen ? (
+                <section className={styles.servicePickerDropdown} id='channel-type-menu'>
+                  {notificationServices.map((service) => (
+                    <button
+                      className={styles.servicePickerOption}
+                      key={service}
+                      onClick={() => beginDraft(service)}
+                      type='button'
+                    >
+                      <span className={styles.servicePickerOptionIcon}>{serviceIcons[service]}</span>
+                      <span className={styles.servicePickerOptionCopy}>
+                        <strong>{serviceMeta[service].label}</strong>
+                        <span>{serviceMeta[service].description}</span>
+                      </span>
+                    </button>
+                  ))}
+                </section>
+              ) : null}
+            </div>
+          </div>
         </div>
       ) : null}
 
-      {draft ? (
+      {draft && editingIndex === null ? (
         <div className={styles.editorCard}>
           <div className={styles.editorHeader}>
             <div>
-              <h3 className={styles.editorTitle}>
-                {editingIndex === null ? 'Add' : 'Edit'} {serviceMeta[draft.service].label}
-              </h3>
+              <h3 className={styles.editorTitle}>Add {serviceMeta[draft.service].label}</h3>
               <p className={styles.editorText}>{serviceMeta[draft.service].description}</p>
             </div>
           </div>
-
-          {serviceMeta[draft.service].quickConnect && !connectionToken ? (
-            <div className={styles.connectCallout}>
-              <div>
-                <h4 className={styles.connectTitle}>Quick connect</h4>
-                <p className={styles.connectText}>{serviceMeta[draft.service].quickConnect}</p>
-              </div>
-              {getConnectPlatform(draft.service) ? (
-                <button
-                  className={`${styles.secondaryButton} ${styles.connectButton}`}
-                  onClick={() => void handleStartConnection()}
-                  type='button'
-                >
-                  <FiLink />
-                  Generate token
-                </button>
-              ) : null}
-            </div>
-          ) : null}
-
-          {connectionToken ? (
-            <div className={styles.tokenCard}>
-              <div className={styles.tokenRow}>
-                <span className={styles.tokenLabel}>Connect token</span>
-                <code className={styles.tokenValue}>{connectionToken.token}</code>
-              </div>
-              {connectionToken.bot_url ? (
-                <div className={styles.linkRow}>
-                  <a href={connectionToken.bot_url} rel='noopener noreferrer' target='_blank'>
-                    <FiExternalLink />
-                    Open bot
-                  </a>
-                  {connectionToken.bot_group_url ? (
-                    <a href={connectionToken.bot_group_url} rel='noopener noreferrer' target='_blank'>
-                      <FiExternalLink />
-                      Open group flow
-                    </a>
-                  ) : null}
-                </div>
-              ) : null}
-              <div className={styles.inlineActions}>
-                <button className={styles.ghostButton} onClick={() => void checkConnectionResult(false)} type='button'>
-                  <FiRefreshCw />
-                  Check now
-                </button>
-                <span
-                  className={
-                    connectionState === 'connected'
-                      ? `${styles.connectionHint} ${styles.connectionHintSuccess}`
-                      : connectionState === 'error'
-                        ? `${styles.connectionHint} ${styles.connectionHintError}`
-                        : styles.connectionHint
-                  }
-                >
-                  {connectionState === 'connected' ? <FiCheckCircle /> : null}
-                  {connectionMessage}
-                </span>
-              </div>
-            </div>
-          ) : null}
-
-          <div className={styles.fieldGrid}>
-            {draft.service === 'telegram' ? (
-              <>
-                <Field label='Chat ID' required>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('chat_id', event.target.value)}
-                    placeholder='379650434'
-                    type='text'
-                    value={draft.chat_id ?? ''}
-                  />
-                </Field>
-                <Field label='Bot Token'>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('token', event.target.value)}
-                    placeholder='Leave blank to use the built-in bot'
-                    type='text'
-                    value={draft.token ?? ''}
-                  />
-                </Field>
-                {draft.telegram_username ? (
-                  <Field hint='Filled after quick connect' label='Telegram Username'>
-                    <input className={styles.input} readOnly type='text' value={draft.telegram_username} />
-                  </Field>
-                ) : null}
-              </>
-            ) : null}
-
-            {draft.service === 'discord_webhook' ? (
-              <>
-                <Field label='Webhook ID' required>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('webhook_id', event.target.value)}
-                    placeholder='Webhook ID'
-                    type='text'
-                    value={draft.webhook_id ?? ''}
-                  />
-                </Field>
-                <Field label='Webhook Token' required>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('webhook_token', event.target.value)}
-                    placeholder='Webhook token'
-                    type='text'
-                    value={draft.webhook_token ?? ''}
-                  />
-                </Field>
-                <Field label='Display Name'>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('username', event.target.value)}
-                    placeholder='Star++'
-                    type='text'
-                    value={draft.username ?? ''}
-                  />
-                </Field>
-                <Field label='Avatar URL'>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('avatar_url', event.target.value)}
-                    placeholder='https://...'
-                    type='text'
-                    value={draft.avatar_url ?? ''}
-                  />
-                </Field>
-                <Field hint='Hex value without #' label='Accent Color'>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('color', event.target.value)}
-                    placeholder='fd9a00'
-                    type='text'
-                    value={draft.color ?? ''}
-                  />
-                </Field>
-              </>
-            ) : null}
-
-            {draft.service === 'discord_bot' ? (
-              <>
-                <Field label='Channel ID' required>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('channel_id', event.target.value)}
-                    placeholder='Channel ID'
-                    type='text'
-                    value={draft.channel_id ?? ''}
-                  />
-                </Field>
-                <Field label='Bot Token'>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('token', event.target.value)}
-                    placeholder='Leave blank to use the built-in bot'
-                    type='text'
-                    value={draft.token ?? ''}
-                  />
-                </Field>
-                <Field label='Display Name'>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('username', event.target.value)}
-                    placeholder='Star++'
-                    type='text'
-                    value={draft.username ?? ''}
-                  />
-                </Field>
-                <Field label='Avatar URL'>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('avatar_url', event.target.value)}
-                    placeholder='https://...'
-                    type='text'
-                    value={draft.avatar_url ?? ''}
-                  />
-                </Field>
-                <Field hint='Hex value without #' label='Accent Color'>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('color', event.target.value)}
-                    placeholder='fd9a00'
-                    type='text'
-                    value={draft.color ?? ''}
-                  />
-                </Field>
-              </>
-            ) : null}
-
-            {draft.service === 'bark' ? (
-              <>
-                <Field label='Key' required>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('key', event.target.value)}
-                    placeholder='Your Bark key'
-                    type='text'
-                    value={draft.key ?? ''}
-                  />
-                </Field>
-                <Field label='Server'>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('server', event.target.value)}
-                    placeholder='https://api.day.app/'
-                    type='text'
-                    value={draft.server ?? ''}
-                  />
-                </Field>
-              </>
-            ) : null}
-
-            {draft.service === 'webhook' ? (
-              <>
-                <Field label='Webhook URL' required wide>
-                  <input
-                    className={styles.input}
-                    onChange={(event) => updateDraftField('url', event.target.value)}
-                    placeholder='https://example.com/webhooks/stars'
-                    type='text'
-                    value={draft.url ?? ''}
-                  />
-                </Field>
-                <Field label='Method'>
-                  <select
-                    className={styles.select}
-                    onChange={(event) => updateDraftField('method', event.target.value)}
-                    value={draft.method ?? 'POST'}
-                  >
-                    <option value='GET'>GET</option>
-                    <option value='POST'>POST</option>
-                    <option value='PUT'>PUT</option>
-                  </select>
-                </Field>
-                <Field hint='Semicolon-separated key:value pairs' label='Headers' wide>
-                  <textarea
-                    className={styles.textarea}
-                    onChange={(event) => updateDraftField('headers', event.target.value)}
-                    placeholder='Authorization: Bearer token; Content-Type: application/json'
-                    value={draft.headers ?? ''}
-                  />
-                </Field>
-                <Field hint='Use {{.Title}} and {{.Message}} placeholders' label='Body Template' wide>
-                  <textarea
-                    className={styles.textarea}
-                    onChange={(event) => updateDraftField('body', event.target.value)}
-                    placeholder='{"title":"{{.Title}}","message":"{{.Message}}"}'
-                    value={draft.body ?? ''}
-                  />
-                </Field>
-              </>
-            ) : null}
-          </div>
-
-          <div className={styles.editorFooter}>
-            <div className={styles.inlineActions}>
-              <button
-                className={styles.primaryButton}
-                disabled={isDraftInvalid}
-                onClick={handleApplyDraft}
-                type='button'
-              >
-                {editingIndex === null ? <FiPlus /> : <FiEdit2 />}
-                {editingIndex === null ? 'Add channel' : 'Update channel'}
-              </button>
-              <button className={styles.secondaryButton} onClick={cancelDraft} type='button'>
-                <FiX />
-                Cancel
-              </button>
-            </div>
-          </div>
+          {renderDraftEditorBody()}
         </div>
       ) : null}
 
@@ -809,50 +862,56 @@ const NotificationConfig: FC<{
           <div className={styles.emptyState}>No notification channels configured yet.</div>
         ) : (
           <div className={styles.settingsGrid}>
-            {settings.notify_settings.map((setting, index) => (
-              <div className={styles.settingCard} key={getSettingKey(setting)}>
-                <div className={styles.settingCardHeader}>
-                  <div className={styles.settingCardTitle}>
+            {settings.notify_settings.map((setting, index) => {
+              const isEditing = editingIndex === index
+
+              return (
+                <div
+                  className={isEditing ? `${styles.settingCard} ${styles.settingCardEditing}` : styles.settingCard}
+                  key={getSettingKey(setting)}
+                >
+                  <div className={styles.settingCardHeader}>
                     <span className={styles.serviceIcon}>{serviceIcons[setting.service]}</span>
-                    <div>
-                      <strong>{serviceMeta[setting.service].label}</strong>
-                      <p>{serviceMeta[setting.service].description}</p>
+                    <strong className={styles.settingCardName}>{serviceMeta[setting.service].label}</strong>
+                    <div className={styles.settingCardMeta}>
+                      <span className={styles.settingIndex}>#{index + 1}</span>
+                      <div className={styles.cardActions}>
+                        <button
+                          aria-label={`Edit ${serviceMeta[setting.service].label}`}
+                          className={`${styles.ghostButton} ${styles.cardActionButton}`}
+                          onClick={() => handleEditService(index)}
+                          title={`Edit ${serviceMeta[setting.service].label}`}
+                          type='button'
+                        >
+                          <FiEdit2 />
+                        </button>
+                        <button
+                          aria-label={`Remove ${serviceMeta[setting.service].label}`}
+                          className={`${styles.dangerButton} ${styles.cardActionButton}`}
+                          onClick={() => handleRemoveService(index)}
+                          title={`Remove ${serviceMeta[setting.service].label}`}
+                          type='button'
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div className={styles.settingCardMeta}>
-                    <span className={styles.settingIndex}>#{index + 1}</span>
-                    <div className={styles.cardActions}>
-                      <button
-                        aria-label={`Edit ${serviceMeta[setting.service].label}`}
-                        className={`${styles.ghostButton} ${styles.cardActionButton}`}
-                        onClick={() => handleEditService(index)}
-                        title={`Edit ${serviceMeta[setting.service].label}`}
-                        type='button'
-                      >
-                        <FiEdit2 />
-                      </button>
-                      <button
-                        aria-label={`Remove ${serviceMeta[setting.service].label}`}
-                        className={`${styles.dangerButton} ${styles.cardActionButton}`}
-                        onClick={() => handleRemoveService(index)}
-                        title={`Remove ${serviceMeta[setting.service].label}`}
-                        type='button'
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </div>
-                  </div>
+                  {isEditing ? (
+                    <div className={styles.inlineEditor}>{renderDraftEditorBody()}</div>
+                  ) : (
+                    <dl className={styles.detailList}>
+                      {getSettingDetails(setting).map((detail) => (
+                        <div className={styles.detailRow} key={`${setting.service}-${detail.label}`}>
+                          <dt>{detail.label}</dt>
+                          <dd>{detail.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
                 </div>
-                <dl className={styles.detailList}>
-                  {getSettingDetails(setting).map((detail) => (
-                    <div className={styles.detailRow} key={`${setting.service}-${detail.label}`}>
-                      <dt>{detail.label}</dt>
-                      <dd>{detail.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
