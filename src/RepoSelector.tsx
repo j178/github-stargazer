@@ -12,9 +12,10 @@ const RepoSelector: FC<{
   loadMoreRepos: () => Promise<void>
   searchRepos: (query: string) => Promise<RepoInfo[]>
   hasMore: boolean
+  isLoading: boolean
   autoFocus?: boolean
   expanded?: boolean
-}> = ({ repos, onSelect, loadMoreRepos, searchRepos, hasMore, autoFocus = false, expanded = false }) => {
+}> = ({ repos, onSelect, loadMoreRepos, searchRepos, hasMore, isLoading, autoFocus = false, expanded = false }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
@@ -61,7 +62,7 @@ const RepoSelector: FC<{
 
   const lastRepoRef = useCallback(
     (node: HTMLButtonElement | null) => {
-      if (isLoadingMore || !hasMore || normalizedSearch) {
+      if (isLoading || isLoadingMore || !hasMore || normalizedSearch) {
         return
       }
 
@@ -76,16 +77,16 @@ const RepoSelector: FC<{
         observer.current.observe(node)
       }
     },
-    [hasMore, isLoadingMore, loadMore, normalizedSearch]
+    [hasMore, isLoading, isLoadingMore, loadMore, normalizedSearch]
   )
 
   useEffect(() => {
-    if (normalizedSearch || repos.length > 0 || !hasMore || isLoadingMore) {
+    if (normalizedSearch || repos.length > 0 || !hasMore || isLoading || isLoadingMore) {
       return
     }
 
     void loadMore()
-  }, [repos.length, hasMore, isLoadingMore, loadMore, normalizedSearch])
+  }, [repos.length, hasMore, isLoading, isLoadingMore, loadMore, normalizedSearch])
 
   useEffect(() => {
     if (!normalizedSearch) {
@@ -141,6 +142,8 @@ const RepoSelector: FC<{
       <div className={expanded ? `${styles.repoList} ${styles.repoListExpanded}` : styles.repoList}>
         {isSearching && displayedRepos.length === 0 ? (
           <div className={styles.emptyState}>Searching repositories…</div>
+        ) : isLoading && displayedRepos.length === 0 && !normalizedSearch ? (
+          null
         ) : searchError ? (
           <div className={styles.emptyState}>{searchError}</div>
         ) : displayedRepos.length === 0 ? (

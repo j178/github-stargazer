@@ -232,7 +232,7 @@ const App: FC = () => {
     let isMounted = true
 
     setIsLoadingSettings(true)
-    setIsLoadingRepos(true)
+    setIsLoadingRepos(false)
     setSettings(createEmptySettings())
     setRepos([])
     setSelectedRepos([])
@@ -269,35 +269,7 @@ const App: FC = () => {
       }
     }
 
-    const fetchRepos = async () => {
-      try {
-        const reposResponse = await axios.get(`/api/repos/${selectedAccount.id}`)
-        if (!isMounted) {
-          return
-        }
-
-        const nextRepos = (reposResponse.data ?? []) as RepoInfo[]
-        setRepos(nextRepos)
-        setPage(nextRepos.length > 0 ? 1 : 0)
-        setHasMore(nextRepos.length > 0)
-      } catch (error) {
-        if (!isMounted) {
-          return
-        }
-
-        setRepos([])
-        setPage(0)
-        setHasMore(false)
-        toast.error(getErrorMessage(error, `Failed to load repositories for ${selectedAccount.account}`))
-      } finally {
-        if (isMounted) {
-          setIsLoadingRepos(false)
-        }
-      }
-    }
-
     void fetchSettings()
-    void fetchRepos()
 
     return () => {
       isMounted = false
@@ -405,11 +377,12 @@ const App: FC = () => {
   }
 
   const loadMoreRepos = async () => {
-    if (!selectedAccount) {
+    if (!selectedAccount || isLoadingRepos || !hasMore) {
       return
     }
 
     const nextPage = curPage + 1
+    setIsLoadingRepos(true)
     try {
       const response = await axios.get(`/api/repos/${selectedAccount.id}?page=${nextPage}`)
       const nextRepos = (response.data ?? []) as RepoInfo[]
@@ -423,7 +396,17 @@ const App: FC = () => {
       setHasMore(true)
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to load more repositories'))
+    } finally {
+      setIsLoadingRepos(false)
     }
+  }
+
+  const handleToggleRepoPicker = () => {
+    if (!isRepoPickerOpen && repos.length === 0 && hasMore && !isLoadingRepos) {
+      void loadMoreRepos()
+    }
+
+    setIsRepoPickerOpen((current) => !current)
   }
 
   const searchRepos = useCallback(
@@ -520,7 +503,7 @@ const App: FC = () => {
   const currentSettings = buildSettingsPayload(settings, selectedRepos, listMode)
   const hasUnsavedChanges = serializeSettingsSnapshot(currentSettings) !== savedSettingsSnapshot
   const isBusy = isChecking || isTesting || isSaving || isDeleting
-  const canOpenRepoPicker = !isLoadingRepos && (availableRepos.length > 0 || hasMore)
+  const canOpenRepoPicker = availableRepos.length > 0 || hasMore
   const scopedRepoCount =
     currentSettings.allow_repos.length > 0 ? currentSettings.allow_repos.length : currentSettings.mute_repos.length
   const scopedRepoLabel = currentSettings.allow_repos.length > 0 ? 'allow-listed' : 'muted'
@@ -731,18 +714,14 @@ const App: FC = () => {
                         aria-expanded={isRepoPickerOpen}
                         className={styles.scopeRepoTrigger}
                         disabled={!canOpenRepoPicker}
-                        onClick={() => setIsRepoPickerOpen((current) => !current)}
+                        onClick={handleToggleRepoPicker}
                         type='button'
                       >
                         <span className={styles.scopeRepoTriggerIcon}>
                           <FiSearch />
                         </span>
                         <span className={styles.scopeRepoTriggerText}>
-                          {isLoadingRepos
-                            ? 'Loading repositories…'
-                            : canOpenRepoPicker
-                              ? 'Search and add repositories'
-                              : 'All repositories are already added'}
+                          {canOpenRepoPicker ? 'Search and add repositories' : 'All repositories are already added'}
                         </span>
                         <span
                           aria-hidden='true'
@@ -761,6 +740,7 @@ const App: FC = () => {
                             autoFocus
                             expanded
                             hasMore={hasMore}
+                            isLoading={isLoadingRepos}
                             loadMoreRepos={loadMoreRepos}
                             onSelect={handleSelectRepoFromPicker}
                             repos={availableRepos}
