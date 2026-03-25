@@ -281,9 +281,10 @@ const getSettingKey = (setting: NotifySetting) =>
     .join('|')
 
 const NotificationConfig: FC<{
+  isLoading: boolean
   settings: Settings
   setSettings: Dispatch<SetStateAction<Settings>>
-}> = ({ settings, setSettings }) => {
+}> = ({ isLoading, settings, setSettings }) => {
   const [draft, setDraft] = useState<NotifySetting | null>(null)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [connectionToken, setConnectionToken] = useState<ConnectionToken | null>(null)
@@ -787,7 +788,7 @@ const NotificationConfig: FC<{
         ) : null}
       </div>
 
-      {!draft ? (
+      {!isLoading && !draft ? (
         <div className={styles.servicePicker}>
           <div className={styles.serviceSelectField}>
             <span className={styles.serviceSelectLabel}>Add a new channel</span>
@@ -838,7 +839,7 @@ const NotificationConfig: FC<{
         </div>
       ) : null}
 
-      {draft && editingIndex === null ? (
+      {!isLoading && draft && editingIndex === null ? (
         <div className={styles.editorCard}>
           <div className={styles.editorHeader}>
             <div>
@@ -858,7 +859,9 @@ const NotificationConfig: FC<{
           <span className={styles.sectionCountBadge}>{settings.notify_settings.length}/10</span>
         </div>
 
-        {settings.notify_settings.length === 0 ? (
+        {isLoading ? (
+          <div className={styles.emptyState}>Loading configured channels…</div>
+        ) : settings.notify_settings.length === 0 ? (
           <div className={styles.emptyState}>No notification channels configured yet.</div>
         ) : (
           <div className={styles.settingsGrid}>

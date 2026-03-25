@@ -144,7 +144,8 @@ const App: FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
   const [isRefreshingAccounts, setIsRefreshingAccounts] = useState(false)
-  const [isLoadingAccountData, setIsLoadingAccountData] = useState(false)
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false)
+  const [isLoadingRepos, setIsLoadingRepos] = useState(false)
   const [installations, setInstallations] = useState<Installation[]>([])
   const [repos, setRepos] = useState<RepoInfo[]>([])
   const [selectedAccount, setSelectedAccount] = useState<Installation | null>(null)
@@ -152,7 +153,7 @@ const App: FC = () => {
   const [listMode, setListMode] = useState(ListMode.Mute)
   const [selectedRepos, setSelectedRepos] = useState<string[]>([])
   const [savedSettingsSnapshot, setSavedSettingsSnapshot] = useState(EMPTY_SETTINGS_SNAPSHOT)
-  const [curPage, setPage] = useState(1)
+  const [curPage, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [isChecking, setIsChecking] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
@@ -215,12 +216,14 @@ const App: FC = () => {
 
   useEffect(() => {
     if (!selectedAccount) {
+      setIsLoadingSettings(false)
+      setIsLoadingRepos(false)
       setSettings(createEmptySettings())
       setRepos([])
       setSelectedRepos([])
       setListMode(ListMode.Mute)
       setSavedSettingsSnapshot(EMPTY_SETTINGS_SNAPSHOT)
-      setPage(1)
+      setPage(0)
       setHasMore(true)
       setIsRepoPickerOpen(false)
       return
@@ -228,36 +231,31 @@ const App: FC = () => {
 
     let isMounted = true
 
-    const fetchAccountData = async () => {
-      setIsLoadingAccountData(true)
-      setSettings(createEmptySettings())
-      setRepos([])
-      setSelectedRepos([])
-      setListMode(ListMode.Mute)
-      setSavedSettingsSnapshot(EMPTY_SETTINGS_SNAPSHOT)
-      setPage(1)
-      setHasMore(true)
+    setIsLoadingSettings(true)
+    setIsLoadingRepos(true)
+    setSettings(createEmptySettings())
+    setRepos([])
+    setSelectedRepos([])
+    setListMode(ListMode.Mute)
+    setSavedSettingsSnapshot(EMPTY_SETTINGS_SNAPSHOT)
+    setPage(0)
+    setHasMore(true)
+    setIsRepoPickerOpen(false)
 
+    const fetchSettings = async () => {
       try {
-        const [settingsResponse, reposResponse] = await Promise.all([
-          axios.get(`/api/settings/${selectedAccount.account}`),
-          axios.get(`/api/repos/${selectedAccount.id}`),
-        ])
-
+        const settingsResponse = await axios.get(`/api/settings/${selectedAccount.account}`)
         if (!isMounted) {
           return
         }
 
         const normalizedSettings = normalizeSettings(settingsResponse.data)
         const selection = deriveRepoSelection(normalizedSettings)
-        const nextRepos = (reposResponse.data ?? []) as RepoInfo[]
 
         setSettings(normalizedSettings)
         setSelectedRepos(selection.repos)
         setListMode(selection.listMode)
         setSavedSettingsSnapshot(serializeSettingsSnapshot(normalizedSettings))
-        setRepos(nextRepos)
-        setHasMore(nextRepos.length > 0)
       } catch (error) {
         if (!isMounted) {
           return
@@ -266,12 +264,40 @@ const App: FC = () => {
         toast.error(getErrorMessage(error, `Failed to load configuration for ${selectedAccount.account}`))
       } finally {
         if (isMounted) {
-          setIsLoadingAccountData(false)
+          setIsLoadingSettings(false)
         }
       }
     }
 
-    void fetchAccountData()
+    const fetchRepos = async () => {
+      try {
+        const reposResponse = await axios.get(`/api/repos/${selectedAccount.id}`)
+        if (!isMounted) {
+          return
+        }
+
+        const nextRepos = (reposResponse.data ?? []) as RepoInfo[]
+        setRepos(nextRepos)
+        setPage(nextRepos.length > 0 ? 1 : 0)
+        setHasMore(nextRepos.length > 0)
+      } catch (error) {
+        if (!isMounted) {
+          return
+        }
+
+        setRepos([])
+        setPage(0)
+        setHasMore(false)
+        toast.error(getErrorMessage(error, `Failed to load repositories for ${selectedAccount.account}`))
+      } finally {
+        if (isMounted) {
+          setIsLoadingRepos(false)
+        }
+      }
+    }
+
+    void fetchSettings()
+    void fetchRepos()
 
     return () => {
       isMounted = false
@@ -494,7 +520,7 @@ const App: FC = () => {
   const currentSettings = buildSettingsPayload(settings, selectedRepos, listMode)
   const hasUnsavedChanges = serializeSettingsSnapshot(currentSettings) !== savedSettingsSnapshot
   const isBusy = isChecking || isTesting || isSaving || isDeleting
-  const canOpenRepoPicker = availableRepos.length > 0 || hasMore
+  const canOpenRepoPicker = !isLoadingRepos && (availableRepos.length > 0 || hasMore)
   const scopedRepoCount =
     currentSettings.allow_repos.length > 0 ? currentSettings.allow_repos.length : currentSettings.mute_repos.length
   const scopedRepoLabel = currentSettings.allow_repos.length > 0 ? 'allow-listed' : 'muted'
@@ -623,7 +649,12 @@ const App: FC = () => {
           ) : (
             <div className={styles.workspaceGrid}>
               <section className={styles.panel}>
-                <NotificationConfig settings={settings} setSettings={setSettings} />
+                <NotificationConfig
+                  isLoading={isLoadingSettings}
+                  key={selectedAccount.account}
+                  settings={settings}
+                  setSettings={setSettings}
+                />
               </section>
 
               <section className={styles.panel}>
@@ -634,145 +665,135 @@ const App: FC = () => {
                   </div>
                 </div>
 
-                {isLoadingAccountData ? (
-                  <div className={styles.loadingState}>Loading repositories and existing rules…</div>
-                ) : (
-                  <>
-                    <div className={styles.scopeWorkspace}>
-                      <div className={`${styles.scopeBox} ${styles.scopeRulesPanel}`}>
-                        <div className={styles.scopePolicyHeader}>
-                          <div
-                            className={styles.scopePolicyToggle}
-                            role='tablist'
-                            aria-label='Repository delivery policy'
-                          >
-                            {scopeModes.map((scopeMode) => {
-                              const isActive = listMode === scopeMode.mode
-                              return (
-                                <button
-                                  aria-pressed={isActive}
-                                  className={
-                                    isActive
-                                      ? `${styles.scopePolicyButton} ${styles.scopePolicyButtonActive}`
-                                      : styles.scopePolicyButton
-                                  }
-                                  key={scopeMode.mode}
-                                  onClick={() => setListMode(scopeMode.mode)}
-                                  type='button'
-                                >
-                                  {scopeMode.title}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                        {selectedRepos.length === 0 ? (
-                          <div className={styles.scopeEmptyState}>
-                            <strong className={styles.scopeEmptyTitle}>{scopeMeta.emptyTitle}</strong>
-                          </div>
-                        ) : (
-                          <div className={styles.scopeRuleList}>
-                            {selectedRepos.map((repo, index) => (
-                              <article className={styles.scopeRuleRow} key={repo}>
-                                <div className={styles.scopeRuleIdentity}>
-                                  <span className={styles.scopeRuleIndex}>{String(index + 1).padStart(2, '0')}</span>
-                                  <span
-                                    aria-hidden='true'
-                                    className={
-                                      listMode === ListMode.Allow
-                                        ? `${styles.scopeRuleStateIcon} ${styles.scopeRuleStateIconAllow}`
-                                        : `${styles.scopeRuleStateIcon} ${styles.scopeRuleStateIconMute}`
-                                    }
-                                  >
-                                    {listMode === ListMode.Allow ? <FiBell /> : <FiBellOff />}
-                                  </span>
-                                  <strong className={styles.scopeRuleName}>{repo}</strong>
-                                </div>
-                                <button
-                                  aria-label={`Remove ${repo}`}
-                                  className={styles.scopeRuleRemove}
-                                  onClick={() => handleUnselectRepo(repo)}
-                                  title={`Remove ${repo}`}
-                                  type='button'
-                                >
-                                  <FiX />
-                                </button>
-                              </article>
-                            ))}
-                          </div>
-                        )}
-                        <p className={styles.scopePolicyNote}>{scopePolicyMessage}</p>
-                        <div className={styles.scopeRepoPicker} ref={repoPickerRef}>
-                          <button
-                            aria-controls='repo-picker-dropdown'
-                            aria-expanded={isRepoPickerOpen}
-                            className={styles.scopeRepoTrigger}
-                            disabled={!canOpenRepoPicker}
-                            onClick={() => setIsRepoPickerOpen((current) => !current)}
-                            type='button'
-                          >
-                            <span className={styles.scopeRepoTriggerIcon}>
-                              <FiSearch />
-                            </span>
-                            <span className={styles.scopeRepoTriggerText}>
-                              {canOpenRepoPicker ? 'Search and add repositories' : 'All repositories are already added'}
-                            </span>
-                            <span
-                              aria-hidden='true'
+                <div className={styles.scopeWorkspace}>
+                  <div className={`${styles.scopeBox} ${styles.scopeRulesPanel}`}>
+                    <div className={styles.scopePolicyHeader}>
+                      <div className={styles.scopePolicyToggle} role='tablist' aria-label='Repository delivery policy'>
+                        {scopeModes.map((scopeMode) => {
+                          const isActive = listMode === scopeMode.mode
+                          return (
+                            <button
+                              aria-pressed={isActive}
                               className={
-                                isRepoPickerOpen
-                                  ? `${styles.scopeRepoTriggerCaret} ${styles.scopeRepoTriggerCaretOpen}`
-                                  : styles.scopeRepoTriggerCaret
+                                isActive
+                                  ? `${styles.scopePolicyButton} ${styles.scopePolicyButtonActive}`
+                                  : styles.scopePolicyButton
                               }
+                              key={scopeMode.mode}
+                              onClick={() => setListMode(scopeMode.mode)}
+                              type='button'
                             >
-                              <FiChevronDown />
-                            </span>
-                          </button>
-                          {isRepoPickerOpen ? (
-                            <section
-                              aria-label='Add repositories'
-                              className={styles.scopeRepoDropdown}
-                              id='repo-picker-dropdown'
-                            >
-                              <RepoSelector
-                                autoFocus
-                                expanded
-                                hasMore={hasMore}
-                                loadMoreRepos={loadMoreRepos}
-                                onSelect={handleSelectRepoFromPicker}
-                                repos={availableRepos}
-                                searchRepos={searchRepos}
-                              />
-                            </section>
-                          ) : null}
-                        </div>
+                              {scopeMode.title}
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
-
-                    <label className={styles.preferenceCard}>
-                      <div className={styles.preferenceContent}>
-                        <span className={styles.preferenceIcon}>
-                          <FiBellOff />
-                        </span>
-                        <h3 className={styles.subsectionTitle}>Mute lost-star notifications</h3>
-                        <p className={styles.sectionText}>
-                          Keep delivery focused on new stars and ignore unstar events.
-                        </p>
+                    {selectedRepos.length === 0 ? (
+                      <div className={styles.scopeEmptyState}>
+                        <strong className={styles.scopeEmptyTitle}>{scopeMeta.emptyTitle}</strong>
                       </div>
-                      <input
-                        checked={settings.mute_lost_stars}
-                        className={styles.preferenceToggle}
-                        onChange={(event) =>
-                          setSettings((current) => ({
-                            ...current,
-                            mute_lost_stars: event.target.checked,
-                          }))
-                        }
-                        type='checkbox'
-                      />
-                    </label>
-                  </>
-                )}
+                    ) : (
+                      <div className={styles.scopeRuleList}>
+                        {selectedRepos.map((repo, index) => (
+                          <article className={styles.scopeRuleRow} key={repo}>
+                            <div className={styles.scopeRuleIdentity}>
+                              <span className={styles.scopeRuleIndex}>{String(index + 1).padStart(2, '0')}</span>
+                              <span
+                                aria-hidden='true'
+                                className={
+                                  listMode === ListMode.Allow
+                                    ? `${styles.scopeRuleStateIcon} ${styles.scopeRuleStateIconAllow}`
+                                    : `${styles.scopeRuleStateIcon} ${styles.scopeRuleStateIconMute}`
+                                }
+                              >
+                                {listMode === ListMode.Allow ? <FiBell /> : <FiBellOff />}
+                              </span>
+                              <strong className={styles.scopeRuleName}>{repo}</strong>
+                            </div>
+                            <button
+                              aria-label={`Remove ${repo}`}
+                              className={styles.scopeRuleRemove}
+                              onClick={() => handleUnselectRepo(repo)}
+                              title={`Remove ${repo}`}
+                              type='button'
+                            >
+                              <FiX />
+                            </button>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                    <p className={styles.scopePolicyNote}>{scopePolicyMessage}</p>
+                    <div className={styles.scopeRepoPicker} ref={repoPickerRef}>
+                      <button
+                        aria-controls='repo-picker-dropdown'
+                        aria-expanded={isRepoPickerOpen}
+                        className={styles.scopeRepoTrigger}
+                        disabled={!canOpenRepoPicker}
+                        onClick={() => setIsRepoPickerOpen((current) => !current)}
+                        type='button'
+                      >
+                        <span className={styles.scopeRepoTriggerIcon}>
+                          <FiSearch />
+                        </span>
+                        <span className={styles.scopeRepoTriggerText}>
+                          {isLoadingRepos
+                            ? 'Loading repositories…'
+                            : canOpenRepoPicker
+                              ? 'Search and add repositories'
+                              : 'All repositories are already added'}
+                        </span>
+                        <span
+                          aria-hidden='true'
+                          className={
+                            isRepoPickerOpen
+                              ? `${styles.scopeRepoTriggerCaret} ${styles.scopeRepoTriggerCaretOpen}`
+                              : styles.scopeRepoTriggerCaret
+                          }
+                        >
+                          <FiChevronDown />
+                        </span>
+                      </button>
+                      {isRepoPickerOpen ? (
+                        <section aria-label='Add repositories' className={styles.scopeRepoDropdown} id='repo-picker-dropdown'>
+                          <RepoSelector
+                            autoFocus
+                            expanded
+                            hasMore={hasMore}
+                            loadMoreRepos={loadMoreRepos}
+                            onSelect={handleSelectRepoFromPicker}
+                            repos={availableRepos}
+                            searchRepos={searchRepos}
+                          />
+                        </section>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <label className={styles.preferenceCard}>
+                  <div className={styles.preferenceContent}>
+                    <span className={styles.preferenceIcon}>
+                      <FiBellOff />
+                    </span>
+                    <h3 className={styles.subsectionTitle}>Mute lost-star notifications</h3>
+                    <p className={styles.sectionText}>
+                      Keep delivery focused on new stars and ignore unstar events.
+                    </p>
+                  </div>
+                  <input
+                    checked={settings.mute_lost_stars}
+                    className={styles.preferenceToggle}
+                    onChange={(event) =>
+                      setSettings((current) => ({
+                        ...current,
+                        mute_lost_stars: event.target.checked,
+                      }))
+                    }
+                    type='checkbox'
+                  />
+                </label>
               </section>
               <aside className={`${styles.panel} ${styles.actionsPanel}`}>
                 <div>
@@ -793,7 +814,7 @@ const App: FC = () => {
                 <div className={styles.actionButtons}>
                   <button
                     className={styles.secondaryButton}
-                    disabled={isBusy || isLoadingAccountData}
+                    disabled={isBusy || isLoadingSettings}
                     onClick={() => void handleValidateSettings()}
                     type='button'
                   >
@@ -802,7 +823,7 @@ const App: FC = () => {
                   </button>
                   <button
                     className={styles.secondaryButton}
-                    disabled={isBusy || isLoadingAccountData}
+                    disabled={isBusy || isLoadingSettings}
                     onClick={() => void handleTestSettings()}
                     type='button'
                   >
@@ -811,7 +832,7 @@ const App: FC = () => {
                   </button>
                   <button
                     className={hasUnsavedChanges ? styles.primaryButton : styles.secondaryButton}
-                    disabled={isBusy || isLoadingAccountData}
+                    disabled={isBusy || isLoadingSettings}
                     onClick={() => void handleSaveSettings()}
                     type='button'
                   >
@@ -820,7 +841,7 @@ const App: FC = () => {
                   </button>
                   <button
                     className={`${styles.dangerButton} ${styles.subtleDangerButton}`}
-                    disabled={isBusy || isLoadingAccountData}
+                    disabled={isBusy || isLoadingSettings}
                     onClick={() => void handleDeleteSettings()}
                     type='button'
                   >
